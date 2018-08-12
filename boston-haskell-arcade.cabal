@@ -8,9 +8,10 @@ tested-with: GHC == 8.4.3
 library
   build-depends:
       base
-    , reactive-banana
-    , termbox-banana
-    , text
+    , lens ^>= 4.17
+    , reactive-banana ^>= 1.2.0
+    , termbox-banana ^>= 0.1.0
+    , text ^>= 1.2.3
   ghc-options:
     -Weverything
     -fno-warn-missing-import-lists
@@ -24,6 +25,7 @@ library
     Bha.Orphans
     Bha.Prelude
     Bha.View
+    Reactive.Banana.Bha
   hs-source-dirs:
     src
 

@@ -1,9 +1,11 @@
 -- | The main menu to display between games.
 
-{-# LANGUAGE NoImplicitPrelude, ScopedTypeVariables #-}
+{-# LANGUAGE LambdaCase, NoImplicitPrelude, ScopedTypeVariables #-}
 
 module Bha.Main.Menu
   ( MainMenuOutput(..)
+  , ᴍainMenuOutputGame
+  , ᴍainMenuOutputDone
   , momentMainMenu
   ) where
 
@@ -19,6 +21,12 @@ import Bha.View
 data MainMenuOutput
   = MainMenuOutputGame Game -- ^ A game was selected.
   | MainMenuOutputDone      -- ^ Quit the program.
+
+ᴍainMenuOutputGame :: Prism' MainMenuOutput Game
+ᴍainMenuOutputGame = prism' MainMenuOutputGame (\case { MainMenuOutputGame x -> Just x; _ -> Nothing })
+
+ᴍainMenuOutputDone :: Prism' MainMenuOutput ()
+ᴍainMenuOutputDone = prism' (const MainMenuOutputDone) (\case { MainMenuOutputDone -> Just (); _ -> Nothing })
 
 -- | Create a main menu in this moment.
 momentMainMenu

@@ -5,7 +5,7 @@ module Bha.Main
   ( main
   ) where
 
-import Reactive.Banana
+import Reactive.Banana.Bha
 import Reactive.Banana.Frameworks
 import Termbox.Banana             (InputMode(..), MouseMode(..), OutputMode(..),
                                    Scene(..))
@@ -28,52 +28,50 @@ main'
   -> Behavior (Int, Int)
   -> MomentIO (Behavior Scene, Event ())
 main' eEvent _bSize = mdo
-  (bMenuScene, eMenuOutput) <-
-    momentMainMenu gamelist (whenE (isNothing <$> bGame) eEvent)
+  -- Partition terminal events into two: those intended for the menu, and those
+  -- intended for the game. How do we tell them apart? When there's an active
+  -- game, it gets all of the input.
+  let
+    eEventForMenu = whenE (isNothing <$> bGame) eEvent :: Event Tb.Event
+    eEventForGame = whenE (isJust    <$> bGame) eEvent :: Event Tb.Event
+
+  -- Create the menu.
+  (bMenuScene, eMenuOutput) :: (Behavior Scene, Event MainMenuOutput) <-
+    momentMainMenu gamelist eEventForMenu
+
+  -- Partition the menu's output into two: "I'm done" (escape) and "play this
+  -- game" (enter).
+  let
+    eMenuDone = previewE ᴍainMenuOutputDone eMenuOutput :: Event ()
+    eMenuGame = previewE ᴍainMenuOutputGame eMenuOutput :: Event Game
 
   let
-    eMenuDone :: Event ()
-    eMenuDone =
-      filterJust (f <$> eMenuOutput)
-     where
-      f :: MainMenuOutput -> Maybe ()
-      f = \case
-        MainMenuOutputDone -> Just ()
-        MainMenuOutputGame{} -> Nothing
+    ebGameScene :: Event (Behavior Scene)
+    eeGameDone :: Event (Event ())
+    (ebGameScene, eeGameDone) =
+      unpairE (observeE (momentGame eEventForGame <$> eMenuGame))
 
-  -- Event that fires whenever a new game is started.
-  -- TODO previewE
-  let
-    eGame :: Event Game
-    eGame =
-      filterJust (f <$> eMenuOutput)
-     where
-      f :: MainMenuOutput -> Maybe Game
-      f = \case
-        MainMenuOutputGame game -> Just game
-        MainMenuOutputDone      -> Nothing
-
-  -- TODO clean this gameGuts stuff up
-  let
-    eGameGuts :: Event (Behavior Scene, Event ())
-    eGameGuts =
-      observeE (momentGame (whenE (isJust <$> bGame) eEvent) <$> eGame)
-
+  -- Event that fires when the current game ends.
   eGameDone :: Event () <-
-    switchE (snd <$> eGameGuts)
+    switchE eeGameDone
 
   -- The game currently being played.
   bGame :: Behavior (Maybe Game) <-
     stepper Nothing
       (unionWith const
-        (Just    <$> eGame)
-        (Nothing <$  eGameDone))
+        (Just    <$> eMenuGame)  -- When a game begins, step to it.
+        (Nothing <$  eGameDone)) -- When the current game ends, step to Nothing.
 
+  -- The scene to render.
   bScene :: Behavior Scene <-
-    switchB bMenuScene
+    switchB
+      -- Start by rendering the menu.
+      bMenuScene
       (unionWith const
-        (bMenuScene <$ eGameDone)
-        (fst <$> eGameGuts))
+        -- When a new game starts, switch to it.
+        ebGameScene
+        -- When the current game ends, switch back to the menu.
+        (bMenuScene <$ eGameDone))
 
   pure (bScene, eMenuDone)
 

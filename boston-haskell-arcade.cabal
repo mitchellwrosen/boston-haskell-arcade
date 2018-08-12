@@ -16,9 +16,14 @@ library
     -fno-warn-missing-import-lists
     -fno-warn-unsafe
   exposed-modules:
+    Bha.Game
+    Bha.Game.Impl.ElmExample
     Bha.Main
+    Bha.Main.Game
+    Bha.Main.Menu
     Bha.Orphans
     Bha.Prelude
+    Bha.View
   hs-source-dirs:
     src
 

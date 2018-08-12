@@ -1,4 +1,5 @@
-{-# LANGUAGE NoImplicitPrelude, OverloadedStrings, ScopedTypeVariables #-}
+{-# LANGUAGE LambdaCase, NoImplicitPrelude, OverloadedStrings, RecursiveDo,
+             ScopedTypeVariables #-}
 
 module Bha.Main
   ( main
@@ -6,13 +7,17 @@ module Bha.Main
 
 import Reactive.Banana
 import Reactive.Banana.Frameworks
-import Termbox.Banana             (Attr, Cell(..), Cells, Cursor(..),
-                                   InputMode(..), Key(..), MouseMode(..),
-                                   OutputMode(..), Scene(..))
+import Termbox.Banana             (InputMode(..), MouseMode(..), OutputMode(..),
+                                   Scene(..))
 
 import qualified Termbox.Banana as Tb
 
+import Bha.Game
+import Bha.Main.Game
+import Bha.Main.Menu
 import Bha.Prelude
+
+import qualified Bha.Game.Impl.ElmExample
 
 main :: IO ()
 main =
@@ -21,56 +26,60 @@ main =
 main'
   :: Event Tb.Event
   -> Behavior (Int, Int)
-  -> MomentIO (Behavior Tb.Scene, Event ())
-main' eEvent _bSize = do
-  let
-    eDone :: Event ()
-    eDone =
-      () <$ filterE (== Tb.EventKey KeyEsc False) eEvent
-
-  bIndex :: Behavior Int <-
-    accumB 0 $ unions
-      [ (+1)       <$ filterE (== Tb.EventKey (KeyChar 'j') False) eEvent
-      , subtract 1 <$ filterE (== Tb.EventKey (KeyChar 'k') False) eEvent
-      ]
+  -> MomentIO (Behavior Scene, Event ())
+main' eEvent _bSize = mdo
+  (bMenuScene, eMenuOutput) <-
+    momentMainMenu gamelist (whenE (isNothing <$> bGame) eEvent)
 
   let
-    bCells :: Behavior Cells
-    bCells =
-      mconcat
-        [ pure
-            (tbstr 0 0 mempty mempty
-              "* Welcome to the Boston Haskell Arcade! *")
-        , render <$> bIndex
-        ]
+    eMenuDone :: Event ()
+    eMenuDone =
+      filterJust (f <$> eMenuOutput)
      where
-      render :: Int -> Cells
-      render i =
-        foldMap
-          (\(j, (name, _game)) ->
-            if i `mod` length gamelist == j
-              then tbstr 0 (j+2) mempty mempty ("> " ++ name)
-              else tbstr 0 (j+2) mempty mempty ("  " ++ name))
-          (zip [0..] gamelist)
+      f :: MainMenuOutput -> Maybe ()
+      f = \case
+        MainMenuOutputDone -> Just ()
+        MainMenuOutputGame{} -> Nothing
 
+  -- Event that fires whenever a new game is started.
+  -- TODO previewE
   let
-    bScene :: Behavior Scene
-    bScene =
-      Scene
-        <$> bCells
-        <*> pure NoCursor
+    eGame :: Event Game
+    eGame =
+      filterJust (f <$> eMenuOutput)
+     where
+      f :: MainMenuOutput -> Maybe Game
+      f = \case
+        MainMenuOutputGame game -> Just game
+        MainMenuOutputDone      -> Nothing
 
-  pure (bScene, eDone)
+  -- TODO clean this gameGuts stuff up
+  let
+    eGameGuts :: Event (Behavior Scene, Event ())
+    eGameGuts =
+      observeE (momentGame (whenE (isJust <$> bGame) eEvent) <$> eGame)
 
-tbstr :: Int -> Int -> Attr -> Attr -> [Char] -> Cells
-tbstr col0 row fg bg =
-  foldMap (\(col, c) -> Tb.set col row (Cell c fg bg)) . zip [col0..]
+  eGameDone :: Event () <-
+    switchE (snd <$> eGameGuts)
 
+  -- The game currently being played.
+  bGame :: Behavior (Maybe Game) <-
+    stepper Nothing
+      (unionWith const
+        (Just    <$> eGame)
+        (Nothing <$  eGameDone))
+
+  bScene :: Behavior Scene <-
+    switchB bMenuScene
+      (unionWith const
+        (bMenuScene <$ eGameDone)
+        (fst <$> eGameGuts))
+
+  pure (bScene, eMenuDone)
+
+-- | The master game list.
 gamelist :: [([Char], Game)]
 gamelist =
-  [ ("Game 1", Game)
-  , ("Game 2", Game)
+  [ ("Elm Example 1", Bha.Game.Impl.ElmExample.game)
+  , ("Broken Game 2", GameFRP)
   ]
-
-data Game
-  = Game

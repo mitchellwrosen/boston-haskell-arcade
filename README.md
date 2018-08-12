@@ -50,3 +50,21 @@ To contribute a game,
 Example games can be found at `src/Bha/Game/Impl/Example*`:
 
 - [Elm Example 1](./src/Bha/Game/Impl/ElmExample.hs)
+
+### Code organization
+
+- `Bha.Main.*`
+
+  The `main` modules. They manage which game to render, and where to route terminal events.
+  
+- `Bha.Game`
+
+  Core game types. Individual games will import this module.
+  
+- `Bha.Game.Impl.*`
+  
+   The games.
+    
+- `Bha.View`
+
+  High-level rendering helpers (not implemented yet). Rendering is still directly via the `termbox` API, which only supports setting individual cells.

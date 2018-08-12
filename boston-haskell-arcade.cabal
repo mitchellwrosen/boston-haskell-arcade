@@ -8,7 +8,23 @@ tested-with: GHC == 8.4.3
 library
   build-depends:
       base
+    , reactive-banana
+    , termbox-banana
+    , text
   ghc-options:
     -Weverything
+    -fno-warn-missing-import-lists
+    -fno-warn-unsafe
+  exposed-modules:
+    Bha.Main
+    Bha.Orphans
+    Bha.Prelude
   hs-source-dirs:
     src
+
+executable boston-haskell-arcade
+  build-depends:
+      base
+    , boston-haskell-arcade
+  main-is:
+    app/Main.hs

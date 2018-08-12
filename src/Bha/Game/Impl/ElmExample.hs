@@ -12,8 +12,10 @@ import Bha.Game    (ElmGame(ElmGame), Game(..))
 import Bha.Prelude
 import Bha.View
 
-type Model
-  = Int
+data Model
+  = Model
+      !Int             -- Event count
+      !NominalDiffTime -- Elapsed time
 
 game :: Game
 game =
@@ -21,20 +23,23 @@ game =
 
 init :: Model
 init =
-  0
+  Model 0 0
 
-update :: Either () Event -> Model -> Model
-update event n =
+update :: Either NominalDiffTime Event -> Model -> Model
+update event (Model n elapsed) =
   case event of
     -- Fast-forward on esc to quit!
     Right (EventKey KeyEsc _) ->
-      11
+      Model 11 elapsed
 
-    _ ->
-      n + 1
+    Right _ ->
+      Model (n + 1) elapsed
+
+    Left delta ->
+      Model n (elapsed + delta)
 
 view :: Model -> Scene
-view n =
+view (Model n elapsed) =
   let
     cells :: Cells
     cells =
@@ -42,14 +47,15 @@ view n =
         [ tbstr 0 0 mempty mempty "I am an Elm game!"
         , tbstr 0 2 mempty mempty "Let's count to 10."
         , tbstr 2 4 mempty mempty (show n)
+        , tbstr 0 6 mempty mempty ("Elapsed time: " ++ show elapsed)
         ]
   in
     Scene cells NoCursor
 
 isDone :: Model -> Bool
-isDone n =
+isDone (Model n _) =
   n > 10
 
-tickEvery :: Model -> Maybe Double
+tickEvery :: Model -> Maybe NominalDiffTime
 tickEvery _ =
-  Nothing
+  Just 1

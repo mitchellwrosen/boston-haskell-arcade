@@ -10,12 +10,12 @@ library
       base
     , lens ^>= 4.17
     , reactive-banana ^>= 1.2.0
+    , stm ^>= 2.4.5
     , termbox-banana ^>= 0.1.0
     , text ^>= 1.2.3
-  ghc-options:
-    -Weverything
-    -fno-warn-missing-import-lists
-    -fno-warn-unsafe
+    , time ^>= 1.9.2
+  default-language:
+    Haskell2010
   exposed-modules:
     Bha.Game
     Bha.Game.Impl.ElmExample
@@ -26,6 +26,10 @@ library
     Bha.Prelude
     Bha.View
     Reactive.Banana.Bha
+  ghc-options:
+    -Weverything
+    -fno-warn-missing-import-lists
+    -fno-warn-unsafe
   hs-source-dirs:
     src
 
@@ -33,5 +37,11 @@ executable boston-haskell-arcade
   build-depends:
       base
     , boston-haskell-arcade
+  default-language:
+    Haskell2010
+  ghc-options:
+    -rtsopts
+    -threaded
+    -with-rtsopts=-N2
   main-is:
     app/Main.hs

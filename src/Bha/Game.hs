@@ -20,9 +20,8 @@ data ElmGame = forall a. ElmGame
   { init :: a
     -- ^ Initial model.
 
-  , update :: Either () Tb.Event -> a -> a
+  , update :: Either NominalDiffTime Tb.Event -> a -> a
     -- ^ Update the model from a tick or terminal event.
-    -- TODO Tick with time delta, not unit
 
   , view :: a -> Tb.Scene
     -- ^ Render the model.
@@ -30,6 +29,6 @@ data ElmGame = forall a. ElmGame
   , isDone :: a -> Bool
     -- ^ Is the game done?
 
-  , tickEvery :: a -> Maybe Double
-    -- ^ Tick, and if so, how often? (in seconds).
+  , tickEvery :: a -> Maybe NominalDiffTime
+    -- ^ Tick, and if so, how often?
   }

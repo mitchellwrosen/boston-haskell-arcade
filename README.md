@@ -32,10 +32,10 @@ Here's what that looks like in Haskell.
 ```haskell
 data ElmGame = forall model. ElmGame
   { init      :: model
-  , update    :: Either () Event -> model -> model
+  , update    :: Either NominalDiffTime Event -> model -> model
   , view      :: model -> Scene
   , isDone    :: model -> Bool
-  , tickEvery :: model -> Maybe Double
+  , tickEvery :: model -> Maybe NominalDiffTime
   }
 ```
 

@@ -45,11 +45,8 @@ main' eEvent _bSize = mdo
     eMenuDone = previewE ᴍainMenuOutputDone eMenuOutput :: Event ()
     eMenuGame = previewE ᴍainMenuOutputGame eMenuOutput :: Event Game
 
-  let
-    ebGameScene :: Event (Behavior Scene)
-    eeGameDone :: Event (Event ())
-    (ebGameScene, eeGameDone) =
-      unpairE (observeE (momentGame eEventForGame <$> eMenuGame))
+  (ebGameScene, eeGameDone) :: (Event (Behavior Scene), Event (Event ())) <-
+    unpairE <$> execute (momentGame eEventForGame <$> eMenuGame)
 
   -- Event that fires when the current game ends.
   eGameDone :: Event () <-

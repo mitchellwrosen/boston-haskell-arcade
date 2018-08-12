@@ -6,9 +6,7 @@ module Bha.Game.Impl.ElmExample
   ( game
   ) where
 
-import Termbox.Banana (Cells, Cursor(..), Key(..), Scene(..))
-
-import qualified Termbox.Banana as Tb
+import Termbox.Banana (Cells, Cursor(..), Event(..), Key(..), Scene(..))
 
 import Bha.Game    (ElmGame(ElmGame), Game(..))
 import Bha.Prelude
@@ -25,11 +23,11 @@ init :: Model
 init =
   0
 
-update :: Either () Tb.Event -> Model -> Model
+update :: Either () Event -> Model -> Model
 update event n =
   case event of
     -- Fast-forward on esc to quit!
-    Right (Tb.EventKey KeyEsc _) ->
+    Right (EventKey KeyEsc _) ->
       11
 
     _ ->

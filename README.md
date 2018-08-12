@@ -56,15 +56,20 @@ Example games can be found at `src/Bha/Game/Impl/Example*`:
 - `Bha.Main.*`
 
   The `main` modules. They manage which game to render, and where to route terminal events.
-  
+
 - `Bha.Game`
 
   Core game types. Individual games will import this module.
-  
+
 - `Bha.Game.Impl.*`
-  
-   The games.
-    
+
+  The games.
+
+- `Bha.Frp`
+
+  Reusable FRP components. If you are building a game or UI in FRP style, you
+  may find useful abstractions here.
+
 - `Bha.View`
 
   High-level rendering helpers (not implemented yet). Rendering is still directly via the `termbox` API, which only supports setting individual cells.

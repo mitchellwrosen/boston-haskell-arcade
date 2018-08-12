@@ -1,11 +1,11 @@
 [![Build Status](https://travis-ci.com/mitchellwrosen/boston-haskell-arcade.svg?branch=master)](https://travis-ci.com/mitchellwrosen/boston-haskell-arcade)
 
-### Getting started
+## Getting started
 
 - Build the code with `cabal new-build`.
 - Run the arcade with `cabal new-run`.
 
-### Making a game
+## Making a game
 
 A terminal game is a program that:
 
@@ -13,7 +13,11 @@ A terminal game is a program that:
 - Draws something to the screen.
 - Ends at some point.
 
-There is currently one supported style of game: the Elm architecture.
+Events and drawing primitives are provided by the [termbox-banana](https://hackage.haskell.org/package/termbox-banana-0.1.0/docs/Termbox-Banana.html) library, and higher-level drawing functions can be found in [`Bha.View`](./src/Bha/View.hs).
+
+There are currently two supported styles of game: Elm-style and Banana-style.
+
+### Elm-style
 
 An Elm game has five components.
 
@@ -32,26 +36,43 @@ Here's what that looks like in Haskell.
 ```haskell
 data ElmGame = forall model. ElmGame
   { init      :: model
-  , update    :: Either NominalDiffTime Event -> model -> model
+  , update    :: Either NominalDiffTime TerminalEvent -> model -> model
   , view      :: model -> Scene
   , isDone    :: model -> Bool
   , tickEvery :: model -> Maybe NominalDiffTime
   }
 ```
 
-Events and drawing primitives are provided by the [termbox-banana](https://hackage.haskell.org/package/termbox-banana-0.1.0/docs/Termbox-Banana.html) library, and higher-level drawing functions can be found in [`Bha.View`](./src/Bha/View.hs).
+### Banana style
+
+A Banana game is written using the [reactive-banana](https://hackage.haskell.org/package/reactive-banana) FRP framework.
+
+```haskell
+type BananaGame
+   = Event TerminalEvent
+  -> Banana (Behavior Scene, Event ())
+```
+
+The `Banana` monad is a wrapper around `MomentIO`, used to prevent games from
+performing arbitrary IO.
+
+The game computation returns a time-varying scene to render, and an event that
+fires when the game is over.
+
+---
 
 To contribute a game,
 
 - Create a new module in the `Bha.Game.Impl.*` namespace.
-- Implement the five fields above.
+- Implement the game in either Elm or Banana style.
 - Add your game to the game list in [`Bha.Main`](./src/Bha/Main.hs).
 
 Example games can be found at `src/Bha/Game/Impl/Example*`:
 
 - [Elm Example 1](./src/Bha/Game/Impl/ElmExample.hs)
+- [Banana Example 1](./src/Bha/Game/Impl/BananaExample.hs)
 
-### Code organization
+## Code organization
 
 - `Bha.Main.*`
 

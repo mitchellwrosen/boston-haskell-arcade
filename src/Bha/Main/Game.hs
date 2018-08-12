@@ -22,8 +22,8 @@ momentGame
 momentGame eEvent = \case
   GameElm game ->
     momentElmGame eEvent game
-  GameFRP ->
-    undefined -- TODO GameFRP moment
+  GameBanana game ->
+    unBanana (game eEvent)
 
 momentElmGame
   :: Event Tb.Event
@@ -31,7 +31,7 @@ momentElmGame
   -> MomentIO (Behavior Scene, Event ())
 momentElmGame eEvent ElmGame { init, update, view, isDone, tickEvery } = mdo
   eTick :: Event NominalDiffTime <-
-    momentTick (tickEvery init) eTickControl
+    unBanana (momentTick (tickEvery init) eTickControl)
 
   let
     eTickControl :: Event TickControl

@@ -19,6 +19,7 @@ library
   exposed-modules:
     Bha.Frp.Tick
     Bha.Game
+    Bha.Game.Impl.BananaExample
     Bha.Game.Impl.ElmExample
     Bha.Main
     Bha.Main.Game

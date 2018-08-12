@@ -8,6 +8,7 @@ module Bha.Frp.Tick
 import Reactive.Banana
 import Reactive.Banana.Frameworks
 
+import Bha.Game (Banana(Banana))
 import Bha.Prelude
 
 data TickControl
@@ -23,8 +24,8 @@ momentTick
      -- ^ Initial tick rate.
   -> Event TickControl
      -- ^ Updates to the tick thread behavior.
-  -> MomentIO (Event NominalDiffTime)
-momentTick delta0 eControl = do
+  -> Banana (Event NominalDiffTime)
+momentTick delta0 eControl = Banana $ do
   (eTick, fireTick) :: (Event NominalDiffTime, NominalDiffTime -> IO ()) <-
     newEvent
 

@@ -17,7 +17,22 @@ import Bha.Main.Game
 import Bha.Main.Menu
 import Bha.Prelude
 
+import qualified Bha.Game.Impl.BananaExample
 import qualified Bha.Game.Impl.ElmExample
+
+------------------------------------------------------------------------------
+-- Game list
+------------------------------------------------------------------------------
+
+gamelist :: [([Char], Game)]
+gamelist =
+  [ ("Elm Example 1",    Bha.Game.Impl.ElmExample.game)
+  , ("Banana Example 1", Bha.Game.Impl.BananaExample.game)
+  ]
+
+------------------------------------------------------------------------------
+-- Main
+------------------------------------------------------------------------------
 
 main :: IO ()
 main =
@@ -71,10 +86,3 @@ main' eEvent _bSize = mdo
         (bMenuScene <$ eGameDone))
 
   pure (bScene, eMenuDone)
-
--- | The master game list.
-gamelist :: [([Char], Game)]
-gamelist =
-  [ ("Elm Example 1", Bha.Game.Impl.ElmExample.game)
-  , ("Broken Game 2", GameFRP)
-  ]

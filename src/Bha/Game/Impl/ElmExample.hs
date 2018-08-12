@@ -1,4 +1,4 @@
--- | Example game built with the Elm architecture.
+-- | Example Elm-style game.
 
 {-# LANGUAGE NoImplicitPrelude #-}
 

@@ -17,6 +17,7 @@ import Bha.Main.Menu
 
 import qualified Bha.Game.Impl.BananaExample
 import qualified Bha.Game.Impl.ElmExample
+import qualified Bha.Game.Impl.H2048
 
 ------------------------------------------------------------------------------
 -- Game list
@@ -26,6 +27,7 @@ gamelist :: [([Char], Game)]
 gamelist =
   [ ("Elm Example 1",    GameElm    Bha.Game.Impl.ElmExample.game)
   , ("Banana Example 1", GameBanana Bha.Game.Impl.BananaExample.moment)
+  , ("2048",             GameBanana Bha.Game.Impl.H2048.moment)
   ]
 
 ------------------------------------------------------------------------------

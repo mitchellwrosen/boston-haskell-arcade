@@ -37,6 +37,7 @@ momentMainMenu games eEvent = do
   -- TODO: build a reusable zipper component with up/down/select controls
   bIndex :: Behavior Int <-
     accumB 0 $ unions
+      -- TODO arrow key controls
       [ min (length games - 1) . (+1)
           <$ filterE (== EventKey (KeyChar 'j') False) eEvent
       , max 0 . subtract 1

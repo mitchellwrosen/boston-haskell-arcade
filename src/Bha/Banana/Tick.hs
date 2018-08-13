@@ -1,15 +1,14 @@
 {-# LANGUAGE LambdaCase, ScopedTypeVariables, NoImplicitPrelude #-}
 
-module Bha.Frp.Tick
+module Bha.Banana.Tick
   ( TickControl(..)
   , momentTick
   ) where
 
-import Reactive.Banana
 import Reactive.Banana.Frameworks
 
-import Bha.Game (Banana(Banana))
-import Bha.Prelude
+import Bha.Banana.Prelude
+import Bha.Banana.Prelude.Internal (Banana(..))
 
 data TickControl
   = TickSetDelta (Maybe NominalDiffTime)
@@ -22,11 +21,11 @@ data TickControl
 momentTick
   :: Maybe NominalDiffTime
      -- ^ Initial tick rate.
-  -> Event TickControl
+  -> Events TickControl
      -- ^ Updates to the tick thread behavior.
-  -> Banana (Event NominalDiffTime)
+  -> Banana (Events NominalDiffTime)
 momentTick delta0 eControl = Banana $ do
-  (eTick, fireTick) :: (Event NominalDiffTime, NominalDiffTime -> IO ()) <-
+  (eTick, fireTick) :: (Events NominalDiffTime, NominalDiffTime -> IO ()) <-
     newEvent
 
   -- Two mutable cells to communicate with the background ticking thread: how

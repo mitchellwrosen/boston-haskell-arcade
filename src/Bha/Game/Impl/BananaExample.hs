@@ -3,39 +3,28 @@
 {-# LANGUAGE NoImplicitPrelude, RecursiveDo, ScopedTypeVariables #-}
 
 module Bha.Game.Impl.BananaExample
-  ( game
+  ( moment
   ) where
 
-import Reactive.Banana
-import Termbox.Banana  (Cells, Cursor(..), Key(..), Scene(..))
+import Bha.Banana.Prelude
+import Bha.Banana.Tick
 
-import qualified Termbox.Banana as Tb
-
-import Bha.Frp.Tick
-import Bha.Game     (Banana, Game(GameBanana))
-import Bha.Prelude
-import Bha.View
-
-game :: Game
-game =
-  GameBanana moment
-
-moment :: Event Tb.Event -> Banana (Behavior Scene, Event ())
+moment :: Events TermEvent -> Banana (Behavior Scene, Events ())
 moment eEvent = mdo
-  eTick :: Event NominalDiffTime <-
+  eTick :: Events NominalDiffTime <-
     momentTick (Just 1) (TickTeardown <$ eDone)
 
   bElapsed :: Behavior NominalDiffTime <-
     accumB 0 ((+) <$> eTick)
 
   let
-    eDone :: Event ()
+    eDone :: Events ()
     eDone =
       unionWith const
-        (() <$ filterE (== Tb.EventKey KeyEsc False) eEvent)
+        (() <$ filterE (== EventKey KeyEsc False) eEvent)
         (() <$ filterE (> 10) eCount)
 
-  eCount :: Event Int <-
+  eCount :: Events Int <-
     accumE 0 ((+1) <$ eEvent)
 
   bCount :: Behavior Int <-

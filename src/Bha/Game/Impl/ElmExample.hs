@@ -1,6 +1,6 @@
 -- | Example Elm-style game.
 
-{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE NoImplicitPrelude, NamedFieldPuns, RecordWildCards #-}
 
 module Bha.Game.Impl.ElmExample
   ( game
@@ -8,8 +8,7 @@ module Bha.Game.Impl.ElmExample
 
 import Termbox.Banana (Cells, Cursor(..), Event(..), Key(..), Scene(..))
 
-import Bha.Game    (ElmGame(ElmGame), Game(..))
-import Bha.Prelude
+import Bha.Elm.Prelude
 import Bha.View
 
 data Model
@@ -17,9 +16,9 @@ data Model
       !Int             -- Event count
       !NominalDiffTime -- Elapsed time
 
-game :: Game
+game :: ElmGame
 game =
-  GameElm (ElmGame init update view isDone tickEvery)
+  ElmGame init update view isDone tickEvery
 
 init :: Model
 init =

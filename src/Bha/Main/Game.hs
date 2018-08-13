@@ -1,24 +1,26 @@
-{-# LANGUAGE LambdaCase, NamedFieldPuns, NoImplicitPrelude, RecursiveDo,
-             ScopedTypeVariables, ViewPatterns #-}
+{-# LANGUAGE LambdaCase, NoImplicitPrelude, RecursiveDo, ScopedTypeVariables #-}
 
 module Bha.Main.Game
-  ( momentGame
+  ( Game(..)
+  , momentGame
   ) where
 
-import Reactive.Banana
-import Reactive.Banana.Frameworks
-import Termbox.Banana             (Scene(..))
+import Reactive.Banana.Frameworks (MomentIO)
 
-import qualified Termbox.Banana as Tb
+import Bha.Banana.Prelude
+import Bha.Banana.Prelude.Internal (Banana(..))
+import Bha.Banana.Tick             (TickControl(TickSetDelta, TickTeardown),
+                                    momentTick)
+import Bha.Elm.Prelude             (ElmGame(..))
 
-import Bha.Frp.Tick (TickControl(TickSetDelta, TickTeardown), momentTick)
-import Bha.Game
-import Bha.Prelude
+data Game
+  = GameElm ElmGame
+  | GameBanana (Events TermEvent -> Banana (Behavior Scene, Events ()))
 
 momentGame
-  :: Event Tb.Event
+  :: Events TermEvent
   -> Game
-  -> MomentIO (Behavior Scene, Event ())
+  -> MomentIO (Behavior Scene, Events ())
 momentGame eEvent = \case
   GameElm game ->
     momentElmGame eEvent game
@@ -26,15 +28,15 @@ momentGame eEvent = \case
     unBanana (game eEvent)
 
 momentElmGame
-  :: Event Tb.Event
+  :: Events TermEvent
   -> ElmGame
-  -> MomentIO (Behavior Scene, Event ())
-momentElmGame eEvent ElmGame { init, update, view, isDone, tickEvery } = mdo
-  eTick :: Event NominalDiffTime <-
+  -> MomentIO (Behavior Scene, Events ())
+momentElmGame eEvent (ElmGame init update view isDone tickEvery) = mdo
+  eTick :: Events NominalDiffTime <-
     unBanana (momentTick (tickEvery init) eTickControl)
 
   let
-    eTickControl :: Event TickControl
+    eTickControl :: Events TickControl
     eTickControl =
       filterJust
         ((\old model ->
@@ -51,18 +53,18 @@ momentElmGame eEvent ElmGame { init, update, view, isDone, tickEvery } = mdo
     stepper (tickEvery init) (tickEvery <$> eModel)
 
   let
-    eDone :: Event ()
+    eDone :: Events ()
     eDone =
       filterJust ((guard . isDone) <$> eModel)
 
-  eModel :: Event a <-
+  eModel :: Events a <-
     accumE init
       (unionWith const
         (update . Left  <$> eTick)
         (update . Right <$> eEvent))
 
   let
-    eScene :: Event Scene
+    eScene :: Events Scene
     eScene =
       view <$> eModel
 

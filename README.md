@@ -34,13 +34,13 @@ An Elm game has five components.
 Here's what that looks like in Haskell.
 
 ```haskell
-data ElmGame = forall model. ElmGame
-  { init      :: model
-  , update    :: Either NominalDiffTime TerminalEvent -> model -> model
-  , view      :: model -> Scene
-  , isDone    :: model -> Bool
-  , tickEvery :: model -> Maybe NominalDiffTime
-  }
+data ElmGame
+  = forall model. ElmGame
+      model
+      (Either NominalDiffTime TerminalEvent -> model -> model)
+      (model -> Scene)
+      (model -> Bool)
+      (model -> Maybe NominalDiffTime)
 ```
 
 ### Banana style
@@ -49,8 +49,8 @@ A Banana game is written using the [reactive-banana](https://hackage.haskell.org
 
 ```haskell
 type BananaGame
-   = Event TerminalEvent
-  -> Banana (Behavior Scene, Event ())
+   = Events TermEvent
+  -> Banana (Behavior Scene, Events ())
 ```
 
 The `Banana` monad is a wrapper around `MomentIO`, used to prevent games from
@@ -78,15 +78,15 @@ Example games can be found at `src/Bha/Game/Impl/Example*`:
 
   The `main` modules. They manage which game to render, and where to route terminal events.
 
-- `Bha.Game`
-
-  Core game types. Individual games will import this module.
-
 - `Bha.Game.Impl.*`
 
   The games.
 
-- `Bha.Frp`
+- `Bha.Elm.*`
+
+  Reusable Elm components.
+
+- `Bha.Banana.*`
 
   Reusable FRP components. If you are building a game or UI in FRP style, you
   may find useful abstractions here.

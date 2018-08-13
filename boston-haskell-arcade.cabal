@@ -17,10 +17,12 @@ library
   default-language:
     Haskell2010
   exposed-modules:
-    Bha.Frp.Tick
-    Bha.Game
+    Bha.Banana.Prelude
+    Bha.Banana.Prelude.Internal
+    Bha.Banana.Tick
     Bha.Game.Impl.BananaExample
     Bha.Game.Impl.ElmExample
+    Bha.Elm.Prelude
     Bha.Main
     Bha.Main.Game
     Bha.Main.Menu

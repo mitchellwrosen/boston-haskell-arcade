@@ -6,16 +6,14 @@ module Bha.Main
   ) where
 
 import Reactive.Banana.Bha
-import Reactive.Banana.Frameworks
-import Termbox.Banana             (InputMode(..), MouseMode(..), OutputMode(..),
-                                   Scene(..))
+import Reactive.Banana.Frameworks (MomentIO, execute)
+import Termbox.Banana             (InputMode(..), MouseMode(..), OutputMode(..))
 
 import qualified Termbox.Banana as Tb
 
-import Bha.Game
+import Bha.Banana.Prelude
 import Bha.Main.Game
 import Bha.Main.Menu
-import Bha.Prelude
 
 import qualified Bha.Game.Impl.BananaExample
 import qualified Bha.Game.Impl.ElmExample
@@ -26,8 +24,8 @@ import qualified Bha.Game.Impl.ElmExample
 
 gamelist :: [([Char], Game)]
 gamelist =
-  [ ("Elm Example 1",    Bha.Game.Impl.ElmExample.game)
-  , ("Banana Example 1", Bha.Game.Impl.BananaExample.game)
+  [ ("Elm Example 1",    GameElm    Bha.Game.Impl.ElmExample.game)
+  , ("Banana Example 1", GameBanana Bha.Game.Impl.BananaExample.moment)
   ]
 
 ------------------------------------------------------------------------------
@@ -39,32 +37,32 @@ main =
   Tb.main (InputModeEsc MouseModeYes) OutputModeNormal main'
 
 main'
-  :: Event Tb.Event
+  :: Events TermEvent
   -> Behavior (Int, Int)
-  -> MomentIO (Behavior Scene, Event ())
+  -> MomentIO (Behavior Scene, Events ())
 main' eEvent _bSize = mdo
   -- Partition terminal events into two: those intended for the menu, and those
   -- intended for the game. How do we tell them apart? When there's an active
   -- game, it gets all of the input.
   let
-    eEventForMenu = whenE (isNothing <$> bGame) eEvent :: Event Tb.Event
-    eEventForGame = whenE (isJust    <$> bGame) eEvent :: Event Tb.Event
+    eEventForMenu = whenE (isNothing <$> bGame) eEvent :: Events TermEvent
+    eEventForGame = whenE (isJust    <$> bGame) eEvent :: Events TermEvent
 
   -- Create the menu.
-  (bMenuScene, eMenuOutput) :: (Behavior Scene, Event MainMenuOutput) <-
+  (bMenuScene, eMenuOutput) :: (Behavior Scene, Events MainMenuOutput) <-
     momentMainMenu gamelist eEventForMenu
 
   -- Partition the menu's output into two: "I'm done" (escape) and "play this
   -- game" (enter).
   let
-    eMenuDone = previewE ᴍainMenuOutputDone eMenuOutput :: Event ()
-    eMenuGame = previewE ᴍainMenuOutputGame eMenuOutput :: Event Game
+    eMenuDone = previewE ᴍainMenuOutputDone eMenuOutput :: Events ()
+    eMenuGame = previewE ᴍainMenuOutputGame eMenuOutput :: Events Game
 
-  (ebGameScene, eeGameDone) :: (Event (Behavior Scene), Event (Event ())) <-
+  (ebGameScene, eeGameDone) :: (Events (Behavior Scene), Events (Events ())) <-
     unpairE <$> execute (momentGame eEventForGame <$> eMenuGame)
 
   -- Event that fires when the current game ends.
-  eGameDone :: Event () <-
+  eGameDone :: Events () <-
     switchE eeGameDone
 
   -- The game currently being played.

@@ -9,14 +9,8 @@ module Bha.Main.Menu
   , momentMainMenu
   ) where
 
-import Reactive.Banana
-import Termbox.Banana  (Cells, Cursor(..), Key(..), Scene(..))
-
-import qualified Termbox.Banana as Tb
-
-import Bha.Game
-import Bha.Prelude
-import Bha.View
+import Bha.Banana.Prelude
+import Bha.Main.Game (Game(..))
 
 data MainMenuOutput
   = MainMenuOutputGame Game -- ^ A game was selected.
@@ -32,30 +26,30 @@ data MainMenuOutput
 momentMainMenu
   :: MonadMoment m
   => [([Char], Game)] -- ^ Non-empty game list.
-  -> Event Tb.Event
-  -> m (Behavior Scene, Event MainMenuOutput)
+  -> Events TermEvent
+  -> m (Behavior Scene, Events MainMenuOutput)
 momentMainMenu games eEvent = do
   let
-    eEsc   = filterE (== Tb.EventKey KeyEsc   False) eEvent
-    eEnter = filterE (== Tb.EventKey KeyEnter False) eEvent
+    eEsc   = filterE (== EventKey KeyEsc   False) eEvent
+    eEnter = filterE (== EventKey KeyEnter False) eEvent
 
   -- The currently-selected index of the game list.
   -- TODO: build a reusable zipper component with up/down/select controls
   bIndex :: Behavior Int <-
     accumB 0 $ unions
       [ min (length games - 1) . (+1)
-          <$ filterE (== Tb.EventKey (KeyChar 'j') False) eEvent
+          <$ filterE (== EventKey (KeyChar 'j') False) eEvent
       , max 0 . subtract 1
-          <$ filterE (== Tb.EventKey (KeyChar 'k') False) eEvent
+          <$ filterE (== EventKey (KeyChar 'k') False) eEvent
       ]
 
   let
-    eGame :: Event Game
+    eGame :: Events Game
     eGame =
       snd . (games !!) <$> bIndex <@ eEnter
 
   let
-    eOutput :: Event MainMenuOutput
+    eOutput :: Events MainMenuOutput
     eOutput =
       unionWith const
         (MainMenuOutputDone <$  eEsc)

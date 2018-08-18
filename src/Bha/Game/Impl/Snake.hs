@@ -8,7 +8,6 @@ module Bha.Game.Impl.Snake
   ) where
 
 import Bha.Elm.Prelude
--- import Bha.View
 
 import Control.Monad.Trans.State
 import Data.List                 (unfoldr)
@@ -172,20 +171,24 @@ view model =
 viewBorder :: Cells
 viewBorder =
   mconcat
-    [ foldMap (\c -> set c  0  (Cell '=' mempty mempty)) [0..41]
-    , foldMap (\c -> set c  21 (Cell '=' mempty mempty)) [0..41]
-    , foldMap (\r -> set 0  r  (Cell '|' mempty mempty)) [1..20]
-    , foldMap (\r -> set 41 r  (Cell '|' mempty mempty)) [1..20]
+    [ foldMap (\c -> set c  0  (Cell ' ' mempty green)) [0..41]
+    , foldMap (\c -> set c  21 (Cell ' ' mempty green)) [0..41]
+    , foldMap (\r -> set 0  r  (Cell ' ' mempty green)) [1..20]
+    , foldMap (\r -> set 41 r  (Cell ' ' mempty green)) [1..20]
     ]
 
 viewSnake :: Seq (Col, Row) -> Cells
 viewSnake =
-  foldMap (\(col, row) -> set (col+1) (row+1) (Cell '-' mempty mempty))
+  foldMap (\(col, row) -> set (col+1) (row+1) (Cell ' ' mempty white))
 
 viewFood :: (Col, Row) -> Cells
 viewFood (col, row) =
-  set (col+1) (row+1) (Cell 'o' mempty mempty)
+  set (col+1) (row+1) (Cell ' ' mempty blue)
 
 tickEvery :: Model -> Maybe NominalDiffTime
-tickEvery _ =
-  Just (1/20)
+tickEvery model =
+  case modelDir model of
+    DirUp    -> Just (1/12)
+    DirDown  -> Just (1/12)
+    DirLeft  -> Just (1/20)
+    DirRight -> Just (1/20)

@@ -8,7 +8,8 @@ import Control.Lens           as X (Prism', preview, prism')
 import Control.Monad          as X
 import Control.Monad.Fix      as X
 import Control.Monad.IO.Class as X
-import Data.Function          as X (fix)
+import Data.Foldable          as X (find)
+import Data.Function          as X (fix, (&))
 import Data.IORef             as X
 import Data.Maybe             as X hiding (fromJust)
 import Data.Text              as X (Text)

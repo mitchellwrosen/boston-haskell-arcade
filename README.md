@@ -19,15 +19,13 @@ There are currently two supported styles of game: Elm-style and Banana-style.
 
 ### Elm-style
 
-An Elm game has five components.
+An Elm game has four components.
 
 - **init**. The initial model.
 
 - **update**. The update loop. Given an event, which is either a tick or a terminal event, update the current model.
 
 - **view**. Render the current model.
-
-- **isDone**. Is the game over?
 
 - **tickEvery**. Tick every `n` seconds, or not at all.
 
@@ -36,10 +34,9 @@ Here's what that looks like in Haskell.
 ```haskell
 data ElmGame
   = forall model. ElmGame
-      model
-      (Either NominalDiffTime TerminalEvent -> model -> model)
+      (Seed -> model)
+      (Either NominalDiffTime TerminalEvent -> model -> Maybe model)
       (model -> Scene)
-      (model -> Bool)
       (model -> Maybe NominalDiffTime)
 ```
 

@@ -6,8 +6,6 @@ module Bha.Game.Impl.ElmExample
   ( game
   ) where
 
-import Termbox.Banana (Cells, Cursor(..), Event(..), Key(..), Scene(..))
-
 import Bha.Elm.Prelude
 import Bha.View
 
@@ -18,24 +16,23 @@ data Model
 
 game :: ElmGame
 game =
-  ElmGame init update view isDone tickEvery
+  ElmGame init update view tickEvery
 
-init :: Model
-init =
+init :: StdGen -> Model
+init _ =
   Model 0 0
 
-update :: Either NominalDiffTime Event -> Model -> Model
+update :: Either NominalDiffTime Event -> Model -> Maybe Model
 update event (Model n elapsed) =
   case event of
-    -- Fast-forward on esc to quit!
     Right (EventKey KeyEsc _) ->
-      Model 11 elapsed
+      Nothing
 
     Right _ ->
-      Model (n + 1) elapsed
+      Just (Model (n + 1) elapsed)
 
     Left delta ->
-      Model n (elapsed + delta)
+      Just (Model n (elapsed + delta))
 
 view :: Model -> Scene
 view (Model n elapsed) =
@@ -50,10 +47,6 @@ view (Model n elapsed) =
         ]
   in
     Scene cells NoCursor
-
-isDone :: Model -> Bool
-isDone (Model n _) =
-  n > 10
 
 tickEvery :: Model -> Maybe NominalDiffTime
 tickEvery _ =

@@ -7,18 +7,20 @@ module Bha.Elm.Prelude
 
 import Bha.Prelude as X
 
-import Termbox.Banana (Event, Scene)
+-- TODO Export nicer randomness API
+import System.Random  as X (StdGen, random)
+import Termbox.Banana as X (Cell(..), Cells, Cursor(..), Event(..), Key(..),
+                            Scene(..), set)
 
 -- | An Elm-style game.
 data ElmGame
   = forall model. ElmGame
-      model
-      -- Initial model.
-      (Either NominalDiffTime Event -> model -> model)
-      -- Update the model from a tick or terminal event.
+      (StdGen -> model)
+      -- Initial model, given a random seed.
+      (Either NominalDiffTime Event -> model -> Maybe model)
+      -- Update the model from a tick or terminal event. Return Nothing if the
+      -- game is done.
       (model -> Scene)
       -- Render the model.
-      (model -> Bool)
-      -- Is the game done?
       (model -> Maybe NominalDiffTime)
       -- Tick, and if so, how often?

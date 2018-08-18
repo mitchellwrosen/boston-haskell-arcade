@@ -6,6 +6,7 @@ module Bha.Main.Game
   ) where
 
 import Reactive.Banana.Frameworks (MomentIO)
+import System.Random (mkStdGen)
 
 import Bha.Banana.Prelude
 import Bha.Banana.Prelude.Internal (Banana(..))
@@ -31,44 +32,51 @@ momentElmGame
   :: Events TermEvent
   -> ElmGame
   -> MomentIO (Behavior Scene, Events ())
-momentElmGame eEvent (ElmGame init update view isDone tickEvery) = mdo
+momentElmGame eEvent (ElmGame init update view tickEvery) = mdo
+  let
+    init' = init (mkStdGen 0)
+
   eTick :: Events NominalDiffTime <-
-    unBanana (momentTick (tickEvery init) eTickControl)
+    unBanana (momentTick (tickEvery init') eTickControl)
 
   let
     eTickControl :: Events TickControl
     eTickControl =
       filterJust
-        ((\old model ->
-          if isDone model
-            then
-              Just TickTeardown
-            else do
-              let new = tickEvery model
-              guard (new /= old)
-              pure (TickSetDelta new))
+        ((\old -> \case
+          Nothing ->
+            Just TickTeardown
+          Just model -> do
+            let new = tickEvery model
+            guard (new /= old)
+            pure (TickSetDelta new))
         <$> bTickEvery <@> eModel)
 
   bTickEvery :: Behavior (Maybe NominalDiffTime) <-
-    stepper (tickEvery init) (tickEvery <$> eModel)
+    stepper (tickEvery init') (tickEvery <$> eModel')
 
   let
     eDone :: Events ()
     eDone =
-      filterJust ((guard . isDone) <$> eModel)
+      () <$ filterE isNothing eModel
 
-  eModel :: Events a <-
-    accumE init
+  eModel :: Events (Maybe a) <-
+    accumE (Just init')
       (unionWith const
-        (update . Left  <$> eTick)
-        (update . Right <$> eEvent))
+        (((=<<) . update) .  Left <$> eTick)
+        (((=<<) . update) . Right <$> eEvent))
+
+  let
+    -- eModel' :: Events a
+    eModel' =
+      filterJust eModel
 
   let
     eScene :: Events Scene
     eScene =
-      view <$> eModel
+      view <$> eModel'
 
   bScene :: Behavior Scene <-
-    stepper (view init) eScene
+    stepper (view init') eScene
 
   pure (bScene, eDone)

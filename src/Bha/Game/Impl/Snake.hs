@@ -164,18 +164,28 @@ view model =
   cells :: Cells
   cells =
     mconcat
-      [ viewSnake (modelSnake model)
+      [ viewBorder
+      , viewSnake (modelSnake model)
       , viewFood (modelFood model)
       ]
 
+viewBorder :: Cells
+viewBorder =
+  mconcat
+    [ foldMap (\c -> set c  0  (Cell '=' mempty mempty)) [0..41]
+    , foldMap (\c -> set c  21 (Cell '=' mempty mempty)) [0..41]
+    , foldMap (\r -> set 0  r  (Cell '|' mempty mempty)) [1..20]
+    , foldMap (\r -> set 41 r  (Cell '|' mempty mempty)) [1..20]
+    ]
+
 viewSnake :: Seq (Col, Row) -> Cells
 viewSnake =
-  foldMap (\(col, row) -> set col row (Cell '-' mempty mempty))
+  foldMap (\(col, row) -> set (col+1) (row+1) (Cell '-' mempty mempty))
 
 viewFood :: (Col, Row) -> Cells
 viewFood (col, row) =
-  set col row (Cell 'o' mempty mempty)
+  set (col+1) (row+1) (Cell 'o' mempty mempty)
 
 tickEvery :: Model -> Maybe NominalDiffTime
 tickEvery _ =
-  Just (1/10)
+  Just (1/20)

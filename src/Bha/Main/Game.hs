@@ -13,6 +13,7 @@ import Bha.Banana.Prelude.Internal (Banana(..))
 import Bha.Banana.Tick             (TickControl(TickSetDelta, TickTeardown),
                                     momentTick)
 import Bha.Elm.Prelude             (ElmGame(..))
+import Bha.Elm.Prelude.Internal    (Seed(..))
 
 data Game
   = GameElm ElmGame
@@ -34,7 +35,7 @@ momentElmGame
   -> MomentIO (Behavior Scene, Events ())
 momentElmGame eEvent (ElmGame init update view tickEvery) = mdo
   let
-    init' = init (mkStdGen 0)
+    init' = init (Seed (mkStdGen 0))
 
   eTick :: Events NominalDiffTime <-
     unBanana (momentTick (tickEvery init') eTickControl)

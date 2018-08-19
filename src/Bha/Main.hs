@@ -25,7 +25,7 @@ import qualified Bha.Game.Impl.Snake
 -- Game list
 ------------------------------------------------------------------------------
 
-gamelist :: [([Char], Game)]
+gamelist :: [(String, Game)]
 gamelist =
   [ ("Grain Man",        GameElm    Bha.Game.Impl.GrainMan.game)
   , ("Elm Example 1",    GameElm    Bha.Game.Impl.ElmExample.game)

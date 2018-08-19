@@ -52,7 +52,7 @@ game :: ElmGame
 game =
   ElmGame init update view tickEvery
 
-init :: StdGen -> Model
+init :: Seed -> Model
 init _seed =
   Model
     { modelLoc               = LocGrain

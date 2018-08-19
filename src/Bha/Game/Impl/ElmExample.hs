@@ -18,7 +18,7 @@ game :: ElmGame
 game =
   ElmGame init update view tickEvery
 
-init :: StdGen -> Model
+init :: Seed -> Model
 init _ =
   Model 0 0
 
@@ -28,8 +28,9 @@ update event (Model n elapsed) =
     Right (EventKey KeyEsc _) ->
       Nothing
 
-    Right _ ->
-      Just (Model (n + 1) elapsed)
+    Right _ -> do
+      guard (n < 10)
+      pure (Model (n + 1) elapsed)
 
     Left delta ->
       Just (Model n (elapsed + delta))

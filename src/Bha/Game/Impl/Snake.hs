@@ -32,7 +32,7 @@ data Direction
 
 data Model
   = Model
-  { modelSeed  :: StdGen
+  { modelSeed  :: Seed
   , modelSnake :: Seq (Col, Row)
   , modelDir   :: Direction
   , modelFood  :: (Col, Row)
@@ -42,7 +42,7 @@ game :: ElmGame
 game =
   ElmGame init update view tickEvery
 
-init :: StdGen -> Model
+init :: Seed -> Model
 init seed =
   Model seed (pure (0, 0)) DirRight (5, 5)
 
@@ -88,7 +88,7 @@ updateTick model =
     (headCol, headRow) =
       case modelSnake model of
         _ :|> x -> x
-        _ -> error "empty snake"
+        _       -> error "empty snake"
 
     target :: (Col, Row)
     target =
@@ -112,7 +112,7 @@ updateTick model =
             modelSnake model |> target
 
         let
-          candidates :: [((Col, Row), StdGen)]
+          candidates :: [((Col, Row), Seed)]
           candidates =
             unfoldr
               (\seed ->
@@ -121,17 +121,17 @@ updateTick model =
                 in
                   Just (x, seed'))
               (modelSeed model)
-            where
-            randomFood :: StdGen -> ((Col, Row), StdGen)
+           where
+            randomFood :: Seed -> ((Col, Row), Seed)
             randomFood =
               runState
                 ((,)
-                  <$> ((`mod` cmax) <$> state random)
-                  <*> ((`mod` rmax) <$> state random))
+                  <$> randomIntS 0 (cmax-1)
+                  <*> randomIntS 0 (rmax-1))
 
         let
           newFood :: (Col, Row)
-          newSeed :: StdGen
+          newSeed :: Seed
           (newFood, newSeed) =
             fromJust (find ((`notElem` newSnake) . fst) candidates)
 
@@ -186,7 +186,7 @@ viewFood (col, row) =
 tickEvery :: Model -> Maybe NominalDiffTime
 tickEvery model =
   case modelDir model of
-    DirUp    -> Just (1/12)
-    DirDown  -> Just (1/12)
+    DirUp    -> Just (1/14)
+    DirDown  -> Just (1/14)
     DirLeft  -> Just (1/20)
     DirRight -> Just (1/20)

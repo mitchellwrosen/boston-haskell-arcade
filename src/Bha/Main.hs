@@ -27,11 +27,11 @@ import qualified Bha.Game.Impl.Snake
 
 gamelist :: [([Char], Game)]
 gamelist =
-  [ ("Elm Example 1",    GameElm    Bha.Game.Impl.ElmExample.game)
+  [ ("Grain Man",        GameElm    Bha.Game.Impl.GrainMan.game)
+  , ("Elm Example 1",    GameElm    Bha.Game.Impl.ElmExample.game)
   , ("Banana Example 1", GameBanana Bha.Game.Impl.BananaExample.moment)
   , ("2048",             GameBanana Bha.Game.Impl.H2048.moment)
   , ("Snake",            GameElm    Bha.Game.Impl.Snake.game)
-  , ("Grain Man",        GameElm    Bha.Game.Impl.GrainMan.game)
   ]
 
 ------------------------------------------------------------------------------

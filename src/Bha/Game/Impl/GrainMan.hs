@@ -16,18 +16,32 @@ data Location
   | LocWater
 
 data Action
-  = Travel
+  = Explore
   | ScoopWater
+  | Trade
+  | Travel
+
+data Trade
+  = Buy Resource Int
+  | Sell Resource Int
+
+data Resource
+  = Grain
+  | Water
 
 data Dialog
   = ActionDialog
+  | ExploreDialog
+  | TradeDialog
   | TravelDialog
 
 data Model
   = Model
-  { modelLoc :: Location
+  { modelLoc    :: Location
   , modelDialog :: Dialog
-  , modelWater :: Int
+  , modelWater  :: Int
+  , modelGrain  :: Int
+  , modelGold   :: Int
   }
 
 game :: ElmGame
@@ -37,9 +51,11 @@ game =
 init :: StdGen -> Model
 init _seed =
   Model
-    { modelLoc = LocGrain
+    { modelLoc    = LocGrain
     , modelDialog = ActionDialog
-    , modelWater = 0
+    , modelWater  = 0
+    , modelGrain  = 0
+    , modelGold   = 0
     }
 
 update :: Either NominalDiffTime Event -> Model -> Maybe Model
@@ -58,9 +74,9 @@ update event model =
             Nothing ->
               Just model
 
-            Just Travel ->
+            Just Explore ->
               Just model
-                { modelDialog = TravelDialog
+                { modelDialog = ExploreDialog
                 }
 
             Just ScoopWater ->
@@ -70,6 +86,38 @@ update event model =
                       (modelWater model)
                       (tryScoopWater (modelWater model))
                 }
+
+            Just Trade ->
+              Just model
+                { modelDialog = TradeDialog
+                }
+
+            Just Travel ->
+              Just model
+                { modelDialog = TravelDialog
+                }
+
+        ExploreDialog ->
+          case List.lookup c (exploreOptions model) of
+            Nothing ->
+              Just model
+
+            Just () ->
+              Just model
+                { modelDialog = ActionDialog }
+
+        TradeDialog ->
+          case List.lookup c (tradeOptions model) of
+            Nothing ->
+              Just model
+
+            Just Nothing ->
+              Just model
+                { modelDialog = ActionDialog
+                }
+
+            Just (Just trade) ->
+              Just (applyTrade trade model)
 
         TravelDialog ->
           case List.lookup c (travelOptions model) of
@@ -92,6 +140,33 @@ update event model =
     Right _ ->
       Just model
 
+applyTrade :: Trade -> Model -> Model
+applyTrade trade model =
+  case trade of
+    Sell Water n ->
+      model
+        { modelWater = modelWater model - 1
+        , modelGold  = modelGold model + n
+        }
+
+    Buy Water n ->
+      model
+        { modelWater = modelWater model + 1
+        , modelGold  = modelGold model - n
+        }
+
+    Sell Grain n ->
+      model
+        { modelGrain = modelGrain model - 1
+        , modelGold  = modelGold model + n
+        }
+
+    Buy Grain n ->
+      model
+        { modelGrain = modelGrain model + 1
+        , modelGold  = modelGold model - n
+        }
+
 tryScoopWater :: Int -> Maybe Int
 tryScoopWater n = do
   guard (n < 5)
@@ -101,7 +176,13 @@ actionOptions :: Model -> [(Char, Action)]
 actionOptions model =
   case modelLoc model of
     LocGrain ->
-      zip ['a'..] [Travel]
+      (zip ['a'..] . catMaybes)
+        [ Just Explore
+        , do
+            guard (length (tradeOptions model) > 1)
+            pure Trade
+        , Just Travel
+        ]
 
     LocWater ->
       (zip ['a'..] . catMaybes)
@@ -110,6 +191,22 @@ actionOptions model =
             guard (isJust (tryScoopWater (modelWater model)))
             pure ScoopWater
         ]
+
+exploreOptions :: Model -> [(Char, ())]
+exploreOptions _model =
+  zip ['a'..] [()]
+
+tradeOptions :: Model -> [(Char, Maybe Trade)]
+tradeOptions model =
+  (zip ['a'..] . catMaybes)
+    [ do
+        guard (modelWater model > 0)
+        pure (Just (Sell Water 10))
+    , do
+        guard (modelGold model >= 5)
+        pure (Just (Buy Grain 5))
+    , pure Nothing
+    ]
 
 -- | Where are we allowed to travel, and what button do we press to get there?
 travelOptions :: Model -> [(Char, Maybe Location)]
@@ -172,19 +269,46 @@ viewDialog model = \case
   ActionDialog ->
     viewDialogOptions (map (second showAction) (actionOptions model))
 
+  ExploreDialog ->
+    mconcat
+      [ tbstr 5 3 black white
+          "You meet a man. He says, \"Our well is broken. Do you have water?\""
+      , viewDialogOptions (map (second showOk) (exploreOptions model))
+      ]
+
+  TradeDialog ->
+    viewDialogOptions (map (second showTrade) (tradeOptions model))
+
   TravelDialog ->
     viewDialogOptions (map (second showLoc) (travelOptions model))
  where
   showAction :: Action -> String
   showAction = \case
-    Travel     -> "Travel"
+    Explore    -> "Explore"
     ScoopWater -> "Scoop water"
+    Trade      -> "Trade"
+    Travel     -> "Travel"
+
+  showOk :: () -> String
+  showOk () =
+    "Ok"
 
   showLoc :: Maybe Location -> String
   showLoc = \case
     Nothing       -> "Cancel"
     Just LocGrain -> "Grain World"
     Just LocWater -> "Water World"
+
+  showTrade :: Maybe Trade -> String
+  showTrade = \case
+    Nothing           -> "Goodbye"
+    Just (Sell res n) -> "Sell " ++ showResource res ++ " for " ++ show n
+    Just (Buy res n)  -> "Buy "  ++ showResource res ++ " for " ++ show n
+
+  showResource :: Resource -> String
+  showResource = \case
+    Grain -> "grain"
+    Water -> "water"
 
 viewDialogOptions :: [(Char, String)] -> Cells
 viewDialogOptions =
@@ -193,10 +317,24 @@ viewDialogOptions =
 
 viewHud :: Model -> Cells
 viewHud model =
-  (mconcat . catMaybes)
+  case catMaybes blah of
+    [] -> mempty
+    ss -> tbstr 0 30 mempty mempty (unwords ss)
+
+ where
+  blah :: [Maybe String]
+  blah =
     [ do
+        guard (modelGold model > 0)
+        pure ("gold " ++ show (modelGold model))
+
+    , do
+        guard (modelGrain model > 0)
+        pure ("grain " ++ show (modelGrain model))
+
+    , do
         guard (modelWater model > 0)
-        pure (tbstr 0 30 mempty mempty ("water " ++ show (modelWater model)))
+        pure ("water " ++ show (modelWater model))
     ]
 
 tickEvery :: Model -> Maybe NominalDiffTime

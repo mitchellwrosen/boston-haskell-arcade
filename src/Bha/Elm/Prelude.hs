@@ -10,8 +10,8 @@ import Bha.Prelude as X
 -- TODO Export nicer randomness API
 import System.Random  as X (StdGen, random)
 import Termbox.Banana as X (Cell(..), Cells, Cursor(..), Event(..), Key(..),
-                            Scene(..), black, blue, cyan, green, set, white,
-                            yellow)
+                            Scene(..), black, blue, cyan, green, magenta, red,
+                            set, white, yellow)
 
 -- | An Elm-style game.
 data ElmGame

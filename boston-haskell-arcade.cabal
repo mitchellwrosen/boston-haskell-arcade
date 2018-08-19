@@ -25,6 +25,7 @@ library
     Bha.Banana.Tick
     Bha.Game.Impl.BananaExample
     Bha.Game.Impl.ElmExample
+    Bha.Game.Impl.GrainMan
     Bha.Game.Impl.H2048
     Bha.Game.Impl.Snake
     Bha.Elm.Prelude

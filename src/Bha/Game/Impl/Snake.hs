@@ -1,5 +1,3 @@
--- | Example Elm-style game.
-
 {-# LANGUAGE NamedFieldPuns, NoImplicitPrelude, PatternSynonyms,
              RecordWildCards #-}
 

@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase, NoImplicitPrelude, OverloadedStrings #-}
+{-# LANGUAGE TupleSections, LambdaCase, NoImplicitPrelude, OverloadedStrings #-}
 
 module Bha.Game.Impl.GrainMan
   ( game
@@ -7,20 +7,12 @@ module Bha.Game.Impl.GrainMan
 import Bha.Elm.Prelude
 import Bha.View
 
-import Data.Bifunctor (second)
-
 import qualified Data.List as List
 
 data Location
   = LocGrain
   | LocPyramid
   | LocWater
-
-data Action
-  = Explore
-  | ScoopWater
-  | Trade
-  | Travel
 
 data Trade
   = Buy Resource Int
@@ -32,8 +24,7 @@ data Resource
 
 data Dialog
   = ActionDialog
-  | ExploreGrainDialog
-  | ExploreWaterDialog
+  | ExploreDialog
   | TradeDialog
   | TravelDialog
 
@@ -47,6 +38,57 @@ data Model
   , modelGrainWorldWater   :: Int -- Grain world's water
   , modelExploredWater     :: Int
   }
+
+data ModelView
+  = ModelView
+  { modelViewLoc    :: Location
+  , modelViewDialog :: ([String], [String])
+  , modelViewWater  :: Int
+  , modelViewGrain  :: Int
+  , modelViewGold   :: Int
+  }
+
+modelToModelView :: Model -> ModelView
+modelToModelView model =
+  ModelView
+    { modelViewDialog =
+        case modelDialog model of
+          ActionDialog ->
+            case actionDialog model of
+              (x, y) ->
+                (x, map fst y)
+
+          ExploreDialog ->
+            case exploreDialog model of
+              (x, y) ->
+                (x, map fst y)
+
+          TradeDialog ->
+            case tradeDialog model of
+              (x, y) ->
+                (x, map fst y)
+
+          TravelDialog ->
+            case travelDialog model of
+              (x, y) ->
+                (x, map fst y)
+
+    , modelViewLoc   = modelLoc   model
+    , modelViewWater = modelWater model
+    , modelViewGrain = modelGrain model
+    , modelViewGold  = modelGold  model
+    }
+
+showResource :: Resource -> String
+showResource = \case
+  Grain -> "grain"
+  Water -> "water"
+
+showTrade :: Maybe Trade -> String
+showTrade = \case
+  Nothing           -> "Goodbye"
+  Just (Sell res n) -> "Sell " ++ showResource res ++ " for " ++ show n
+  Just (Buy res n)  -> "Buy "  ++ showResource res ++ " for " ++ show n
 
 game :: ElmGame
 game =
@@ -76,93 +118,47 @@ update event model =
     Right (EventKey (KeyChar c) _) ->
       case modelDialog model of
         ActionDialog ->
-          case List.lookup c (actionOptions model) of
-            Nothing ->
-              Just model
+          Just (handleAction c model)
 
-            Just Explore ->
-              case modelLoc model of
-                LocGrain ->
-                  Just model
-                    { modelDialog = ExploreGrainDialog
-                    }
-                LocWater ->
-                  Just model
-                    { modelDialog = ExploreWaterDialog
-                    , modelExploredWater = modelExploredWater model + 1
-                    }
-                LocPyramid ->
-                  error "explore pyramid"
-
-            Just ScoopWater ->
-              Just model
-                { modelWater =
-                    fromMaybe
-                      (modelWater model)
-                      (tryScoopWater (modelWater model))
-                }
-
-            Just Trade ->
-              Just model
-                { modelDialog = TradeDialog
-                }
-
-            Just Travel ->
-              Just model
-                { modelDialog = TravelDialog
-                }
-
-        ExploreGrainDialog ->
-          case List.lookup c (exploreGrainOptions model) of
-            Nothing ->
-              Just model
-
-            Just () ->
-              Just model
-                { modelDialog = ActionDialog }
-
-        ExploreWaterDialog ->
-          case List.lookup c (exploreWaterOptions model) of
-            Nothing ->
-              Just model
-
-            Just () ->
-              Just model
-                { modelDialog = ActionDialog }
+        ExploreDialog ->
+          Just (handleExplore c model)
 
         TradeDialog ->
-          case List.lookup c (tradeOptions model) of
-            Nothing ->
-              Just model
-
-            Just Nothing ->
-              Just model
-                { modelDialog = ActionDialog
-                }
-
-            Just (Just trade) ->
-              Just (applyTrade trade model)
+          Just (handleTrade c model)
 
         TravelDialog ->
-          case List.lookup c (travelOptions model) of
-            Nothing ->
-              Just model
-
-            Just loc ->
-              case loc of
-                Nothing ->
-                  Just model
-                    { modelDialog = ActionDialog
-                    }
-
-                Just loc' ->
-                  Just model
-                    { modelDialog = ActionDialog
-                    , modelLoc = loc'
-                    }
+          Just (handleTravel c model)
 
     Right _ ->
       Just model
+
+handleAction :: Char -> Model -> Model
+handleAction c model =
+  maybe
+    model
+    snd
+    (List.lookup c (zip ['1'..] (snd (actionDialog model))))
+
+handleExplore :: Char -> Model -> Model
+handleExplore c model =
+  maybe
+    model
+    snd
+    (List.lookup c (zip ['1'..] (snd (exploreDialog model))))
+
+handleTrade :: Char -> Model -> Model
+handleTrade c model =
+  maybe
+    model
+    snd
+    (List.lookup c (zip ['1'..] (snd (tradeDialog model))))
+
+handleTravel :: Char -> Model -> Model
+handleTravel c model =
+  maybe
+    model
+    snd
+    (List.lookup c (zip ['1'..] (snd (travelDialog model))))
 
 applyTrade :: Trade -> Model -> Model
 applyTrade trade model =
@@ -199,100 +195,187 @@ tryScoopWater n = do
   guard (n < 5)
   pure (n+1)
 
-actionOptions :: Model -> [(Char, Action)]
-actionOptions model =
+actionDialog :: Model -> ([String], [(String, Model)])
+actionDialog model =
   case modelLoc model of
     LocGrain ->
-      (zip ['1'..] . catMaybes)
-        [ Just Explore
+      (noInfo . catMaybes)
+        [ Just ("Explore", model { modelDialog = ExploreDialog })
         , do
-            guard (length (tradeOptions model) > 1)
-            pure Trade
-        , Just Travel
+            guard (length (snd (tradeDialog model)) > 1)
+            Just doTrade
+        , Just doTravel
         ]
 
     LocPyramid ->
-      (zip ['1'..] . catMaybes)
-        [ Just Trade
-        , Just Travel
-        ]
+      noInfo [ doTrade, doTravel ]
 
     LocWater ->
-      (zip ['1'..] . catMaybes)
-        [ Just Explore
+      (noInfo . catMaybes)
+        [ Just ("Explore", model
+            { modelDialog = ExploreDialog
+            , modelExploredWater = modelExploredWater model + 1
+            })
+
         , do
             guard (isJust (tryScoopWater (modelWater model)))
-            pure ScoopWater
-        , Just Travel
+            Just ("Scoop water",
+              model
+                { modelWater =
+                    fromMaybe
+                      (modelWater model)
+                      (tryScoopWater (modelWater model))
+                })
+
+        , Just doTravel
         ]
+
+ where
+  noInfo :: [(String, Model)] -> ([String], [(String, Model)])
+  noInfo = ([],)
+
+  doTrade :: (String, Model)
+  doTrade =
+    ("Trade", model { modelDialog = TradeDialog })
+
+  doTravel :: (String, Model)
+  doTravel =
+    ("Travel", model { modelDialog = TravelDialog })
+
+exploreDialog :: Model -> ([String], [(String, Model)])
+exploreDialog model =
+  (info, [("Ok", model { modelDialog = ActionDialog })])
+ where
+  info :: [String]
+  info =
+    case modelLoc model of
+      LocGrain ->
+        [ "You meet a man. He says, \"Our well is broken. Do you have water?\"" ]
+
+      LocWater ->
+        if modelExploredWater model == 5
+          then
+            [ "You find the wreckage of an ancient orbital booster."
+            , "By copying the design, you improve your engines."
+            ]
+          else
+            [ "Inky blackness! Luminous fish lights pass by." ]
+
+      LocPyramid ->
+        error "explore in LocPyramid"
+
+tradeDialog :: Model -> ([String], [(String, Model)])
+tradeDialog model =
+  (info, options)
+ where
+  info :: [String]
+  info = do
+    guard (grainWorldFixedWell model)
+    [ "We fixed our well and the drought is over. We aren't buying any water." ]
+
+  options :: [(String, Model)]
+  options =
+    catMaybes
+      [ do
+          guard (modelWater model > 0)
+          guard (not (grainWorldFixedWell model))
+          let trade = Just (Sell Water 10)
+          Just (showTrade trade, maybe id applyTrade trade model)
+      , do
+          guard (modelGold model >= 5)
+          let trade = Just (Buy Grain 5)
+          Just (showTrade trade, maybe id applyTrade trade model)
+      , Just (showTrade Nothing, model { modelDialog = ActionDialog })
+      ]
+
+travelDialog :: Model -> ([String], [(String, Model)])
+travelDialog model =
+  (info, options)
+ where
+  info :: [String]
+  info = []
+
+  options :: [(String, Model)]
+  options =
+    case modelLoc model of
+      LocGrain ->
+        catMaybes
+          [ pure doWater
+          , do
+              guard (discoveredPyramid model)
+              pure doPyramid
+          , pure doCancel
+          ]
+
+      LocWater ->
+        catMaybes
+          [ pure doGrain
+          , do
+              guard (discoveredPyramid model)
+              pure doPyramid
+          , pure doCancel
+          ]
+
+      LocPyramid ->
+        [ doGrain
+        , doWater
+        , doCancel
+        ]
+
+   where
+    doGrain :: (String, Model)
+    doGrain =
+      ("Grain world",
+        model
+          { modelLoc = LocGrain
+          , modelDialog = ActionDialog
+          })
+
+    doWater :: (String, Model)
+    doWater =
+      ("Water world",
+        model
+          { modelLoc = LocWater
+          , modelDialog = ActionDialog
+          })
+
+    doPyramid :: (String, Model)
+    doPyramid =
+      ("Pyramid world",
+        model
+          { modelLoc = LocPyramid
+          , modelDialog = ActionDialog
+          })
+
+    doCancel :: (String, Model)
+    doCancel =
+      ("Cancel",
+        model
+          { modelDialog = ActionDialog
+          })
 
 grainWorldFixedWell :: Model -> Bool
 grainWorldFixedWell model =
   modelGrainWorldWater model >= 15
 
-exploreGrainOptions :: Model -> [(Char, ())]
-exploreGrainOptions _model =
-  zip ['1'..] [()]
-
-exploreWaterOptions :: Model -> [(Char, ())]
-exploreWaterOptions _model =
-  zip ['1'..] [()]
-
-tradeOptions :: Model -> [(Char, Maybe Trade)]
-tradeOptions model =
-  (zip ['1'..] . catMaybes)
-    [ do
-        guard (modelWater model > 0)
-        guard (not (grainWorldFixedWell model))
-        pure (Just (Sell Water 10))
-    , do
-        guard (modelGold model >= 5)
-        pure (Just (Buy Grain 5))
-    , pure Nothing
-    ]
-
 discoveredPyramid :: Model -> Bool
 discoveredPyramid =
   (>= 5) . modelExploredWater
 
--- | Where are we allowed to travel, and what button do we press to get there?
-travelOptions :: Model -> [(Char, Maybe Location)]
-travelOptions model =
-  case modelLoc model of
-    LocGrain ->
-      (zip ['1'..] . catMaybes)
-        [ pure (Just LocWater)
-        , do
-            guard (discoveredPyramid model)
-            pure (Just LocPyramid)
-        , pure Nothing
-        ]
-
-    LocWater ->
-      (zip ['1'..] . catMaybes)
-        [ pure (Just LocGrain)
-        , do
-            guard (discoveredPyramid model)
-            pure (Just LocPyramid)
-        , pure Nothing
-        ]
-
-    LocPyramid ->
-      zip ['1'..]
-        [ Just LocGrain
-        , Just LocWater
-        , Nothing
-        ]
-
 view :: Model -> Scene
-view model =
+view =
+  viewModel . modelToModelView
+
+viewModel :: ModelView -> Scene
+viewModel model =
   Scene cells NoCursor
  where
   cells :: Cells
   cells =
     mconcat
-      [ viewLoc (modelLoc model)
-      , viewDialog model (modelDialog model)
+      [ viewLoc (modelViewLoc model)
+      -- , viewInfo (modelViewInfo model)
+      , viewDialog (modelViewDialog model)
       , viewHud model
       ]
 
@@ -334,77 +417,34 @@ viewLocWater =
     , rect 0 20 100 10 mempty cyan
     ]
 
-viewDialog :: Model -> Dialog -> Cells
-viewDialog model = \case
-  ActionDialog ->
-    viewDialogOptions (map (second showAction) (actionOptions model))
+viewDialog :: ([String], [String]) -> Cells
+viewDialog (info, options) =
+  viewInfo info <> viewOptions options
 
-  ExploreGrainDialog ->
-    mconcat
-      [ tbstr 5 3 black white
-          "You meet a man. He says, \"Our well is broken. Do you have water?\""
-      , viewDialogOptions (map (second showOk) (exploreGrainOptions model))
-      ]
+viewInfo :: [String] -> Cells
+viewInfo = \case
+  [] ->
+    mempty
 
-  ExploreWaterDialog ->
-    mconcat
-      [ if modelExploredWater model == 5
-          then
-            mconcat
-             [ tbstr 5 2 black white "You find the wreckage of an ancient orbital booster."
-             , tbstr 5 3 black white "By copying the design, you improve your engines."
-             ]
-            else
-              tbstr 5 3 black white "Inky blackness! Luminous fish lights pass by."
-      , viewDialogOptions (map (second showOk) (exploreWaterOptions model))
-      ]
+  [s] ->
+    tbstr 5 3 black white s
 
-  TradeDialog ->
-    (mconcat . catMaybes)
-      [ do
-          guard (grainWorldFixedWell model)
-          pure (tbstr 5 3 black white "We fixed our well and the drought is over. We aren't buying any water.")
-      , Just (viewDialogOptions (map (second showTrade) (tradeOptions model)))
-      ]
+  [s1, s2] ->
+    tbstr 5 2 black white s1 <>
+    tbstr 5 3 black white s2
 
-  TravelDialog ->
-    viewDialogOptions (map (second showLoc) (travelOptions model))
+  _ ->
+    error "viewInfo"
+
+viewOptions :: [String] -> Cells
+viewOptions =
+  foldMap f . zip [0..]
  where
-  showAction :: Action -> String
-  showAction = \case
-    Explore    -> "Explore"
-    ScoopWater -> "Scoop water"
-    Trade      -> "Trade"
-    Travel     -> "Travel"
+  f :: (Int, String) -> Cells
+  f (i, s) =
+    tbstr 5 (i+5) black white ('(' : show (i+1) ++ ") " ++ s)
 
-  showOk :: () -> String
-  showOk () =
-    "Ok"
-
-  showLoc :: Maybe Location -> String
-  showLoc = \case
-    Nothing         -> "Cancel"
-    Just LocGrain   -> "Grain world"
-    Just LocPyramid -> "Pyramid world"
-    Just LocWater   -> "Water world"
-
-  showTrade :: Maybe Trade -> String
-  showTrade = \case
-    Nothing           -> "Goodbye"
-    Just (Sell res n) -> "Sell " ++ showResource res ++ " for " ++ show n
-    Just (Buy res n)  -> "Buy "  ++ showResource res ++ " for " ++ show n
-
-  showResource :: Resource -> String
-  showResource = \case
-    Grain -> "grain"
-    Water -> "water"
-
-viewDialogOptions :: [(Char, String)] -> Cells
-viewDialogOptions =
-  foldMap (\(i, (c,s)) -> tbstr 5 (i+5) black white ('(':c:')':' ':s))
-    . zip [0..]
-
-viewHud :: Model -> Cells
+viewHud :: ModelView -> Cells
 viewHud model =
   case catMaybes blah of
     [] -> mempty
@@ -414,16 +454,16 @@ viewHud model =
   blah :: [Maybe String]
   blah =
     [ do
-        guard (modelGold model > 0)
-        pure ("gold " ++ show (modelGold model))
+        guard (modelViewGold model > 0)
+        pure ("gold " ++ show (modelViewGold model))
 
     , do
-        guard (modelGrain model > 0)
-        pure ("grain " ++ show (modelGrain model))
+        guard (modelViewGrain model > 0)
+        pure ("grain " ++ show (modelViewGrain model))
 
     , do
-        guard (modelWater model > 0)
-        pure ("water " ++ show (modelWater model))
+        guard (modelViewWater model > 0)
+        pure ("water " ++ show (modelViewWater model))
     ]
 
 tickEvery :: Model -> Maybe NominalDiffTime

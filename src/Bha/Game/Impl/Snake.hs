@@ -62,19 +62,23 @@ update = \case
 
   Right (EventKey KeyArrowUp _) -> do
     dir <- use dirL
-    unless (dir == DirDown) (dirL .= DirUp)
+    dirL .= DirUp
+    when (dir == DirDown) (snakeL %= Seq.reverse)
 
   Right (EventKey KeyArrowDown _) -> do
     dir <- use dirL
-    unless (dir == DirUp) (dirL .= DirDown)
+    dirL .= DirDown
+    when (dir == DirUp) (snakeL %= Seq.reverse)
 
   Right (EventKey KeyArrowLeft _) -> do
     dir <- use dirL
-    unless (dir == DirRight) (dirL .= DirLeft)
+    dirL .= DirLeft
+    when (dir == DirRight) (snakeL %= Seq.reverse)
 
   Right (EventKey KeyArrowRight _) -> do
     dir <- use dirL
-    unless (dir == DirLeft) (dirL .= DirRight)
+    dirL .= DirRight
+    when (dir == DirLeft) (snakeL %= Seq.reverse)
 
   Right _ ->
     pure ()

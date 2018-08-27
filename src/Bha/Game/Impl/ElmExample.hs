@@ -1,6 +1,8 @@
 -- | Example Elm-style game.
 
-{-# LANGUAGE NoImplicitPrelude, NamedFieldPuns, RecordWildCards #-}
+{-# LANGUAGE FunctionalDependencies, LambdaCase, MultiParamTypeClasses,
+             NamedFieldPuns, NoImplicitPrelude, RecordWildCards,
+             TemplateHaskell #-}
 
 module Bha.Game.Impl.ElmExample
   ( game
@@ -11,8 +13,10 @@ import Bha.View
 
 data Model
   = Model
-      !Int             -- Event count
-      !NominalDiffTime -- Elapsed time
+  { _modelCountL :: !Int
+  , _modelElapsedL :: !NominalDiffTime
+  }
+makeFields ''Model
 
 game :: ElmGame Model
 game =
@@ -22,18 +26,18 @@ init :: Seed -> Model
 init _ =
   Model 0 0
 
-update :: Either NominalDiffTime Event -> Model -> Maybe Model
-update event (Model n elapsed) =
-  case event of
-    Right (EventKey KeyEsc _) ->
-      Nothing
+update :: Either NominalDiffTime Event -> StateT Model Maybe ()
+update = \case
+  Right (EventKey KeyEsc _) ->
+    empty
 
-    Right _ -> do
-      guard (n < 10)
-      pure (Model (n + 1) elapsed)
+  Right _ -> do
+    n <- use countL
+    guard (n < 10)
+    countL .= (n+1)
 
-    Left delta ->
-      Just (Model n (elapsed + delta))
+  Left delta ->
+    elapsedL %= (+ delta)
 
 view :: Model -> Scene
 view (Model n elapsed) =

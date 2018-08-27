@@ -35,7 +35,7 @@ Here's what that looks like in Haskell.
 data ElmGame model
   = ElmGame
       (Seed -> model)
-      (Either NominalDiffTime TerminalEvent -> model -> Maybe model)
+      (Either NominalDiffTime TerminalEvent -> StateT model Maybe ())
       (model -> Scene)
       (model -> Maybe NominalDiffTime)
 ```

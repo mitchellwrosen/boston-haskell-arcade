@@ -1,5 +1,7 @@
-{-# LANGUAGE NamedFieldPuns, NoImplicitPrelude, PatternSynonyms,
-             RecordWildCards #-}
+{-# LANGUAGE FlexibleInstances, FunctionalDependencies, LambdaCase,
+             MultiParamTypeClasses, NamedFieldPuns, NoImplicitPrelude,
+             PatternSynonyms, RecordWildCards, ScopedTypeVariables,
+             TemplateHaskell #-}
 
 module Bha.Game.Impl.Snake
   ( game
@@ -7,21 +9,17 @@ module Bha.Game.Impl.Snake
 
 import Bha.Elm.Prelude
 
-import Control.Monad.Trans.State
-import Data.List                 (unfoldr)
-import Data.Maybe                (fromJust)
-import Data.Sequence             (pattern (:|>), Seq, (|>))
+import Data.Sequence (pattern (:|>), Seq, (|>))
 
 import qualified Data.Sequence as Seq
 
+
+--------------------------------------------------------------------------------
+-- Model
+--------------------------------------------------------------------------------
+
 type Row = Int
 type Col = Int
-
-rmax :: Row
-rmax = 20
-
-cmax :: Col
-cmax = 40
 
 data Direction
   = DirUp
@@ -32,127 +30,117 @@ data Direction
 
 data Model
   = Model
-  { modelSeed  :: Seed
-  , modelSnake :: Seq (Col, Row)
-  , modelDir   :: Direction
-  , modelFood  :: (Col, Row)
+  { _modelSeedL  :: Seed
+  , _modelSnakeL :: Seq (Col, Row)
+  , _modelDirL   :: Direction
+  , _modelFoodL  :: (Col, Row)
   }
+makeFields ''Model
 
-game :: ElmGame Model
-game =
-  ElmGame init update view tickEvery
+rmax :: Row
+rmax = 20
+
+cmax :: Col
+cmax = 40
 
 init :: Seed -> Model
 init seed =
   Model seed (pure (0, 0)) DirRight (5, 5)
 
-inBounds :: (Col, Row) -> Bool
-inBounds (col, row) =
-  and [ col >= 0, col < cmax, row >= 0, row < rmax ]
 
-update :: Either NominalDiffTime Event -> Model -> Maybe Model
-update event model =
-  case event of
-    Left _ ->
-      updateTick model
+--------------------------------------------------------------------------------
+-- Update
+--------------------------------------------------------------------------------
 
-    Right (EventKey KeyEsc _) ->
-      Nothing
+update :: Either NominalDiffTime Event -> StateT Model Maybe ()
+update = \case
+  Left _ ->
+    updateTick
 
-    Right (EventKey KeyArrowUp _) ->
-      if modelDir model == DirDown
-        then Just model
-        else Just model { modelDir = DirUp }
+  Right (EventKey KeyEsc _) ->
+    empty
 
-    Right (EventKey KeyArrowDown _) ->
-      if modelDir model == DirUp
-        then Just model
-        else Just model { modelDir = DirDown }
+  Right (EventKey KeyArrowUp _) -> do
+    dir <- use dirL
+    unless (dir == DirDown) (dirL .= DirUp)
 
-    Right (EventKey KeyArrowLeft _) ->
-      if modelDir model == DirRight
-        then Just model
-        else Just model { modelDir = DirLeft }
+  Right (EventKey KeyArrowDown _) -> do
+    dir <- use dirL
+    unless (dir == DirUp) (dirL .= DirDown)
 
-    Right (EventKey KeyArrowRight _) ->
-      if modelDir model == DirLeft
-        then Just model
-        else Just model { modelDir = DirRight }
+  Right (EventKey KeyArrowLeft _) -> do
+    dir <- use dirL
+    unless (dir == DirRight) (dirL .= DirLeft)
 
-    Right _ ->
-      Just model
+  Right (EventKey KeyArrowRight _) -> do
+    dir <- use dirL
+    unless (dir == DirLeft) (dirL .= DirRight)
 
-updateTick :: Model -> Maybe Model
-updateTick model =
+  Right _ ->
+    pure ()
+
+updateTick :: StateT Model Maybe ()
+updateTick = do
+  model :: Model <-
+    get
+
+  let
+    snake =
+      model ^. snakeL
+
   let
     (headCol, headRow) =
-      case modelSnake model of
+      case snake of
         _ :|> x -> x
         _       -> error "empty snake"
 
     target :: (Col, Row)
     target =
-      case modelDir model of
+      case model ^. dirL of
         DirUp    -> (headCol,   headRow-1)
         DirDown  -> (headCol,   headRow+1)
         DirLeft  -> (headCol-1, headRow)
         DirRight -> (headCol+1, headRow)
 
-  in do
-    guard (inBounds target)
-    guard (target `notElem` Seq.drop 1 (modelSnake model))
+  guard (inBounds target)
+  guard (target `notElem` Seq.drop 1 snake)
 
-    if modelFood model == target
-      then do
-        guard (length (modelSnake model) < cmax*rmax - 1)
+  if model ^. foodL == target
+    then do
+      guard (length snake < cmax*rmax - 1)
 
-        let
-          newSnake :: Seq (Col, Row)
-          newSnake =
-            modelSnake model |> target
+      let
+        newSnake =
+          snake |> target
 
-        let
-          candidates :: [((Col, Row), Seed)]
-          candidates =
-            unfoldr
-              (\seed ->
-                let
-                  x@(_, seed') = randomFood seed
-                in
-                  Just (x, seed'))
-              (modelSeed model)
-           where
-            randomFood :: Seed -> ((Col, Row), Seed)
-            randomFood =
-              runState
-                ((,)
-                  <$> randomIntS 0 (cmax-1)
-                  <*> randomIntS 0 (rmax-1))
+      newFood <-
+        fix $ \loop -> do
+          food <- zoom seedL randomFood
+          if food `elem` newSnake
+            then loop
+            else pure food
 
-        let
-          newFood :: (Col, Row)
-          newSeed :: Seed
-          (newFood, newSeed) =
-            fromJust (find ((`notElem` newSnake) . fst) candidates)
 
-        Just model
-          { modelSnake = newSnake
-          , modelSeed  = newSeed
-          , modelFood  = newFood
-          }
+      snakeL .= newSnake
+      foodL  .= newFood
 
-      else
-        let
-          newSnake :: Seq (Col, Row)
-          newSnake =
-            modelSnake model
-              & Seq.drop 1
-              & (|> target)
-        in
-          Just model
-            { modelSnake = newSnake
-            }
+    else
+      snakeL %= (Seq.drop 1 >>> (|> target))
 
+inBounds :: (Col, Row) -> Bool
+inBounds (col, row) =
+  and [ col >= 0, col < cmax, row >= 0, row < rmax ]
+
+randomFood :: Monad m => StateT Seed m (Col, Row)
+randomFood =
+  ((,)
+    <$> randomIntS 0 (cmax-1)
+    <*> randomIntS 0 (rmax-1))
+
+
+--------------------------------------------------------------------------------
+-- View
+--------------------------------------------------------------------------------
 
 view :: Model -> Scene
 view model =
@@ -162,8 +150,8 @@ view model =
   cells =
     mconcat
       [ viewBorder
-      , viewSnake (modelSnake model)
-      , viewFood (modelFood model)
+      , viewSnake (model ^. snakeL)
+      , viewFood (model ^. foodL)
       ]
 
 viewBorder :: Cells
@@ -183,10 +171,24 @@ viewFood :: (Col, Row) -> Cells
 viewFood (col, row) =
   set (col+1) (row+1) (Cell ' ' mempty blue)
 
+
+--------------------------------------------------------------------------------
+-- Tick
+--------------------------------------------------------------------------------
+
 tickEvery :: Model -> Maybe NominalDiffTime
 tickEvery model =
-  case modelDir model of
+  case model ^. dirL of
     DirUp    -> Just (1/14)
     DirDown  -> Just (1/14)
     DirLeft  -> Just (1/20)
     DirRight -> Just (1/20)
+
+
+--------------------------------------------------------------------------------
+-- Game
+--------------------------------------------------------------------------------
+
+game :: ElmGame Model
+game =
+  ElmGame init update view tickEvery

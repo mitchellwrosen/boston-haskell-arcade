@@ -29,20 +29,25 @@ module Bha.Elm.Prelude
 import Bha.Elm.Prelude.Internal (Seed(..))
 import Bha.Prelude              as X
 
-import           Control.Monad.Trans.State
+import           Control.Applicative as X (empty)
+import           Control.Arrow       as X ((>>>))
+import           Control.Lens        as X (use, (%=), (%~), (.=), (.~), (^.))
+import           Control.Lens.TH     as X (makeFields)
+import           Control.Lens.Zoom   as X (zoom)
+import           Control.Monad.State as X (StateT, get, put)
+import           Control.Monad.State
 import           Data.Coerce
-import qualified System.Random             as Random
-import           Termbox.Banana            (Cell(..), Cells, Cursor(..),
-                                            Event(..), Key(..), Scene(..),
-                                            black, blue, cyan, green, magenta,
-                                            red, set, white, yellow)
+import qualified System.Random       as Random
+import           Termbox.Banana      (Cell(..), Cells, Cursor(..), Event(..),
+                                      Key(..), Scene(..), black, blue, cyan,
+                                      green, magenta, red, set, white, yellow)
 
 -- | An Elm-style game.
 data ElmGame model
   = ElmGame
       (Seed -> model)
       -- Initial model, given a random seed.
-      (Either NominalDiffTime Event -> model -> Maybe model)
+      (Either NominalDiffTime Event -> StateT model Maybe ())
       -- Update the model from a tick or terminal event. Return Nothing if the
       -- game is done.
       (model -> Scene)
@@ -56,6 +61,6 @@ randomInt lo hi (Seed seed) =
   coerce (Random.randomR (lo, hi) seed)
 
 -- | Like 'randomInt', but in the 'State' monad.
-randomIntS :: Int -> Int -> State Seed Int
+randomIntS :: Monad m => Int -> Int -> StateT Seed m Int
 randomIntS lo hi =
   state (randomInt lo hi)

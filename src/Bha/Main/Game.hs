@@ -6,6 +6,7 @@ module Bha.Main.Game
   , momentGame
   ) where
 
+import Control.Monad.State (StateT, execStateT)
 import Reactive.Banana.Frameworks (MomentIO)
 import System.Random              (mkStdGen)
 
@@ -66,8 +67,8 @@ momentElmGame eEvent (ElmGame init update view tickEvery) = mdo
   eModel :: Events (Maybe a) <-
     accumE (Just init')
       (unionWith const
-        (((=<<) . update) .  Left <$> eTick)
-        (((=<<) . update) . Right <$> eEvent))
+        (stepElm . update .  Left <$> eTick)
+        (stepElm . update . Right <$> eEvent))
 
   let
     eModel' :: Events model
@@ -83,3 +84,7 @@ momentElmGame eEvent (ElmGame init update view tickEvery) = mdo
     stepper (view init') eScene
 
   pure (bScene, eDone)
+
+stepElm :: StateT model Maybe () -> Maybe model -> Maybe model
+stepElm m =
+  (>>= execStateT m)

@@ -10,6 +10,7 @@ library
       base
     , containers
     , lens ^>= 4.17
+    , mtl
     , random
     , reactive-banana ^>= 1.2.0
     , stm ^>= 2.4.5

@@ -1,4 +1,4 @@
-{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE NoImplicitPrelude, TypeApplications #-}
 
 module Bha.Elm.Prelude
   ( -- * Elm game
@@ -6,7 +6,7 @@ module Bha.Elm.Prelude
     -- * Randomness
   , Seed
   , randomInt
-  , randomIntS
+  , randomPct
     -- * Rendering
   , Scene(..)
   , Cells
@@ -56,11 +56,10 @@ data ElmGame model
       -- Tick, and if so, how often?
 
 -- | Generate a random 'Int' in the given bounds (inclusive).
-randomInt :: Int -> Int -> Seed -> (Int, Seed)
-randomInt lo hi (Seed seed) =
-  coerce (Random.randomR (lo, hi) seed)
+randomInt :: Monad m => Int -> Int -> StateT Seed m Int
+randomInt lo hi =
+  state (\(Seed seed) -> coerce (Random.randomR (lo, hi) seed))
 
--- | Like 'randomInt', but in the 'State' monad.
-randomIntS :: Monad m => Int -> Int -> StateT Seed m Int
-randomIntS lo hi =
-  state (randomInt lo hi)
+randomPct :: Monad m => StateT Seed m Double
+randomPct =
+  state (\(Seed seed) -> coerce (Random.random @Double seed))

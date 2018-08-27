@@ -28,6 +28,13 @@ data Direction
   | DirRight
   deriving (Eq)
 
+flipDir :: Direction -> Direction
+flipDir = \case
+  DirUp    -> DirDown
+  DirDown  -> DirUp
+  DirLeft  -> DirRight
+  DirRight -> DirLeft
+
 data Model
   = Model
   { _modelSeedL  :: Seed
@@ -113,9 +120,14 @@ updateTick = do
     then do
       guard (length snake < cmax*rmax - 1)
 
+      -- Flip around 10% of the time
+      doFlip :: Bool <-
+        (> 0.9) <$> zoom seedL randomPct
+
       let
         newSnake =
-          snake |> target
+          (snake |> target)
+            & if doFlip then Seq.reverse else id
 
       newFood <-
         fix $ \loop -> do
@@ -124,9 +136,9 @@ updateTick = do
             then loop
             else pure food
 
-
-      snakeL .= newSnake
+      when doFlip (dirL %= flipDir)
       foodL  .= newFood
+      snakeL .= newSnake
 
     else
       snakeL %= (Seq.drop 1 >>> (|> target))
@@ -138,8 +150,8 @@ inBounds (col, row) =
 randomFood :: Monad m => StateT Seed m (Col, Row)
 randomFood =
   ((,)
-    <$> randomIntS 0 (cmax-1)
-    <*> randomIntS 0 (rmax-1))
+    <$> randomInt 0 (cmax-1)
+    <*> randomInt 0 (rmax-1))
 
 
 --------------------------------------------------------------------------------

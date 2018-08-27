@@ -14,7 +14,7 @@ data Model
       !Int             -- Event count
       !NominalDiffTime -- Elapsed time
 
-game :: ElmGame
+game :: ElmGame Model
 game =
   ElmGame init update view tickEvery
 

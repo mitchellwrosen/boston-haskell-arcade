@@ -90,7 +90,7 @@ showTrade = \case
   Just (Sell res n) -> "Sell " ++ showResource res ++ " for " ++ show n
   Just (Buy res n)  -> "Buy "  ++ showResource res ++ " for " ++ show n
 
-game :: ElmGame
+game :: ElmGame Model
 game =
   ElmGame init update view tickEvery
 

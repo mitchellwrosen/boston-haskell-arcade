@@ -38,7 +38,7 @@ data Model
   , modelFood  :: (Col, Row)
   }
 
-game :: ElmGame
+game :: ElmGame Model
 game =
   ElmGame init update view tickEvery
 

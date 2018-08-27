@@ -1,4 +1,4 @@
-{-# LANGUAGE ExistentialQuantification, NoImplicitPrelude #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Bha.Elm.Prelude
   ( -- * Elm game
@@ -38,8 +38,8 @@ import           Termbox.Banana            (Cell(..), Cells, Cursor(..),
                                             red, set, white, yellow)
 
 -- | An Elm-style game.
-data ElmGame
-  = forall model. ElmGame
+data ElmGame model
+  = ElmGame
       (Seed -> model)
       -- Initial model, given a random seed.
       (Either NominalDiffTime Event -> model -> Maybe model)

@@ -32,8 +32,8 @@ An Elm game has four components.
 Here's what that looks like in Haskell.
 
 ```haskell
-data ElmGame
-  = forall model. ElmGame
+data ElmGame model
+  = ElmGame
       (Seed -> model)
       (Either NominalDiffTime TerminalEvent -> model -> Maybe model)
       (model -> Scene)

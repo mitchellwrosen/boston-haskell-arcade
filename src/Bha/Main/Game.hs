@@ -1,4 +1,5 @@
-{-# LANGUAGE LambdaCase, NoImplicitPrelude, RecursiveDo, ScopedTypeVariables #-}
+{-# LANGUAGE ExistentialQuantification, LambdaCase, NoImplicitPrelude,
+             RecursiveDo, ScopedTypeVariables #-}
 
 module Bha.Main.Game
   ( Game(..)
@@ -6,7 +7,7 @@ module Bha.Main.Game
   ) where
 
 import Reactive.Banana.Frameworks (MomentIO)
-import System.Random (mkStdGen)
+import System.Random              (mkStdGen)
 
 import Bha.Banana.Prelude
 import Bha.Banana.Prelude.Internal (Banana(..))
@@ -16,7 +17,7 @@ import Bha.Elm.Prelude             (ElmGame(..))
 import Bha.Elm.Prelude.Internal    (Seed(..))
 
 data Game
-  = GameElm ElmGame
+  = forall model. GameElm (ElmGame model)
   | GameBanana (Events TermEvent -> Banana (Behavior Scene, Events ()))
 
 momentGame
@@ -30,8 +31,9 @@ momentGame eEvent = \case
     unBanana (game eEvent)
 
 momentElmGame
-  :: Events TermEvent
-  -> ElmGame
+  :: forall model.
+     Events TermEvent
+  -> ElmGame model
   -> MomentIO (Behavior Scene, Events ())
 momentElmGame eEvent (ElmGame init update view tickEvery) = mdo
   let
@@ -68,7 +70,7 @@ momentElmGame eEvent (ElmGame init update view tickEvery) = mdo
         (((=<<) . update) . Right <$> eEvent))
 
   let
-    -- eModel' :: Events a
+    eModel' :: Events model
     eModel' =
       filterJust eModel
 

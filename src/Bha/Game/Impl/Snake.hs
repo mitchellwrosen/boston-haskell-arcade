@@ -24,7 +24,7 @@ type Col   = Int
 type Score = Int
 type Alive = Bool
 type Level = Int
-
+type Pause = Bool
 
 data Direction
   = DirUp
@@ -48,6 +48,7 @@ data Model
   , _modelFoodL  :: (Col, Row)
   , _modelScoreL :: Score
   , _modelLevelL :: Level
+  , _modelPauseL :: Pause
   , _modelAliveL  :: Alive 
   }
 makeFields ''Model
@@ -62,7 +63,7 @@ init :: Seed -> Model
 init seed =
   let (row , firstSeed)= runState ( randomInt 0 39 ) seed
       (col, secondSeed) = runState  (randomInt 0 19) firstSeed
-    in Model secondSeed (pure (0, 0)) DirRight (row, col) 0 1 True
+    in Model secondSeed (pure (0, 0)) DirRight (row, col) 0 1 False True
 
 
 --------------------------------------------------------------------------------
@@ -96,6 +97,9 @@ update = \case
     dir <- use dirL
     dirL .= DirRight
     when (dir == DirLeft) (snakeL %= Seq.reverse)
+
+  Right (EventKey KeySpace _) -> 
+    pauseL %= not
 
   Right _ ->
     pure ()
@@ -221,11 +225,11 @@ viewSpeed model = tbstr 0 27 blue white ("Speed : " ++ show (tickEvery model))
 --------------------------------------------------------------------------------
 
 tickEvery :: Model -> Maybe NominalDiffTime
-tickEvery model =
+tickEvery model = do
+  guard (not (model ^. pauseL))
   let level = model ^. levelL
       dir = model ^. dirL
-  in 
-  case dir of
+  case dir of 
     DirUp    -> Just (1 / (fromIntegral level * 14))
     DirDown  -> Just (1 / (fromIntegral level * 14))
     DirLeft  -> Just (1 / (fromIntegral level * 20))

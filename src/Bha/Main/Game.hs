@@ -8,7 +8,7 @@ module Bha.Main.Game
 
 import Control.Monad.State (StateT, execStateT)
 import Reactive.Banana.Frameworks (MomentIO)
-import System.Random              (mkStdGen)
+import System.Random              (getStdGen)
 
 import Bha.Banana.Prelude
 import Bha.Banana.Prelude.Internal (Banana(..))
@@ -37,8 +37,11 @@ momentElmGame
   -> ElmGame model
   -> MomentIO (Behavior Scene, Events ())
 momentElmGame eEvent (ElmGame init update view tickEvery) = mdo
+  seed :: Seed <-
+    Seed <$> liftIO getStdGen
+
   let
-    init' = init (Seed (mkStdGen 0))
+    init' = init seed
 
   eTick :: Events NominalDiffTime <-
     unBanana (momentTick (tickEvery init') eTickControl)

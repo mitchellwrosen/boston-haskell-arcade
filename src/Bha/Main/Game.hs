@@ -6,9 +6,9 @@ module Bha.Main.Game
   , momentGame
   ) where
 
-import Control.Monad.State (StateT, execStateT)
+import Control.Monad.State        (StateT, execStateT)
 import Reactive.Banana.Frameworks (MomentIO)
-import System.Random              (getStdGen)
+import System.Random              (mkStdGen, randomIO)
 
 import Bha.Banana.Prelude
 import Bha.Banana.Prelude.Internal (Banana(..))
@@ -38,7 +38,7 @@ momentElmGame
   -> MomentIO (Behavior Scene, Events ())
 momentElmGame eEvent (ElmGame init update view tickEvery) = mdo
   seed :: Seed <-
-    Seed <$> liftIO getStdGen
+    liftIO (Seed . mkStdGen <$> randomIO)
 
   let
     init' = init seed

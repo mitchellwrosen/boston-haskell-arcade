@@ -19,9 +19,13 @@ import qualified Data.Sequence as Seq
 -- Model
 --------------------------------------------------------------------------------
 
-type Row = Int
-type Col = Int
+type Row   = Int
+type Col   = Int
 type Score = Int
+type Alive = Bool
+type Level = Int
+
+
 data Direction
   = DirUp
   | DirDown
@@ -42,7 +46,9 @@ data Model
   , _modelSnakeL :: Seq (Col, Row)
   , _modelDirL   :: Direction
   , _modelFoodL  :: (Col, Row)
-  , _modelScoreL :: Score 
+  , _modelScoreL :: Score
+  , _modelLevelL :: Level
+  , _modelAliveL  :: Alive 
   }
 makeFields ''Model
 
@@ -56,7 +62,7 @@ init :: Seed -> Model
 init seed =
   let (row , firstSeed)= runState ( randomInt 0 39 ) seed
       (col, secondSeed) = runState  (randomInt 0 19) firstSeed
-    in Model secondSeed (pure (0, 0)) DirRight (row, col) 0
+    in Model secondSeed (pure (0, 0)) DirRight (row, col) 0 1 True
 
 
 --------------------------------------------------------------------------------
@@ -117,10 +123,13 @@ updateTick = do
         DirLeft  -> (headCol-1, headRow)
         DirRight -> (headCol+1, headRow)
 
-  guard (inBounds target)
+  -- guard(model ^. aliveL)
+  -- guard (inBounds target)
   guard (target `notElem` Seq.drop 1 snake)
 
-  if model ^. foodL == target
+  if not (inBounds target && model ^. aliveL) then
+      aliveL .= False
+  else if model ^. foodL == target
     then do
       guard (length snake < cmax*rmax - 1)
 
@@ -132,6 +141,7 @@ updateTick = do
         newSnake =
           (snake |> target)
             & if doFlip then Seq.reverse else id
+        currentlevel = model ^. levelL
 
       newFood <-
         fix $ \loop -> do
@@ -143,7 +153,9 @@ updateTick = do
       when doFlip (dirL %= flipDir)
       foodL  .= newFood
       snakeL .= newSnake
-      scoreL += 1
+      scoreL += (1 * currentlevel)
+      score <- use scoreL
+      levelL .= (score `div` 5) +1
 
     else
       snakeL %= (Seq.drop 1 >>> (|> target))
@@ -154,9 +166,7 @@ inBounds (col, row) =
 
 randomFood :: Monad m => StateT Seed m (Col, Row)
 randomFood =
-  ((,)
-    <$> randomInt 0 (cmax-1)
-    <*> randomInt 0 (rmax-1))
+  (,) <$> randomInt 0 (cmax-1) <*> randomInt 0 (rmax-1)
 
 
 --------------------------------------------------------------------------------
@@ -174,6 +184,8 @@ view model =
       , viewSnake (model ^. snakeL)
       , viewFood (model ^. foodL)
       , viewScore (model ^. scoreL)
+      , viewLevel (model ^. levelL)
+      , viewSpeed model
       ]
 
 viewBorder :: Cells
@@ -196,17 +208,28 @@ viewFood (col, row) =
 viewScore :: Int -> Cells
 viewScore score = tbstr 0 25 blue white ("Score : " ++ show score)
 
+viewLevel :: Int -> Cells
+viewLevel level = tbstr 0 26 blue white ("Level : " ++ show level)
+
+viewSpeed :: Model -> Cells
+viewSpeed model = tbstr 0 27 blue white ("Speed : " ++ show (tickEvery model))
+
+
+--getNominalDiffTimeString :: 
 --------------------------------------------------------------------------------
 -- Tick
 --------------------------------------------------------------------------------
 
 tickEvery :: Model -> Maybe NominalDiffTime
 tickEvery model =
-  case model ^. dirL of
-    DirUp    -> Just (1/14)
-    DirDown  -> Just (1/14)
-    DirLeft  -> Just (1/20)
-    DirRight -> Just (1/20)
+  let level = model ^. levelL
+      dir = model ^. dirL
+  in 
+  case dir of
+    DirUp    -> Just (1 / (fromIntegral level * 14))
+    DirDown  -> Just (1 / (fromIntegral level * 14))
+    DirLeft  -> Just (1 / (fromIntegral level * 20))
+    DirRight -> Just (1 / (fromIntegral level * 20))
 
 
 --------------------------------------------------------------------------------

@@ -8,7 +8,8 @@ module Bha.Game.Impl.Snake
   ) where
 
 import Bha.Elm.Prelude
-
+import Control.Monad.Trans.State.Lazy (runState)
+import Bha.View
 import Data.Sequence (pattern (:|>), Seq, (|>))
 
 import qualified Data.Sequence as Seq
@@ -20,7 +21,7 @@ import qualified Data.Sequence as Seq
 
 type Row = Int
 type Col = Int
-
+type Score = Int
 data Direction
   = DirUp
   | DirDown
@@ -41,6 +42,7 @@ data Model
   , _modelSnakeL :: Seq (Col, Row)
   , _modelDirL   :: Direction
   , _modelFoodL  :: (Col, Row)
+  , _modelScoreL :: Score 
   }
 makeFields ''Model
 
@@ -52,7 +54,9 @@ cmax = 40
 
 init :: Seed -> Model
 init seed =
-  Model seed (pure (0, 0)) DirRight (5, 5)
+  let (row , firstSeed)= runState ( randomInt 0 39 ) seed
+      (col, secondSeed) = runState  (randomInt 0 19) firstSeed
+    in Model secondSeed (pure (0, 0)) DirRight (row, col) 0
 
 
 --------------------------------------------------------------------------------
@@ -139,6 +143,7 @@ updateTick = do
       when doFlip (dirL %= flipDir)
       foodL  .= newFood
       snakeL .= newSnake
+      scoreL += 1
 
     else
       snakeL %= (Seq.drop 1 >>> (|> target))
@@ -168,6 +173,7 @@ view model =
       [ viewBorder
       , viewSnake (model ^. snakeL)
       , viewFood (model ^. foodL)
+      , viewScore (model ^. scoreL)
       ]
 
 viewBorder :: Cells
@@ -187,6 +193,8 @@ viewFood :: (Col, Row) -> Cells
 viewFood (col, row) =
   set (col+1) (row+1) (Cell ' ' mempty blue)
 
+viewScore :: Int -> Cells
+viewScore score = tbstr 0 25 blue white ("Score : " ++ show score)
 
 --------------------------------------------------------------------------------
 -- Tick

@@ -8,7 +8,7 @@ module Bha.Game.Impl.Snake
   ) where
 
 import Bha.Elm.Prelude
-
+import Control.Monad.Trans.State.Lazy (runState)
 import Data.Sequence (pattern (:|>), Seq, (|>))
 
 import qualified Data.Sequence as Seq
@@ -52,7 +52,9 @@ cmax = 40
 
 init :: Seed -> Model
 init seed =
-  Model seed (pure (0, 0)) DirRight (5, 5)
+  let (row , firstSeed)= runState ( randomInt 0 39 ) seed
+      (col, secondSeed) = runState  (randomInt 0 19) firstSeed
+    in Model secondSeed (pure (0, 0)) DirRight (row, col)
 
 
 --------------------------------------------------------------------------------

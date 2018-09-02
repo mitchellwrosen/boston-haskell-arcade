@@ -47,6 +47,8 @@ library
     Reactive.Banana.Bha
   ghc-options:
     -Weverything
+    -fno-warn-all-missed-specialisations
+    -fno-warn-missed-specialisations
     -fno-warn-missing-import-lists
     -fno-warn-unsafe
   hs-source-dirs:

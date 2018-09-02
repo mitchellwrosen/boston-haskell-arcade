@@ -32,11 +32,11 @@ import qualified Bha.Game.Impl.Snake
 
 gamelist :: [Game]
 gamelist =
-  [ GameElm    "Grain Main"       Bha.Game.Impl.GrainMan.game
+  [ GameElm    "Snake"            Bha.Game.Impl.Snake.game
+  , GameBanana "2048"             Bha.Game.Impl.H2048.moment
+  , GameElm    "Grain Main"       Bha.Game.Impl.GrainMan.game
   , GameElm    "Elm Example 1"    Bha.Game.Impl.ElmExample.game
   , GameBanana "Banana Example 1" Bha.Game.Impl.BananaExample.moment
-  , GameBanana "2048"             Bha.Game.Impl.H2048.moment
-  , GameElm    "Snake"            Bha.Game.Impl.Snake.game
   ]
 
 ------------------------------------------------------------------------------

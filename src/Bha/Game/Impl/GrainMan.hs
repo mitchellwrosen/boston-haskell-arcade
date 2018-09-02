@@ -7,7 +7,6 @@ module Bha.Game.Impl.GrainMan
   ) where
 
 import Bha.Elm.Prelude
-import Bha.View
 
 import qualified Data.List as List
 

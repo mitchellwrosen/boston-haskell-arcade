@@ -9,32 +9,24 @@ module Bha.Elm.Prelude
   , randomPct
     -- * Rendering
   , Scene(..)
-  , Cells
-  , set
   , Cell(..)
   , Cursor(..)
   , Event(..)
   , Key(..)
-  , black
-  , blue
-  , cyan
-  , green
-  , magenta
-  , red
-  , white
-  , yellow
   , module X
   ) where
 
 import Bha.Elm.Prelude.Internal (Seed(..))
 import Bha.Prelude              as X
+import Bha.View                 as X
 
 import           Control.Applicative as X (empty)
 import           Control.Arrow       as X ((>>>))
-import           Control.Lens        as X (use, (%=), (%~), (.=), (.~), (^.), (+=))
+import           Control.Lens        as X (use, (%=), (%~), (+=), (.=), (.~),
+                                           (^.))
 import           Control.Lens.TH     as X (makeFields)
 import           Control.Lens.Zoom   as X (zoom)
-import           Control.Monad.State as X (StateT, get, put)
+import           Control.Monad.State as X (StateT, get, put, runState)
 import           Control.Monad.State
 import           Data.Coerce
 import qualified System.Random       as Random

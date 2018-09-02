@@ -9,7 +9,6 @@ module Bha.Game.Impl.ElmExample
   ) where
 
 import Bha.Elm.Prelude
-import Bha.View
 
 data Model
   = Model

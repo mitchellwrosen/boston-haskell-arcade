@@ -10,8 +10,11 @@ import Bha.Banana.Prelude
 
 -- TODO 2048 detect game over
 -- TODO 2048 keep score
-moment :: Events TermEvent -> Banana (Behavior Scene, Events ())
-moment eEvent = mdo
+moment
+  :: Maybe Int
+  -> Events TermEvent
+  -> Banana (Behavior Scene, Events (GameOutput Int))
+moment hiscore eEvent = mdo
   -- TODO 2048 hjkl controls
   let
     eUp    = filterE (== EventKey KeyArrowUp    False) eEvent
@@ -23,20 +26,29 @@ moment eEvent = mdo
     eUDLR  = leftmostE [eUp, eDown, eLeft, eRight]
 
   let
-    eDone :: Events ()
+    eDone :: Events (GameOutput Int)
     eDone =
-      (() <$ eEsc) <> eGameOver
+      f <$> bScore <@
+        leftmostE
+          [ () <$ eEsc
+          , eGameOver
+          ]
+     where
+      eGameOver :: Events ()
+      eGameOver =
+        filterJust
+          (mergeE
+            (\_ -> Just ())
+            (\_ -> Nothing)
+            (\_ _ -> Nothing)
+            eUDLR
+            (leftmostE [eBoardUp, eBoardDown, eBoardLeft, eBoardRight]))
 
-  let
-    eGameOver :: Events ()
-    eGameOver =
-      filterJust
-        (mergeE
-          (\_ -> Just ())
-          (\_ -> Nothing)
-          (\_ _ -> Nothing)
-          eUDLR
-          (leftmostE [eBoardUp, eBoardDown, eBoardLeft, eBoardRight]))
+      f :: Int -> GameOutput Int
+      f score =
+        GameOver $ do
+          guard (Just score > hiscore)
+          Just score
 
   let
     eBoardUp :: Events [[Maybe Int]]
@@ -73,11 +85,17 @@ moment eEvent = mdo
     stepper initialBoard eBoard
 
   let
+    bScore :: Behavior Int
+    bScore =
+      boardScore <$> bBoard
+
+  let
     bCells :: Behavior Cells
     bCells =
-      mconcat
-        [ renderBoard <$> bBoard
-        , renderScore . boardScore <$> bBoard
+      (mconcat . catMaybes)
+        [ Just (renderBoard <$> bBoard)
+        , Just (renderScore <$> bScore)
+        , pure . renderHighScore <$> hiscore
         ]
 
   let
@@ -133,6 +151,10 @@ renderCell row0 col0 = \case
 renderScore :: Int -> Cells
 renderScore n =
   tbstr 0 16 mempty mempty ("Score: " ++ show n)
+
+renderHighScore :: Int -> Cells
+renderHighScore n =
+  tbstr 0 17 mempty mempty ("High score: " ++ show n)
 
 --------------------------------------------------------------------------------
 -- Board manipulation

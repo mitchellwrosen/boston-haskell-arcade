@@ -6,12 +6,17 @@ module Bha.Main
   ) where
 
 import Reactive.Banana.Bha
-import Reactive.Banana.Frameworks (MomentIO, execute)
+import Reactive.Banana.Frameworks (MomentIO, execute, reactimate)
+import System.Directory           (XdgDirectory(..), createDirectoryIfMissing,
+                                   getXdgDirectory)
+import System.FilePath            ((</>))
 import Termbox.Banana             (InputMode(..), MouseMode(..), OutputMode(..))
 
-import qualified Termbox.Banana as Tb
+import qualified Data.ByteString       as ByteString
+import qualified Termbox.Banana        as Tb
 
 import Bha.Banana.Prelude
+import Bha.Game           (ɢameOver)
 import Bha.Main.Game
 import Bha.Main.Menu
 
@@ -25,13 +30,13 @@ import qualified Bha.Game.Impl.Snake
 -- Game list
 ------------------------------------------------------------------------------
 
-gamelist :: [(String, Game)]
+gamelist :: [Game]
 gamelist =
-  [ ("Grain Man",        GameElm    Bha.Game.Impl.GrainMan.game)
-  , ("Elm Example 1",    GameElm    Bha.Game.Impl.ElmExample.game)
-  , ("Banana Example 1", GameBanana Bha.Game.Impl.BananaExample.moment)
-  , ("2048",             GameBanana Bha.Game.Impl.H2048.moment)
-  , ("Snake",            GameElm    Bha.Game.Impl.Snake.game)
+  [ GameElm    "Grain Main"       Bha.Game.Impl.GrainMan.game
+  , GameElm    "Elm Example 1"    Bha.Game.Impl.ElmExample.game
+  , GameBanana "Banana Example 1" Bha.Game.Impl.BananaExample.moment
+  , GameBanana "2048"             Bha.Game.Impl.H2048.moment
+  , GameElm    "Snake"            Bha.Game.Impl.Snake.game
   ]
 
 ------------------------------------------------------------------------------
@@ -39,14 +44,17 @@ gamelist =
 ------------------------------------------------------------------------------
 
 main :: IO ()
-main =
-  Tb.main (InputModeEsc MouseModeYes) OutputModeNormal main'
+main = do
+  dir <- getXdgDirectory XdgData "boston-haskell-arcade"
+  createDirectoryIfMissing True dir
+  Tb.main (InputModeEsc MouseModeYes) OutputModeNormal (main' dir)
 
 main'
-  :: Events TermEvent
+  :: FilePath
+  -> Events TermEvent
   -> Behavior (Int, Int)
   -> MomentIO (Behavior Scene, Events ())
-main' eEvent _bSize = mdo
+main' dir eEvent _bSize = mdo
   -- Partition terminal events into two: those intended for the menu, and those
   -- intended for the game. How do we tell them apart? When there's an active
   -- game, it gets all of the input.
@@ -64,12 +72,21 @@ main' eEvent _bSize = mdo
     eMenuDone = previewE ᴍainMenuOutputDone eMenuOutput :: Events ()
     eMenuGame = previewE ᴍainMenuOutputGame eMenuOutput :: Events Game
 
-  (ebGameScene, eeGameDone) :: (Events (Behavior Scene), Events (Events ())) <-
-    unpairE <$> execute (momentGame eEventForGame <$> eMenuGame)
+  (ebGameScene, eeGameOutput) :: (Events (Behavior Scene), Events (Events (GameOutput ByteString))) <-
+    let
+      f :: Game -> MomentIO (Behavior Scene, Events (GameOutput ByteString))
+      f game = do
+        save :: Maybe ByteString <-
+          liftIO
+            ((Just <$> ByteString.readFile (dir </> gameName game)) <|>
+              pure Nothing)
+        momentGame save eEventForGame game
+    in
+      unpairE <$> execute (f <$> eMenuGame)
 
   -- Event that fires when the current game ends.
-  eGameDone :: Events () <-
-    switchE eeGameDone
+  eGameDone :: Events (Maybe ByteString) <-
+    previewE ɢameOver <$> switchE eeGameOutput
 
   -- The game currently being played.
   bGame :: Behavior (Maybe Game) <-
@@ -88,5 +105,15 @@ main' eEvent _bSize = mdo
         ebGameScene
         -- When the current game ends, switch back to the menu.
         (bMenuScene <$ eGameDone))
+
+  reactimate $
+    let
+      f :: Maybe Game -> Maybe ByteString -> IO ()
+      f (Just game) (Just save) = do
+        ByteString.writeFile (dir </> gameName game) save
+      f _ _ =
+        pure ()
+    in
+      f <$> bGame <@> eGameDone
 
   pure (bScene, eMenuDone)

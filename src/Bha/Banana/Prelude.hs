@@ -18,6 +18,7 @@ import Termbox.Banana             as X (Cells, Cursor(..), Event(..), Key(..),
 
 import Bha.Banana.Prelude.Internal
 import Bha.Banana.Prelude.Internal as X (Banana)
+import Bha.Game                    as X (GameOutput(..))
 import Bha.Prelude                 as X
 import Bha.View                    as X
 

@@ -8,7 +8,11 @@ tested-with: GHC == 8.4.3
 library
   build-depends:
       base
+    , bytestring
+    , cereal
     , containers
+    , directory
+    , filepath
     , lens ^>= 4.17
     , mtl
     , random
@@ -16,14 +20,17 @@ library
     , stm ^>= 2.4.5
     , termbox-banana ^>= 0.1.0
     , text ^>= 1.2.3
-    , time ^>= 1.9.2
+    , time
+    -- ^>= 1.9.2
     , transformers
   default-language:
     Haskell2010
   exposed-modules:
+    Bha.Banana.Menu
     Bha.Banana.Prelude
     Bha.Banana.Prelude.Internal
     Bha.Banana.Tick
+    Bha.Game
     Bha.Game.Impl.BananaExample
     Bha.Game.Impl.ElmExample
     Bha.Game.Impl.GrainMan

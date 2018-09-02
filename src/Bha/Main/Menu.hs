@@ -9,8 +9,9 @@ module Bha.Main.Menu
   , momentMainMenu
   ) where
 
+import Bha.Banana.Menu
 import Bha.Banana.Prelude
-import Bha.Main.Game (Game(..))
+import Bha.Main.Game (Game(..), gameName)
 
 data MainMenuOutput
   = MainMenuOutputGame Game -- ^ A game was selected.
@@ -25,7 +26,7 @@ data MainMenuOutput
 -- | Create a main menu in this moment.
 momentMainMenu
   :: MonadMoment m
-  => [([Char], Game)] -- ^ Non-empty game list.
+  => [Game] -- ^ Non-empty game list.
   -> Events TermEvent
   -> m (Behavior Scene, Events MainMenuOutput)
 momentMainMenu games eEvent = do
@@ -33,21 +34,21 @@ momentMainMenu games eEvent = do
     eEsc   = filterE (== EventKey KeyEsc   False) eEvent
     eEnter = filterE (== EventKey KeyEnter False) eEvent
 
-  -- The currently-selected index of the game list.
-  -- TODO: build a reusable zipper component with up/down/select controls
-  bIndex :: Behavior Int <-
-    accumB 0 $ unions
-      -- TODO arrow key controls
-      [ min (length games - 1) . (+1)
-          <$ filterE (== EventKey (KeyChar 'j') False) eEvent
-      , max 0 . subtract 1
-          <$ filterE (== EventKey (KeyChar 'k') False) eEvent
-      ]
+    eUp    = filterE (== EventKey (KeyChar 'k') False) eEvent
+    eDown  = filterE (== EventKey (KeyChar 'j') False) eEvent
 
-  let
-    eGame :: Events Game
-    eGame =
-      snd . (games !!) <$> bIndex <@ eEnter
+  (bMenuScene, eGame) <-
+    makeMenu
+      (\selected i game ->
+        if selected
+          then tbstr 0 (i+2) mempty mempty ("> " ++ gameName game)
+          else tbstr 0 (i+2) mempty mempty ("  " ++ gameName game))
+      games
+      (leftmostE
+        [ MenuUp    <$ eUp
+        , MenuDown  <$ eDown
+        , MenuEnter <$ eEnter
+        ])
 
   let
     eOutput :: Events MainMenuOutput
@@ -62,7 +63,7 @@ momentMainMenu games eEvent = do
       Scene
         <$> mconcat
               [ pure renderTitle
-              , renderGameList games <$> bIndex
+              , bMenuScene
               ]
         <*> pure NoCursor
 
@@ -71,12 +72,3 @@ momentMainMenu games eEvent = do
 renderTitle :: Cells
 renderTitle =
   tbstr 0 0 mempty mempty "* Welcome to the Boston Haskell Arcade! *"
-
-renderGameList :: [([Char], Game)] -> Int -> Cells
-renderGameList games i =
-  foldMap
-    (\(j, (name, _game)) ->
-      if i == j
-        then tbstr 0 (j+2) mempty mempty ("> " ++ name)
-        else tbstr 0 (j+2) mempty mempty ("  " ++ name))
-    (zip [0..] games)

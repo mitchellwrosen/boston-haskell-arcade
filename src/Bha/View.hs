@@ -3,9 +3,11 @@
 module Bha.View
   ( tbstr
   , rect
+  , module X
   ) where
 
-import Termbox.Banana (Attr, Cell(..), Cells)
+import Termbox.Banana as X (Attr, Cell(..), Cells, Scene(..), black, blue, cyan,
+                            green, magenta, red, set, white, yellow)
 
 import qualified Termbox.Banana as Tb
 

@@ -34,7 +34,7 @@ init =
 -- Update
 --------------------------------------------------------------------------------
 
-update :: Either NominalDiffTime Event -> StateT Model Maybe ()
+update :: Either NominalDiffTime Event -> Update Model ()
 update = \case
   Right (EventKey KeyEsc _) ->
     empty
@@ -82,4 +82,4 @@ tickEvery _ =
 
 game :: ElmGame Model
 game =
-  undefined -- ElmGame init update view tickEvery
+  ElmGame init update view tickEvery

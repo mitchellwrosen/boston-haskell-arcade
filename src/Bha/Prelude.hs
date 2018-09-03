@@ -3,6 +3,7 @@ module Bha.Prelude
   , module X
   ) where
 
+import Control.Applicative       as X (Alternative, empty)
 import Control.Concurrent        as X (forkIO, threadDelay)
 import Control.Concurrent.STM    as X
 import Control.Lens              as X (Prism', mapped, over, preview, prism',

@@ -51,7 +51,7 @@ runInit phi =
 
 newtype Update s a
   = Update { unUpdate :: StateT s (FreeT ElmF Maybe) a }
-  deriving newtype (Applicative, Functor, Monad, MonadState s)
+  deriving newtype (Alternative, Applicative, Functor, Monad, MonadState s)
 
 runUpdate
   :: forall a m s.
@@ -84,7 +84,7 @@ data ElmGame model
 
 gameover :: Update s a
 gameover =
-  Update (lift (lift Nothing))
+  empty
 
 save :: (MonadElm m, Serialize a) => Text -> a -> m ()
 save k v =

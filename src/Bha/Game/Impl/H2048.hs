@@ -5,7 +5,8 @@ module Bha.Game.Impl.H2048
   ( moment
   ) where
 
-import Data.List (transpose)
+import Data.List       (transpose)
+import System.FilePath ((</>))
 
 import Bha.Banana.Prelude
 
@@ -14,7 +15,7 @@ moment
   -> Banana (Behavior Scene, Events ())
 moment eEvent = mdo
   hiscore :: Maybe Int <-
-    load "score"
+    load (bhaDataDir </> "2048" </> "highScore")
 
   -- TODO 2048 hjkl controls
   let
@@ -99,6 +100,8 @@ moment eEvent = mdo
         <$> bCells
         <*> pure NoCursor
 
+  reactimate
+    (save (bhaDataDir </> "2048") "highScore" <$> bScore <@ eDone)
   pure (bScene, eDone)
 
 --------------------------------------------------------------------------------

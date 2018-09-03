@@ -7,7 +7,7 @@ module Bha.Banana.Tick
 
 import Reactive.Banana.Frameworks
 
-import Bha.Banana.Prelude
+import Bha.Banana.Prelude hiding (reactimate)
 import Bha.Banana.Prelude.Internal (Banana(..))
 
 data TickControl

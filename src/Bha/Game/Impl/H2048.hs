@@ -14,7 +14,7 @@ moment
   :: Events TermEvent
   -> Banana (Behavior Scene, Events ())
 moment eEvent = mdo
-  hiscore :: Maybe Int <-
+  highScore :: Maybe Int <-
     load (bhaDataDir </> "2048" </> "highScore")
 
   -- TODO 2048 hjkl controls
@@ -90,7 +90,7 @@ moment eEvent = mdo
       (mconcat . catMaybes)
         [ Just (renderBoard <$> bBoard)
         , Just (renderScore <$> bScore)
-        , pure . renderHighScore <$> hiscore
+        , pure . renderHighScore <$> highScore
         ]
 
   let
@@ -101,7 +101,11 @@ moment eEvent = mdo
         <*> pure NoCursor
 
   reactimate
-    (save (bhaDataDir </> "2048") "highScore" <$> bScore <@ eDone)
+    ((\score ->
+      when (Just score > highScore)
+        (save (bhaDataDir </> "2048") "highScore" score))
+    <$> bScore
+    <@  eDone)
   pure (bScene, eDone)
 
 --------------------------------------------------------------------------------

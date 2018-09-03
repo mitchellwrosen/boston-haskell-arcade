@@ -95,11 +95,11 @@ showTrade = \case
 
 game :: ElmGame Model
 game =
-  ElmGame init update view tickEvery
+  undefined -- ElmGame init update view tickEvery
 
-init :: Seed -> Model
-init _seed =
-  Model
+init :: Init Model
+init =
+  pure Model
     { _modelLocL               = LocGrain
     , _modelDialogL            = ActionDialog
     , _modelWaterL             = 0

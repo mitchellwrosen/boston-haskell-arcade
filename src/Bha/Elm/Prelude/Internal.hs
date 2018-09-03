@@ -1,10 +1,114 @@
-{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE DeriveFunctor, DerivingStrategies, GADTs,
+             GeneralizedNewtypeDeriving, InstanceSigs, NoImplicitPrelude,
+             RankNTypes, ScopedTypeVariables, TypeApplications #-}
 
 module Bha.Elm.Prelude.Internal
-  ( Seed(..)
+  ( ElmGame(..)
+  , ElmF(..)
+  , Init(..)
+  , runInit
+  , Update(..)
+  , runUpdate
+  , MonadElm(..)
+  , gameover
+  , save
+  , load
+  , randomInt
+  , randomPct
   ) where
 
-import System.Random (StdGen)
+import           Control.Monad.State
+import           Control.Monad.Trans.Free
+import           Data.Functor.Identity
+import           Data.Serialize           (Serialize)
+import           System.Random            (StdGen)
+import           Termbox.Banana           (Event, Scene)
 
-newtype Seed
-  = Seed StdGen
+import qualified Data.Serialize as Serialize
+
+import Bha.Prelude
+
+class Monad m => MonadElm m where
+  interpretElm :: ElmF a -> m a
+
+instance MonadElm Init where
+  interpretElm :: ElmF a -> Init a
+  interpretElm =
+    Init . liftF
+
+instance MonadElm (Update s) where
+  interpretElm :: ElmF a -> Update s a
+  interpretElm =
+    Update . lift . liftF
+
+newtype Init a
+  = Init { unInit :: Free ElmF a }
+  deriving newtype (Applicative, Functor, Monad)
+
+runInit :: Monad m => (forall x. ElmF (m x) -> m x) -> Init a -> m a
+runInit phi =
+  iterT phi . hoistFreeT (pure . runIdentity) . unInit
+
+newtype Update s a
+  = Update { unUpdate :: StateT s (FreeT ElmF Maybe) a }
+  deriving newtype (Applicative, Functor, Monad, MonadState s)
+
+runUpdate
+  :: forall a m s.
+     Monad m
+  => s
+  -> (forall x. ElmF (MaybeT m x) -> MaybeT m x)
+  -> Update s a
+  -> m (Maybe (a, s))
+runUpdate s phi (Update m) =
+  runMaybeT (iterT phi (hoistFreeT (MaybeT . pure) (runStateT m s)))
+
+data ElmF x
+  = Save !Text !ByteString x
+  | Load !Text (Maybe ByteString -> x)
+  | RandomInt !Int !Int (Int -> x)
+  | RandomPct (Double -> x)
+  deriving Functor
+
+-- | An Elm-style game.
+data ElmGame model
+  = ElmGame
+      (Init model)
+      -- Initial model.
+      (Either NominalDiffTime Event -> Update model ())
+      -- Update the model from a tick or terminal event.
+      (model -> Scene)
+      -- Render the model.
+      (model -> Maybe NominalDiffTime)
+      -- Tick, and if so, how often?
+
+gameover :: Update s a
+gameover =
+  Update (lift (lift Nothing))
+
+save :: (MonadElm m, Serialize a) => Text -> a -> m ()
+save k v =
+  interpretElm (Save k (Serialize.encode v) ())
+
+load
+  :: forall a m.
+     (MonadElm m, Serialize a)
+  => Text
+  -> m (Maybe a)
+load k =
+  interpretElm (Load k f)
+ where
+  f :: Maybe ByteString -> Maybe a
+  f mbytes = do
+    bytes <- mbytes
+    Right val <- pure (Serialize.decode bytes)
+    pure val
+
+-- | Generate a random 'Int' in the given bounds (inclusive).
+randomInt :: MonadElm m => Int -> Int -> m Int
+randomInt lo hi =
+  interpretElm (RandomInt lo hi id)
+
+randomPct :: MonadElm m => m Double
+randomPct =
+  interpretElm (RandomPct id)

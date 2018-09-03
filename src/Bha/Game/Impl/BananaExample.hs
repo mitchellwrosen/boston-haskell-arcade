@@ -10,10 +10,9 @@ import Bha.Banana.Prelude
 import Bha.Banana.Tick
 
 moment
-  :: Maybe ()
-  -> Events TermEvent
-  -> Banana (Behavior Scene, Events (GameOutput ()))
-moment _ eEvent = mdo
+  :: Events TermEvent
+  -> Banana (Behavior Scene, Events ())
+moment eEvent = mdo
   eTick :: Events NominalDiffTime <-
     momentTick (Just 1) (TickTeardown <$ eDone)
 
@@ -21,11 +20,12 @@ moment _ eEvent = mdo
     accumB 0 ((+) <$> eTick)
 
   let
-    eDone :: Events (GameOutput ())
+    eDone :: Events ()
     eDone =
-      unionWith const
-        (GameOver Nothing <$ filterE (== EventKey KeyEsc False) eEvent)
-        (GameOver Nothing <$ filterE (> 10) eCount)
+      leftmostE
+        [ () <$ filterE (== EventKey KeyEsc False) eEvent
+        , () <$ filterE (> 10) eCount
+        ]
 
   eCount :: Events Int <-
     accumE 0 ((+1) <$ eEvent)

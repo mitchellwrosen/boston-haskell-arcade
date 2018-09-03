@@ -6,17 +6,13 @@ module Bha.Main
   ) where
 
 import Reactive.Banana.Bha
-import Reactive.Banana.Frameworks (MomentIO, execute, reactimate)
-import System.Directory           (XdgDirectory(..), createDirectoryIfMissing,
-                                   getXdgDirectory)
-import System.FilePath            ((</>))
+import Reactive.Banana.Frameworks (MomentIO, execute)
+import System.Directory           (createDirectoryIfMissing)
 import Termbox.Banana             (InputMode(..), MouseMode(..), OutputMode(..))
 
-import qualified Data.ByteString       as ByteString
-import qualified Termbox.Banana        as Tb
+import qualified Termbox.Banana as Tb
 
 import Bha.Banana.Prelude
-import Bha.Game           (ɢameOver)
 import Bha.Main.Game
 import Bha.Main.Menu
 
@@ -45,16 +41,14 @@ gamelist =
 
 main :: IO ()
 main = do
-  dir <- getXdgDirectory XdgData "boston-haskell-arcade"
-  createDirectoryIfMissing True dir
-  Tb.main (InputModeEsc MouseModeYes) OutputModeNormal (main' dir)
+  createDirectoryIfMissing True bhaDataDir
+  Tb.main (InputModeEsc MouseModeYes) OutputModeNormal main'
 
 main'
-  :: FilePath
-  -> Events TermEvent
+  :: Events TermEvent
   -> Behavior (Int, Int)
   -> MomentIO (Behavior Scene, Events ())
-main' dir eEvent _bSize = mdo
+main' eEvent _bSize = mdo
   -- Partition terminal events into two: those intended for the menu, and those
   -- intended for the game. How do we tell them apart? When there's an active
   -- game, it gets all of the input.
@@ -72,21 +66,12 @@ main' dir eEvent _bSize = mdo
     eMenuDone = previewE ᴍainMenuOutputDone eMenuOutput :: Events ()
     eMenuGame = previewE ᴍainMenuOutputGame eMenuOutput :: Events Game
 
-  (ebGameScene, eeGameOutput) :: (Events (Behavior Scene), Events (Events (GameOutput ByteString))) <-
-    let
-      f :: Game -> MomentIO (Behavior Scene, Events (GameOutput ByteString))
-      f game = do
-        save :: Maybe ByteString <-
-          liftIO
-            ((Just <$> ByteString.readFile (dir </> gameName game)) <|>
-              pure Nothing)
-        momentGame save eEventForGame game
-    in
-      unpairE <$> execute (f <$> eMenuGame)
+  (ebGameScene, eeGameOutput) :: (Events (Behavior Scene), Events (Events ())) <-
+    unpairE <$> execute (momentGame eEventForGame <$> eMenuGame)
 
   -- Event that fires when the current game ends.
-  eGameDone :: Events (Maybe ByteString) <-
-    previewE ɢameOver <$> switchE eeGameOutput
+  eGameDone :: Events () <-
+    switchE eeGameOutput
 
   -- The game currently being played.
   bGame :: Behavior (Maybe Game) <-
@@ -105,15 +90,5 @@ main' dir eEvent _bSize = mdo
         ebGameScene
         -- When the current game ends, switch back to the menu.
         (bMenuScene <$ eGameDone))
-
-  reactimate $
-    let
-      f :: Maybe Game -> Maybe ByteString -> IO ()
-      f (Just game) (Just save) = do
-        ByteString.writeFile (dir </> gameName game) save
-      f _ _ =
-        pure ()
-    in
-      f <$> bGame <@> eGameDone
 
   pure (bScene, eMenuDone)

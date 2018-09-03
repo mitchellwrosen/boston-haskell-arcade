@@ -6,8 +6,8 @@ module Bha.View
   , module X
   ) where
 
-import Termbox.Banana as X (Attr, Cell(..), Cells, Scene(..), black, blue, cyan,
-                            green, magenta, red, set, white, yellow)
+import Termbox.Banana as X (Attr, Cell(..), Cells, Cursor(..), Scene(..), black,
+                            blue, cyan, green, magenta, red, set, white, yellow)
 
 import qualified Termbox.Banana as Tb
 

@@ -10,6 +10,11 @@ module Bha.Game.Impl.ElmExample
 
 import Bha.Elm.Prelude
 
+
+--------------------------------------------------------------------------------
+-- Model
+--------------------------------------------------------------------------------
+
 data Model
   = Model
   { _modelCountL :: !Int
@@ -17,13 +22,17 @@ data Model
   }
 makeFields ''Model
 
-game :: ElmGame Model
-game =
-  ElmGame init update view tickEvery
+init :: Init Model
+init =
+  pure Model
+    { _modelCountL = 0
+    , _modelElapsedL = 0
+    }
 
-init :: Seed -> Model
-init _ =
-  Model 0 0
+
+--------------------------------------------------------------------------------
+-- Update
+--------------------------------------------------------------------------------
 
 update :: Either NominalDiffTime Event -> StateT Model Maybe ()
 update = \case
@@ -37,6 +46,11 @@ update = \case
 
   Left delta ->
     elapsedL %= (+ delta)
+
+
+--------------------------------------------------------------------------------
+-- View
+--------------------------------------------------------------------------------
 
 view :: Model -> Scene
 view (Model n elapsed) =
@@ -52,6 +66,20 @@ view (Model n elapsed) =
   in
     Scene cells NoCursor
 
+
+--------------------------------------------------------------------------------
+-- Tick
+--------------------------------------------------------------------------------
+
+-- Tick once per second.
 tickEvery :: Model -> Maybe NominalDiffTime
 tickEvery _ =
   Just 1
+
+--------------------------------------------------------------------------------
+-- Game
+--------------------------------------------------------------------------------
+
+game :: ElmGame Model
+game =
+  undefined -- ElmGame init update view tickEvery

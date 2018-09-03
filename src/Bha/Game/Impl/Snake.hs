@@ -1,14 +1,15 @@
 {-# LANGUAGE FlexibleInstances, FunctionalDependencies, LambdaCase,
              MultiParamTypeClasses, MultiWayIf, NamedFieldPuns,
-             NoImplicitPrelude, PatternSynonyms, RecordWildCards,
-             ScopedTypeVariables, TemplateHaskell #-}
+             NoImplicitPrelude, OverloadedStrings, PatternSynonyms,
+             RecordWildCards, ScopedTypeVariables, TemplateHaskell #-}
 
 module Bha.Game.Impl.Snake
   ( game
   ) where
 
-import Bha.Elm.Prelude
 import Data.Sequence   (pattern (:|>), Seq, (|>))
+
+import Bha.Elm.Prelude
 
 import qualified Data.Sequence as Seq
 
@@ -17,8 +18,8 @@ import qualified Data.Sequence as Seq
 -- Model
 --------------------------------------------------------------------------------
 
-type Row   = Int
-type Col   = Int
+type Row = Int
+type Col = Int
 
 data Direction
   = DirUp
@@ -27,22 +28,15 @@ data Direction
   | DirRight
   deriving (Eq)
 
-flipDir :: Direction -> Direction
-flipDir = \case
-  DirUp    -> DirDown
-  DirDown  -> DirUp
-  DirLeft  -> DirRight
-  DirRight -> DirLeft
-
 data Model
   = Model
-  { _modelSeedL  :: Seed
-  , _modelSnakeL :: Seq (Col, Row)
-  , _modelDirL   :: Direction
-  , _modelFoodL  :: (Col, Row)
-  , _modelScoreL :: Int
-  , _modelPauseL :: Bool
-  , _modelAliveL :: Bool
+  { _modelSnakeL     :: !(Seq (Col, Row))
+  , _modelDirL       :: !Direction
+  , _modelFoodL      :: !(Col, Row)
+  , _modelScoreL     :: !Int
+  , _modelHighScoreL :: !(Maybe Int)
+  , _modelPauseL     :: !Bool
+  , _modelAliveL     :: !Bool
   }
 makeFields ''Model
 
@@ -52,37 +46,40 @@ rmax = 20
 cmax :: Col
 cmax = 40
 
-init :: Seed -> Model
-init seed =
-  let
-    (food, seed') =
-      runState randomCell seed
-  in
-    Model
-      { _modelSeedL  = seed'
-      , _modelSnakeL = pure (0, 0)
-      , _modelDirL   = DirRight
-      , _modelFoodL  = food
-      , _modelScoreL = 0
-      , _modelPauseL = False
-      , _modelAliveL = True
-      }
+init :: Init Model
+init = do
+  highScore :: Maybe Int <-
+    load "highScore"
+
+  food <- randomCell
+
+  pure Model
+    { _modelSnakeL     = pure (0, 0)
+    , _modelDirL       = DirRight
+    , _modelFoodL      = food
+    , _modelScoreL     = 0
+    , _modelHighScoreL = highScore
+    , _modelPauseL     = False
+    , _modelAliveL     = True
+    }
 
 
 --------------------------------------------------------------------------------
 -- Update
 --------------------------------------------------------------------------------
 
-update :: Either NominalDiffTime Event -> StateT Model Maybe ()
+update :: Either NominalDiffTime Event -> Update Model ()
 update event = do
   model <- get
 
   if
-    -- When dead, <Esc> quits the game.
+    -- When dead, <Esc> saves and quits the game.
     | not (model ^. aliveL) ->
         case event of
-          Right (EventKey KeyEsc _) ->
-            empty
+          Right (EventKey KeyEsc _) -> do
+            when (Just (model ^. scoreL) > model ^. highScoreL)
+              (save "highScore" (model ^. scoreL))
+            gameover
 
           _ ->
             pure ()
@@ -102,7 +99,7 @@ update event = do
             updateTick
 
           Right (EventKey KeyEsc _) ->
-            empty
+            gameover
 
           Right (EventKey KeyArrowUp _) -> do
             dir <- use dirL
@@ -130,7 +127,7 @@ update event = do
           Right _ ->
             pure ()
 
-updateTick :: StateT Model Maybe ()
+updateTick :: Update Model ()
 updateTick = do
   model :: Model <-
     get
@@ -166,16 +163,10 @@ updateTick = do
     then do
       scoreL += 1
 
-      -- Flip around 10% of the time
-      doFlip :: Bool <-
-        (> 0.9) <$> zoom seedL randomPct
-
       let
         newSnake =
           (snake |> target)
-            & if doFlip then Seq.reverse else id
 
-      when doFlip (dirL %= flipDir)
       snakeL .= newSnake
 
       if length newSnake == cmax*rmax
@@ -184,7 +175,7 @@ updateTick = do
       else do
         newFood <-
           fix $ \loop -> do
-            food <- zoom seedL randomCell
+            food <- randomCell
             if food `elem` newSnake
               then loop
               else pure food
@@ -196,7 +187,7 @@ inBounds :: (Col, Row) -> Bool
 inBounds (col, row) =
   and [ col >= 0, col < cmax, row >= 0, row < rmax ]
 
-randomCell :: Monad m => StateT Seed m (Col, Row)
+randomCell :: MonadElm m => m (Col, Row)
 randomCell =
   (,) <$> randomInt 0 (cmax-1) <*> randomInt 0 (rmax-1)
 
@@ -211,11 +202,12 @@ view model =
  where
   cells :: Cells
   cells =
-    mconcat
-      [ viewBorder (model ^. aliveL)
-      , viewSnake  (model ^. snakeL)
-      , viewFood   (model ^. foodL)
-      , viewScore  (model ^. scoreL)
+    (mconcat . catMaybes)
+      [ Just (viewBorder (model ^. aliveL))
+      , Just (viewSnake (model ^. snakeL))
+      , Just (viewFood (model ^. foodL))
+      , Just (viewScore (model ^. scoreL))
+      , viewHighScore <$> (model ^. highScoreL)
       ]
 
 viewBorder :: Bool -> Cells
@@ -240,6 +232,10 @@ viewFood (col, row) =
 viewScore :: Int -> Cells
 viewScore score =
   tbstr 0 22 mempty mempty ("Score: " ++ show score)
+
+viewHighScore :: Int -> Cells
+viewHighScore score =
+  tbstr 0 23 mempty mempty ("High score: " ++ show score)
 
 
 --------------------------------------------------------------------------------

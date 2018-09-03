@@ -34,11 +34,13 @@ Here's what that looks like in Haskell.
 ```haskell
 data ElmGame model
   = ElmGame
-      (Seed -> model)
-      (Either NominalDiffTime TerminalEvent -> StateT model Maybe ())
+      (Init model)
+      (Either NominalDiffTime TerminalEvent -> Update model ())
       (model -> Scene)
       (model -> Maybe NominalDiffTime)
 ```
+
+TODO document `Init`, `Update` monads
 
 ### Banana style
 

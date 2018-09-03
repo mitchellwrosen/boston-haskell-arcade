@@ -13,6 +13,7 @@ library
     , containers
     , directory
     , filepath
+    , free
     , lens ^>= 4.17
     , mtl
     , random

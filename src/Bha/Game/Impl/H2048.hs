@@ -1,4 +1,5 @@
-{-# LANGUAGE LambdaCase, NoImplicitPrelude, RecursiveDo, ScopedTypeVariables #-}
+{-# LANGUAGE LambdaCase, NoImplicitPrelude, OverloadedStrings, RecursiveDo,
+             ScopedTypeVariables #-}
 
 module Bha.Game.Impl.H2048
   ( moment
@@ -8,13 +9,13 @@ import Data.List (transpose)
 
 import Bha.Banana.Prelude
 
--- TODO 2048 detect game over
--- TODO 2048 keep score
 moment
-  :: Maybe Int
-  -> Events TermEvent
-  -> Banana (Behavior Scene, Events (GameOutput Int))
-moment hiscore eEvent = mdo
+  :: Events TermEvent
+  -> Banana (Behavior Scene, Events ())
+moment eEvent = mdo
+  hiscore :: Maybe Int <-
+    load "score"
+
   -- TODO 2048 hjkl controls
   let
     eUp    = filterE (== EventKey KeyArrowUp    False) eEvent
@@ -26,13 +27,12 @@ moment hiscore eEvent = mdo
     eUDLR  = leftmostE [eUp, eDown, eLeft, eRight]
 
   let
-    eDone :: Events (GameOutput Int)
+    eDone :: Events ()
     eDone =
-      f <$> bScore <@
-        leftmostE
-          [ () <$ eEsc
-          , eGameOver
-          ]
+      leftmostE
+        [ () <$ eEsc
+        , eGameOver
+        ]
      where
       eGameOver :: Events ()
       eGameOver =
@@ -43,12 +43,6 @@ moment hiscore eEvent = mdo
             (\_ _ -> Nothing)
             eUDLR
             (leftmostE [eBoardUp, eBoardDown, eBoardLeft, eBoardRight]))
-
-      f :: Int -> GameOutput Int
-      f score =
-        GameOver $ do
-          guard (Just score > hiscore)
-          Just score
 
   let
     eBoardUp :: Events [[Maybe Int]]

@@ -8,20 +8,21 @@ module Bha.Main.Game
   , momentGame
   ) where
 
-import Control.Monad.State        (StateT, execStateT)
-import Data.Serialize             (Serialize)
-import Reactive.Banana.Frameworks (MomentIO)
-import System.Random              (mkStdGen, randomIO)
+import Control.Monad.Except
+import Reactive.Banana.Frameworks (MomentIO, execute)
+import System.Directory           (createDirectoryIfMissing)
+import System.FilePath            ((</>))
+import System.Random              (randomIO, randomRIO)
 
-import qualified Data.Serialize as Serialize
+import qualified Data.ByteString as ByteString
+import qualified Data.Text       as Text
 
 import Bha.Banana.Prelude
 import Bha.Banana.Prelude.Internal (Banana(..))
 import Bha.Banana.Tick             (TickControl(TickSetDelta, TickTeardown),
                                     momentTick)
 import Bha.Elm.Prelude             (ElmGame(..))
-import Bha.Elm.Prelude.Internal    (Seed(..))
-import Bha.Game                    (GameOutput(..))
+import Bha.Elm.Prelude.Internal    (ElmF(..), runInit, runUpdate)
 
 data Game :: Type where
   GameElm
@@ -30,11 +31,8 @@ data Game :: Type where
     -> Game
 
   GameBanana
-    :: Serialize a
-    => [Char]
-    -> (Maybe a
-        -> Events TermEvent
-        -> Banana (Behavior Scene, Events (GameOutput a)))
+    :: [Char]
+    -> (Events TermEvent -> Banana (Behavior Scene, Events ()))
     -> Game
 
 gameName :: Game -> [Char]
@@ -43,36 +41,55 @@ gameName = \case
   GameBanana name _ -> name
 
 momentGame
-  :: Maybe ByteString
-  -> Events TermEvent
+  :: Events TermEvent
   -> Game
-  -> MomentIO (Behavior Scene, Events (GameOutput ByteString))
-momentGame save eEvent = \case
-  GameElm _ game ->
-    momentElmGame eEvent game
+  -> MomentIO (Behavior Scene, Events ())
+momentGame eEvent = \case
+  GameElm name game ->
+    momentElmGame name eEvent game
 
   GameBanana _ game ->
-    let
-      save' =
-        save >>= either (const Nothing) Just . Serialize.decode
-    in
-      over (mapped._2.mapped.mapped) Serialize.encode
-        (unBanana (game save' eEvent))
+    unBanana (game eEvent)
 
 momentElmGame
   :: forall model.
-     Events TermEvent
+     [Char]
+  -> Events TermEvent
   -> ElmGame model
-  -> MomentIO (Behavior Scene, Events (GameOutput ByteString))
-momentElmGame eEvent (ElmGame init update view tickEvery) = mdo
-  seed :: Seed <-
-    liftIO (Seed . mkStdGen <$> randomIO)
+  -> MomentIO (Behavior Scene, Events ())
+momentElmGame name eEvent (ElmGame init update view tickEvery) = mdo
+  model0 :: model <-
+    runInit (interpretElmIO name) init
 
   let
-    init' = init seed
+    tickEvery0 :: Maybe NominalDiffTime
+    tickEvery0 =
+      tickEvery model0
+
+  eUpdate :: Events (Maybe ((), model)) <-
+    let
+      f model event =
+        runUpdate model (interpretElmIO name) (update event)
+
+      eInput :: Events (Either NominalDiffTime TermEvent)
+      eInput =
+        leftmostE
+          [ Left <$> eTick
+          , Right <$> eEvent
+          ]
+    in
+      execute (f <$> bModel <@> eInput)
+
+  let
+    eModel :: Events model
+    eModel =
+      (\((), model) -> model) <$> filterJust eUpdate
+
+  bModel :: Behavior model <-
+    stepper model0 eModel
 
   eTick :: Events NominalDiffTime <-
-    unBanana (momentTick (tickEvery init') eTickControl)
+    unBanana (momentTick tickEvery0 eTickControl)
 
   let
     eTickControl :: Events TickControl
@@ -81,41 +98,52 @@ momentElmGame eEvent (ElmGame init update view tickEvery) = mdo
         ((\old -> \case
           Nothing ->
             Just TickTeardown
-          Just model -> do
+
+          Just ((), model) -> do
             let new = tickEvery model
             guard (new /= old)
             pure (TickSetDelta new))
-        <$> bTickEvery <@> eModel)
+        <$> bTickEvery <@> eUpdate)
 
   bTickEvery :: Behavior (Maybe NominalDiffTime) <-
-    stepper (tickEvery init') (tickEvery <$> eModel')
+    stepper tickEvery0 (tickEvery <$> eModel)
 
   let
-    eDone :: Events (GameOutput ByteString)
+    eDone :: Events ()
     eDone =
-      GameOver Nothing <$ filterE isNothing eModel
-
-  eModel :: Events (Maybe a) <-
-    accumE (Just init')
-      (unionWith const
-        (stepElm . update .  Left <$> eTick)
-        (stepElm . update . Right <$> eEvent))
-
-  let
-    eModel' :: Events model
-    eModel' =
-      filterJust eModel
+      () <$ filterE isNothing eUpdate
 
   let
     eScene :: Events Scene
     eScene =
-      view <$> eModel'
+      view <$> eModel
 
   bScene :: Behavior Scene <-
-    stepper (view init') eScene
+    stepper (view model0) eScene
 
   pure (bScene, eDone)
 
-stepElm :: StateT model Maybe () -> Maybe model -> Maybe model
-stepElm m =
-  (>>= execStateT m)
+interpretElmIO :: MonadIO m => [Char] -> ElmF (m x) -> m x
+interpretElmIO name = \case
+  Save key value k -> do
+    let dir = bhaDataDir </> name
+    let file = dir </> Text.unpack key
+    liftIO $ do
+      createDirectoryIfMissing True dir
+      ByteString.writeFile file value
+    k
+
+  Load key k -> do
+    let file = bhaDataDir </> name </> Text.unpack key
+    value :: Maybe ByteString <- liftIO $
+      asum
+        [ Just <$> ByteString.readFile file
+        , pure Nothing
+        ]
+    k value
+
+  RandomInt lo hi k ->
+    liftIO (randomRIO (lo, hi)) >>= k
+
+  RandomPct k ->
+    liftIO randomIO >>= k

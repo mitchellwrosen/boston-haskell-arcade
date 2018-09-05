@@ -1,0 +1,6 @@
+resolver: lts-12.9
+extra-deps:
+  - lens-4.17
+  - reactive-banana-1.2.0.0
+  - termbox-0.1.0
+  - termbox-banana-0.1.0

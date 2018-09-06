@@ -1,7 +1,3 @@
-{-# LANGUAGE DataKinds, ExistentialQuantification, GADTs, KindSignatures,
-             LambdaCase, NoImplicitPrelude, RecursiveDo,
-             ScopedTypeVariables #-}
-
 module Bha.Main.Game
   ( Game(..)
   , gameName

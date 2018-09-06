@@ -1,5 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude, TypeApplications #-}
-
 module Bha.Elm.Prelude
   ( -- * Elm game
     ElmGame(..)

@@ -1,6 +1,4 @@
-{-# LANGUAGE FlexibleInstances, FunctionalDependencies, LambdaCase,
-             MultiParamTypeClasses, NoImplicitPrelude, OverloadedStrings,
-             TemplateHaskell, TupleSections #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Bha.Game.Impl.GrainMan
   ( game
@@ -95,7 +93,7 @@ showTrade = \case
 
 game :: ElmGame Model
 game =
-  undefined -- ElmGame init update view tickEvery
+  ElmGame init update view tickEvery
 
 init :: Init Model
 init =
@@ -109,13 +107,13 @@ init =
     , _modelExploredWaterL     = 0
     }
 
-update :: Either NominalDiffTime Event -> StateT Model Maybe ()
+update :: Either NominalDiffTime Event -> Update Model ()
 update = \case
   Left _ ->
     pure ()
 
   Right (EventKey KeyEsc _) ->
-    empty
+    gameover
 
   Right (EventKey (KeyChar c) _) -> do
     model <- get

@@ -1,7 +1,5 @@
 -- | The main menu to display between games.
 
-{-# LANGUAGE LambdaCase, NoImplicitPrelude, ScopedTypeVariables #-}
-
 module Bha.Main.Menu
   ( MainMenuOutput(..)
   , ᴍainMenuOutputGame

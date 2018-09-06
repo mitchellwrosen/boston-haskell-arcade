@@ -1,7 +1,3 @@
-{-# LANGUAGE DeriveFunctor, DerivingStrategies, GADTs,
-             GeneralizedNewtypeDeriving, InstanceSigs, NoImplicitPrelude,
-             RankNTypes, ScopedTypeVariables, TypeApplications #-}
-
 module Bha.Elm.Prelude.Internal
   ( ElmGame(..)
   , ElmF(..)
@@ -17,12 +13,11 @@ module Bha.Elm.Prelude.Internal
   , randomPct
   ) where
 
-import           Control.Monad.State
-import           Control.Monad.Trans.Free
-import           Data.Functor.Identity
-import           Data.Serialize           (Serialize)
-import           System.Random            (StdGen)
-import           Termbox.Banana           (Event, Scene)
+import Control.Monad.State
+import Control.Monad.Trans.Free
+import Data.Functor.Identity
+import Data.Serialize           (Serialize)
+import Termbox.Banana           (Event, Scene)
 
 import qualified Data.Serialize as Serialize
 

@@ -1,7 +1,4 @@
-{-# LANGUAGE FlexibleInstances, FunctionalDependencies, LambdaCase,
-             MultiParamTypeClasses, MultiWayIf, NamedFieldPuns,
-             NoImplicitPrelude, OverloadedStrings, PatternSynonyms,
-             RecordWildCards, ScopedTypeVariables, TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Bha.Game.Impl.Snake
   ( game

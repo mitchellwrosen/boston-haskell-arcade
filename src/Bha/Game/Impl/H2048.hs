@@ -1,6 +1,3 @@
-{-# LANGUAGE LambdaCase, NoImplicitPrelude, OverloadedStrings, RecursiveDo,
-             ScopedTypeVariables #-}
-
 module Bha.Game.Impl.H2048
   ( moment
   ) where

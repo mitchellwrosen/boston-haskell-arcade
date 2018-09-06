@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase, ScopedTypeVariables, NoImplicitPrelude #-}
-
 module Bha.Banana.Tick
   ( TickControl(..)
   , momentTick

@@ -1,5 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude, ScopedTypeVariables #-}
-
 module Bha.Banana.Prelude
   ( TermEvent
   , reactimate

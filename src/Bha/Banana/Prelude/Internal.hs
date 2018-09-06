@@ -1,6 +1,3 @@
-{-# LANGUAGE DerivingStrategies, GeneralizedNewtypeDeriving,
-             NoImplicitPrelude #-}
-
 -- TODO move Bha.Banana.Prelude to Bha.Banana.Prelude.Internal
 
 module Bha.Banana.Prelude.Internal

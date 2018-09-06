@@ -1,7 +1,7 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module Bha.View
-  ( tbstr
+  ( cursorColL
+  , cursorRowL
+  , tbstr
   , rect
   , module X
   ) where
@@ -12,6 +12,16 @@ import Termbox.Banana as X (Attr, Cell(..), Cells, Cursor(..), Scene(..), black,
 import qualified Termbox.Banana as Tb
 
 import Bha.Prelude
+
+cursorColL :: Traversal' Cursor Int
+cursorColL f = \case
+  NoCursor -> pure NoCursor
+  Cursor c r -> Cursor <$> f c <*> pure r
+
+cursorRowL :: Traversal' Cursor Int
+cursorRowL f = \case
+  NoCursor -> pure NoCursor
+  Cursor c r -> Cursor <$> pure c <*> f r
 
 tbstr :: Int -> Int -> Attr -> Attr -> String -> Cells
 tbstr col0 row fg bg =
@@ -24,4 +34,3 @@ rect c0 r0 w h fg bg =
     ((,)
       <$> [r0 .. r0 + h - 1]
       <*> [c0 .. c0 + w - 1])
-

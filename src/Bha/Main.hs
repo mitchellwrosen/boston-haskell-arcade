@@ -1,6 +1,3 @@
-{-# LANGUAGE LambdaCase, NoImplicitPrelude, OverloadedStrings, RecursiveDo,
-             ScopedTypeVariables #-}
-
 module Bha.Main
   ( main
   ) where
@@ -20,6 +17,7 @@ import qualified Bha.Game.Impl.BananaExample
 import qualified Bha.Game.Impl.ElmExample
 import qualified Bha.Game.Impl.GrainMan
 import qualified Bha.Game.Impl.H2048
+import qualified Bha.Game.Impl.Paint
 import qualified Bha.Game.Impl.Snake
 
 ------------------------------------------------------------------------------
@@ -30,7 +28,8 @@ gamelist :: [Game]
 gamelist =
   [ GameElm    "Snake"            Bha.Game.Impl.Snake.game
   , GameBanana "2048"             Bha.Game.Impl.H2048.moment
-  , GameElm    "Grain Main"       Bha.Game.Impl.GrainMan.game
+  , GameBanana "Paint"            Bha.Game.Impl.Paint.moment
+  , GameElm    "Grain Man"        Bha.Game.Impl.GrainMan.game
   , GameElm    "Elm Example 1"    Bha.Game.Impl.ElmExample.game
   , GameBanana "Banana Example 1" Bha.Game.Impl.BananaExample.moment
   ]

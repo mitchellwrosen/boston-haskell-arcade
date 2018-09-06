@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase, NoImplicitPrelude, RankNTypes #-}
-
 module Reactive.Banana.Bha
   ( Events
   , filterCoincidentE

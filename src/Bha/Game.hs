@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveFunctor, LambdaCase, NoImplicitPrelude #-}
-
 module Bha.Game
   ( GameOutput(..)
   , ɢameOver

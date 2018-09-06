@@ -1,7 +1,5 @@
 -- | Example FRP-style game.
 
-{-# LANGUAGE NoImplicitPrelude, RecursiveDo, ScopedTypeVariables #-}
-
 module Bha.Game.Impl.BananaExample
   ( moment
   ) where

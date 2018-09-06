@@ -1,5 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables, RecursiveDo, NoImplicitPrelude #-}
-
 module Bha.Banana.Menu
   ( MenuControl(..)
   , makeMenu

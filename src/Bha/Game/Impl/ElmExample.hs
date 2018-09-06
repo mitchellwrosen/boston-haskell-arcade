@@ -1,8 +1,6 @@
 -- | Example Elm-style game.
 
-{-# LANGUAGE FunctionalDependencies, LambdaCase, MultiParamTypeClasses,
-             NamedFieldPuns, NoImplicitPrelude, RecordWildCards,
-             TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Bha.Game.Impl.ElmExample
   ( game

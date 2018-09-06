@@ -228,11 +228,11 @@ viewFood (col, row) =
 
 viewScore :: Int -> Cells
 viewScore score =
-  tbstr 0 22 mempty mempty ("Score: " ++ show score)
+  text 0 22 mempty mempty ("Score: " ++ show score)
 
 viewHighScore :: Int -> Cells
 viewHighScore score =
-  tbstr 0 23 mempty mempty ("High score: " ++ show score)
+  text 0 23 mempty mempty ("High score: " ++ show score)
 
 
 --------------------------------------------------------------------------------

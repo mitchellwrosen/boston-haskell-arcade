@@ -119,40 +119,40 @@ renderRow row =
 
 renderCell :: Int -> Int -> Maybe Int -> Cells
 renderCell row0 col0 = \case
-  Nothing   -> rect  col row 8 4 mempty black
-  Just 2    -> rect  col row 8 4 mempty blue
-  Just 4    -> rect  col row 8 4 mempty red
-  Just 8    -> rect  col row 8 4 mempty yellow
-  Just 16   -> rect  col row 8 4 mempty green
-  Just 32   -> rect  col row 8 4 mempty magenta
-  Just 64   -> rect  col row 8 4 mempty cyan
-  Just 128  -> rects col row 4 2 mempty blue red
-  Just 256  -> rects col row 4 2 mempty red yellow
-  Just 512  -> rects col row 4 2 mempty yellow green
-  Just 1024 -> rects col row 4 2 mempty green magenta
-  Just 2048 -> rects col row 4 2 mempty magenta cyan
-  Just 4096 -> rects col row 4 2 mempty cyan black
-  Just _    -> rect  col row 8 4 mempty black
+  Nothing   -> rect  col row 8 4 black
+  Just 2    -> rect  col row 8 4 blue
+  Just 4    -> rect  col row 8 4 red
+  Just 8    -> rect  col row 8 4 yellow
+  Just 16   -> rect  col row 8 4 green
+  Just 32   -> rect  col row 8 4 magenta
+  Just 64   -> rect  col row 8 4 cyan
+  Just 128  -> rects col row 4 2 blue red
+  Just 256  -> rects col row 4 2 red yellow
+  Just 512  -> rects col row 4 2 yellow green
+  Just 1024 -> rects col row 4 2 green magenta
+  Just 2048 -> rects col row 4 2 magenta cyan
+  Just 4096 -> rects col row 4 2 cyan black
+  Just _    -> rect  col row 8 4 black
 
  where
   col = 0 + col0*8
   row = 0 + row0*4
 
-  rects c r w h fg bg1 bg2 =
+  rects c r w h bg1 bg2 =
     mconcat
-      [ rect c     r     w h fg bg1
-      , rect (c+4) r     w h fg bg2
-      , rect c     (r+2) w h fg bg2
-      , rect (c+4) (r+2) w h fg bg1
+      [ rect c     r     w h bg1
+      , rect (c+4) r     w h bg2
+      , rect c     (r+2) w h bg2
+      , rect (c+4) (r+2) w h bg1
       ]
 
 renderScore :: Int -> Cells
 renderScore n =
-  tbstr 0 16 mempty mempty ("Score: " ++ show n)
+  text 0 16 mempty mempty ("Score: " ++ show n)
 
 renderHighScore :: Int -> Cells
 renderHighScore n =
-  tbstr 0 17 mempty mempty ("High score: " ++ show n)
+  text 0 17 mempty mempty ("High score: " ++ show n)
 
 --------------------------------------------------------------------------------
 -- Board manipulation

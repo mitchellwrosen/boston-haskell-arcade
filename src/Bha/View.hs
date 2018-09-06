@@ -1,7 +1,7 @@
 module Bha.View
   ( cursorColL
   , cursorRowL
-  , tbstr
+  , text
   , rect
   , module X
   ) where
@@ -23,14 +23,14 @@ cursorRowL f = \case
   NoCursor -> pure NoCursor
   Cursor c r -> Cursor <$> pure c <*> f r
 
-tbstr :: Int -> Int -> Attr -> Attr -> String -> Cells
-tbstr col0 row fg bg =
+text :: Int -> Int -> Attr -> Attr -> String -> Cells
+text col0 row fg bg =
   foldMap (\(col, c) -> Tb.set col row (Cell c fg bg)) . zip [col0..]
 
-rect :: Int -> Int -> Int -> Int -> Attr -> Attr -> Cells
-rect c0 r0 w h fg bg =
+rect :: Int -> Int -> Int -> Int -> Attr -> Cells
+rect c0 r0 w h bg =
   foldMap
-    (\(r, c) -> Tb.set c r (Cell ' ' fg bg))
+    (\(r, c) -> Tb.set c r (Cell ' ' mempty bg))
     ((,)
       <$> [r0 .. r0 + h - 1]
       <*> [c0 .. c0 + w - 1])

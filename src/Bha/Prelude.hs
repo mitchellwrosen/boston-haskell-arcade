@@ -7,7 +7,7 @@ import Control.Applicative       as X (Alternative, empty)
 import Control.Concurrent        as X (forkIO, threadDelay)
 import Control.Concurrent.STM    as X
 import Control.Lens              as X (Prism', Traversal', mapped, over,
-                                       preview, prism', _2)
+                                       preview, prism', _1, _2)
 import Control.Monad             as X
 import Control.Monad.Fix         as X
 import Control.Monad.IO.Class    as X

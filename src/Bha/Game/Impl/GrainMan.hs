@@ -375,33 +375,33 @@ viewLoc = \case
 viewLocGrain :: Cells
 viewLocGrain =
   mconcat
-    [ rect 0 0 100 20 mempty blue
-    , rect 0 20 100 10 mempty yellow
-    , rect 56 13 7 7 mempty white
-    , rect 64 12 7 8 mempty white
+    [ rect 0 0 100 20 blue
+    , rect 0 20 100 10 yellow
+    , rect 56 13 7 7 white
+    , rect 64 12 7 8 white
     ]
 
 viewLocPyramid :: Cells
 viewLocPyramid =
   mconcat
-    [ rect 0 0 100 20 mempty green
+    [ rect 0 0 100 20 green
 
-    , rect 44  6 12 2 mempty red
-    , rect 40  8 20 2 mempty red
-    , rect 36 10 28 2 mempty red
-    , rect 32 12 36 2 mempty red
-    , rect 28 14 44 2 mempty red
-    , rect 24 16 52 2 mempty red
-    , rect 20 18 60 2 mempty red
+    , rect 44  6 12 2 red
+    , rect 40  8 20 2 red
+    , rect 36 10 28 2 red
+    , rect 32 12 36 2 red
+    , rect 28 14 44 2 red
+    , rect 24 16 52 2 red
+    , rect 20 18 60 2 red
 
-    , rect 0 20 100 10 mempty magenta
+    , rect 0 20 100 10 magenta
     ]
 
 viewLocWater :: Cells
 viewLocWater =
   mconcat
-    [ rect 0 0 100 20 mempty blue
-    , rect 0 20 100 10 mempty cyan
+    [ rect 0 0 100 20 blue
+    , rect 0 20 100 10 cyan
     ]
 
 viewDialog :: ([String], [String]) -> Cells
@@ -414,11 +414,11 @@ viewInfo = \case
     mempty
 
   [s] ->
-    tbstr 5 3 black white s
+    text 5 3 black white s
 
   [s1, s2] ->
-    tbstr 5 2 black white s1 <>
-    tbstr 5 3 black white s2
+    text 5 2 black white s1 <>
+    text 5 3 black white s2
 
   _ ->
     error "viewInfo"
@@ -429,13 +429,13 @@ viewOptions =
  where
   f :: (Int, String) -> Cells
   f (i, s) =
-    tbstr 5 (i+5) black white ('(' : show (i+1) ++ ") " ++ s)
+    text 5 (i+5) black white ('(' : show (i+1) ++ ") " ++ s)
 
 viewHud :: ModelView -> Cells
 viewHud model =
   case catMaybes blah of
     [] -> mempty
-    ss -> tbstr 0 30 mempty mempty (unwords ss)
+    ss -> text 0 30 mempty mempty (unwords ss)
 
  where
   blah :: [Maybe String]

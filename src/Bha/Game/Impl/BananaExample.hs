@@ -39,10 +39,10 @@ moment eEvent = mdo
       f :: Int -> NominalDiffTime -> Cells
       f n elapsed =
         mconcat
-          [ tbstr 0 0 mempty mempty "I am a banana game!"
-          , tbstr 0 2 mempty mempty "Let's count to 10."
-          , tbstr 2 4 mempty mempty (show n)
-          , tbstr 0 6 mempty mempty ("Elapsed time: " ++ show elapsed)
+          [ text 0 0 mempty mempty "I am a banana game!"
+          , text 0 2 mempty mempty "Let's count to 10."
+          , text 2 4 mempty mempty (show n)
+          , text 0 6 mempty mempty ("Elapsed time: " ++ show elapsed)
           ]
   let
     bScene :: Behavior Scene

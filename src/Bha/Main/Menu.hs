@@ -39,8 +39,8 @@ momentMainMenu games eEvent = do
     makeMenu
       (\selected i game ->
         if selected
-          then tbstr 0 (i+2) mempty mempty ("> " ++ gameName game)
-          else tbstr 0 (i+2) mempty mempty ("  " ++ gameName game))
+          then text 0 (i+2) mempty mempty ("> " ++ gameName game)
+          else text 0 (i+2) mempty mempty ("  " ++ gameName game))
       games
       (leftmostE
         [ MenuUp    <$ eUp
@@ -69,4 +69,4 @@ momentMainMenu games eEvent = do
 
 renderTitle :: Cells
 renderTitle =
-  tbstr 0 0 mempty mempty "* Welcome to the Boston Haskell Arcade! *"
+  text 0 0 mempty mempty "* Welcome to the Boston Haskell Arcade! *"

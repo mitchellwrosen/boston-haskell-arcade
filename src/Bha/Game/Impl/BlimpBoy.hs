@@ -21,21 +21,26 @@ blimprow  = 5  :: Row
 castlecol = 40 :: Col
 enemycol  = 0  :: Col
 enemyrow  = 20 :: Row
+bombtimer = 5  :: Int
 
 data Model
   = Model
-  { _modelEnemiesL :: !IntSet
-  , _modelBombL    :: !(Maybe Int)
-  , _modelHealthL  :: !Int
+  { _modelEnemiesL  :: !IntSet
+  , _modelBombL     :: !IntSet
+  , _modelNumBombsL :: !Int
+  , _modelNextBombL :: !Int
+  , _modelHealthL   :: !Int
   }
 makeFields ''Model
 
 init :: Init Model
 init = do
   pure Model
-    { _modelEnemiesL = mempty
-    , _modelBombL    = Nothing
-    , _modelHealthL  = 50
+    { _modelEnemiesL  = mempty
+    , _modelBombL     = mempty
+    , _modelNumBombsL = 1
+    , _modelNextBombL = bombtimer
+    , _modelHealthL   = 50
     }
 
 
@@ -53,24 +58,22 @@ update event =
       guard (health0 > 0)
 
       enemies0 <- use enemiesL
-      bomb0    <- use bombL
+      bombs0   <- use bombL
 
       -- March enemies forward by 1
       let
         enemies1 =
           IntSet.map (+1) enemies0
 
-      -- Move bomb down
+      -- Move bombs down
       let
-        bomb1 = do
-          bomb <- (+1) <$> bomb0
-          guard (bomb <= enemyrow)
-          pure bomb
+        bombs1 =
+          IntSet.filter (<= enemyrow) (IntSet.map (+1) bombs0)
 
       -- Kill any enemy being bombed
       let
         enemies2 =
-          if bomb1 == Just enemyrow
+          if IntSet.member enemyrow bombs1
             then IntSet.delete blimpcol enemies1
             else enemies1
 
@@ -86,8 +89,20 @@ update event =
           then pure (IntSet.insert enemycol enemies3)
           else pure enemies3
 
+      timer <- use nextBombL
+
+      numBombsL %=
+        if timer == 0
+          then min 3 . (+1)
+          else id
+
+      nextBombL .=
+        if timer == 0
+          then bombtimer
+          else timer - 1
+
       enemiesL .= enemies4
-      bombL    .= bomb1
+      bombL    .= bombs1
 
       -- If an enemy hit the castle, decrease health by 1
       healthL %=
@@ -95,10 +110,16 @@ update event =
           then subtract 1
           else id
 
-    Right (EventKey KeySpace _) ->
-      bombL %= \case
-        Nothing -> Just blimprow
-        Just x  -> Just x
+    Right (EventKey KeySpace _) -> do
+      supply <- use numBombsL
+
+      bombL %=
+        if supply >= 1
+          then IntSet.insert blimprow
+          else id
+
+      numBombsL %=
+        (max 0 . subtract 1)
 
     Right (EventKey KeyEsc _) ->
       empty
@@ -122,9 +143,10 @@ view model =
       , renderGround
       , renderBlimp
       , renderCastle
-      , renderBomb (model ^. bombL)
+      , renderBombs (model ^. bombL)
       , renderEnemies (model ^. enemiesL)
       , renderHealth (model ^. healthL)
+      , renderNumBombs (model ^. numBombsL)
       ]
 
 renderSky    = rect 0 0 60 (enemyrow+1) blue
@@ -135,9 +157,9 @@ renderBlimp :: Cells
 renderBlimp =
   rect (blimpcol-1) (blimprow-1) 3 2 yellow
 
-renderBomb :: Maybe Int -> Cells
-renderBomb =
-  foldMap (\r -> set blimpcol r (Cell '•' black blue))
+renderBombs :: IntSet -> Cells
+renderBombs =
+  foldMap (\r -> set blimpcol r (Cell '•' black blue)) . IntSet.toList
 
 renderEnemies :: IntSet -> Cells
 renderEnemies =
@@ -146,6 +168,10 @@ renderEnemies =
 renderHealth :: Int -> Cells
 renderHealth health =
   text 0 (enemyrow+11) white black ("Health: " ++ show health)
+
+renderNumBombs :: Int -> Cells
+renderNumBombs bombs =
+  text 0 (enemyrow+12) white black ("Bombs: " ++ show bombs)
 
 
 --------------------------------------------------------------------------------

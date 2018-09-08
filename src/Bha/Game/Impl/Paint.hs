@@ -129,7 +129,12 @@ renderCanvas background cells =
 
 renderCursor :: (Col, Row) -> Color -> Cells
 renderCursor (c, r) color =
-  set c r (Cell ' ' mempty (attr color))
+  set c r (Cell '+' fg (attr color))
+ where
+  fg =
+    case color of
+      Black -> white
+      _     -> black
 
 renderEasel :: Cells
 renderEasel =

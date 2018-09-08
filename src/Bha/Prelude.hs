@@ -3,7 +3,7 @@ module Bha.Prelude
   , module X
   ) where
 
-import Control.Applicative       as X (Alternative, empty)
+import Control.Applicative       as X (Alternative, empty, (<|>))
 import Control.Concurrent        as X (forkIO, threadDelay)
 import Control.Concurrent.STM    as X
 import Control.Lens              as X (Prism', Traversal', ix, mapped, over,
@@ -27,7 +27,7 @@ import GHC.Generics              as X (Generic)
 -- TODO Don't export bad bits of Prelude
 import Prelude as X hiding (init)
 
-import Bha.Orphans as X ()
+import Internal.Bha.Orphans as X ()
 
 import System.Directory (XdgDirectory(..), getXdgDirectory)
 import System.IO.Unsafe (unsafePerformIO)

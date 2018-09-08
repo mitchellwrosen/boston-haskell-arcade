@@ -5,8 +5,8 @@ module Bha.Banana.Tick
 
 import Reactive.Banana.Frameworks
 
-import Bha.Banana.Prelude hiding (reactimate)
-import Bha.Banana.Prelude.Internal (Banana(..))
+import Bha.Banana.Prelude          hiding (reactimate)
+import Internal.Bha.Banana.Prelude (Banana(..))
 
 data TickControl
   = TickSetDelta (Maybe NominalDiffTime)

@@ -1,4 +1,4 @@
-module Bha.Elm.Prelude.Internal
+module Internal.Bha.Elm.Prelude
   ( ElmGame(..)
   , ElmF(..)
   , Init(..)
@@ -7,8 +7,6 @@ module Bha.Elm.Prelude.Internal
   , runUpdate
   , MonadElm(..)
   , gameover
-  , save
-  , load
   , randomInt
   , randomPct
   ) where
@@ -16,10 +14,7 @@ module Bha.Elm.Prelude.Internal
 import Control.Monad.State
 import Control.Monad.Trans.Free
 import Data.Functor.Identity
-import Data.Serialize           (Serialize)
 import Termbox.Banana           (Event, Scene)
-
-import qualified Data.Serialize as Serialize
 
 import Bha.Prelude
 
@@ -80,24 +75,6 @@ data ElmGame model
 gameover :: Update s a
 gameover =
   empty
-
-save :: (MonadElm m, Serialize a) => Text -> a -> m ()
-save k v =
-  interpretElm (Save k (Serialize.encode v) ())
-
-load
-  :: forall a m.
-     (MonadElm m, Serialize a)
-  => Text
-  -> m (Maybe a)
-load k =
-  interpretElm (Load k f)
- where
-  f :: Maybe ByteString -> Maybe a
-  f mbytes = do
-    bytes <- mbytes
-    Right val <- pure (Serialize.decode bytes)
-    pure val
 
 -- | Generate a random 'Int' in the given bounds (inclusive).
 randomInt :: MonadElm m => Int -> Int -> m Int

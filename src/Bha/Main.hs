@@ -2,7 +2,6 @@ module Bha.Main
   ( main
   ) where
 
-import Reactive.Banana.Bha
 import Reactive.Banana.Frameworks (MomentIO, execute)
 import System.Directory           (createDirectoryIfMissing)
 import Termbox.Banana             (InputMode(..), MouseMode(..), OutputMode(..))

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bha.Orphans () where
+module Internal.Bha.Orphans () where
 
 import Reactive.Banana
 import Prelude

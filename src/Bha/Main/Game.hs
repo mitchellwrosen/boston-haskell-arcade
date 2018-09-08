@@ -14,11 +14,11 @@ import qualified Data.ByteString as ByteString
 import qualified Data.Text       as Text
 
 import Bha.Banana.Prelude
-import Bha.Banana.Prelude.Internal (Banana(..))
 import Bha.Banana.Tick             (TickControl(TickSetDelta, TickTeardown),
                                     momentTick)
 import Bha.Elm.Prelude             (ElmGame(..))
-import Bha.Elm.Prelude.Internal    (ElmF(..), runInit, runUpdate)
+import Internal.Bha.Banana.Prelude (Banana(..))
+import Internal.Bha.Elm.Prelude    (ElmF(..), runInit, runUpdate)
 
 data Game :: Type where
   GameElm

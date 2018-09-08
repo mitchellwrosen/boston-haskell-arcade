@@ -7,6 +7,7 @@ module Bha.Game.Impl.Snake
 import Data.Sequence   (pattern (:|>), Seq, (|>))
 
 import Bha.Elm.Prelude
+import Bha.Elm.Versioned
 
 import qualified Data.Sequence as Seq
 
@@ -24,6 +25,11 @@ data Direction
   | DirLeft
   | DirRight
   deriving (Eq)
+
+newtype HighScore
+  = HighScore { unHighScore :: Int }
+  deriving stock (Generic)
+  deriving anyclass (Serialize, Versioned '[])
 
 data Model
   = Model
@@ -46,7 +52,7 @@ cmax = 40
 init :: Init Model
 init = do
   highScore :: Maybe Int <-
-    load "highScore"
+    (fmap.fmap) unHighScore (load "highScore")
 
   food <- randomCell
 
@@ -75,7 +81,7 @@ update event = do
         case event of
           Right (EventKey KeyEsc _) -> do
             when (Just (model ^. scoreL) > model ^. highScoreL)
-              (save "highScore" (model ^. scoreL))
+              (save "highScore" (HighScore (model ^. scoreL)))
             gameover
 
           _ ->

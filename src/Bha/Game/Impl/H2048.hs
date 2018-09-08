@@ -7,7 +7,7 @@ import Data.Ord        (Down(Down))
 import System.FilePath ((</>))
 
 import Bha.Banana.Prelude
-import Bha.Versioned
+import Bha.Banana.Versioned
 
 newtype HighScores
   = HighScores [Int]

@@ -58,8 +58,8 @@ library
   exposed-modules:
     Bha.Banana.Menu
     Bha.Banana.Prelude
-    Bha.Banana.Prelude.Internal
     Bha.Banana.Tick
+    Bha.Banana.Versioned
     Bha.Game
     Bha.Game.Impl.BananaExample
     Bha.Game.Impl.ElmExample
@@ -68,16 +68,16 @@ library
     Bha.Game.Impl.Paint
     Bha.Game.Impl.Snake
     Bha.Elm.Prelude
-    Bha.Elm.Prelude.Internal
+    Bha.Elm.Versioned
     Bha.Main
     Bha.Main.Game
     Bha.Main.Menu
-    Bha.Orphans
     Bha.Prelude
-    Bha.Versioned
     Bha.View
+    Internal.Bha.Banana.Prelude
+    Internal.Bha.Elm.Prelude
+    Internal.Bha.Orphans
     Internal.Bha.Versioned
-    Reactive.Banana.Bha
   ghc-options:
     -Weverything
     -fno-warn-all-missed-specialisations

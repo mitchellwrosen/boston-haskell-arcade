@@ -6,6 +6,7 @@ module Bha.View
   , cursorRowL
   , text
   , rect
+  , rect'
   , module X
   ) where
 

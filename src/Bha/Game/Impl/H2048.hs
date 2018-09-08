@@ -118,8 +118,24 @@ moment eEvent = mdo
 --------------------------------------------------------------------------------
 
 renderBoard :: [[Maybe Int]] -> Cells
-renderBoard =
-  foldMap (uncurry renderRow) . zip [0..]
+renderBoard cells = do
+  mconcat
+    [ (foldMap (uncurry renderRow) . zip [0..]) cells
+    , renderBorder
+    ]
+
+renderBorder :: Cells
+renderBorder =
+  mconcat
+    [ set 0 0 (Cell '┌' white black)
+    , set 0 17 (Cell '└' white black)
+    , set 33 0 (Cell '┐' white black)
+    , set 33 17 (Cell '┘' white black)
+    , foldMap (\c -> set c 0 (Cell '─' white black)) [1..32]
+    , foldMap (\c -> set c 17 (Cell '─' white black)) [1..32]
+    , foldMap (\r -> set 0 r (Cell '│' white black)) [1..16]
+    , foldMap (\r -> set 33 r (Cell '│' white black)) [1..16]
+    ]
 
 renderRow :: Int -> [Maybe Int] -> Cells
 renderRow row =
@@ -127,7 +143,7 @@ renderRow row =
 
 renderCell :: Int -> Int -> Maybe Int -> Cells
 renderCell row0 col0 = \case
-  Nothing   -> rect  col row 8 4 black
+  Nothing   -> rect' col row 8 4 (Cell '‧' white black)
   Just 2    -> rect  col row 8 4 blue
   Just 4    -> rect  col row 8 4 red
   Just 8    -> rect  col row 8 4 yellow
@@ -143,8 +159,8 @@ renderCell row0 col0 = \case
   Just _    -> rect  col row 8 4 black
 
  where
-  col = 0 + col0*8
-  row = 0 + row0*4
+  col = 1 + col0*8
+  row = 1 + row0*4
 
   rects c r w h bg1 bg2 =
     mconcat
@@ -156,12 +172,12 @@ renderCell row0 col0 = \case
 
 renderScore :: Int -> Cells
 renderScore n =
-  text 0 16 mempty mempty ("Score: " ++ show n)
+  text 0 18 mempty mempty ("Score: " ++ show n)
 
 renderHighScores :: [Int] -> Cells
 renderHighScores [] = mempty
 renderHighScores ns =
-  text 0 17 mempty mempty ("High scores: " ++ intercalate ", " (map show ns))
+  text 0 19 mempty mempty ("High scores: " ++ intercalate ", " (map show ns))
 
 --------------------------------------------------------------------------------
 -- Board manipulation

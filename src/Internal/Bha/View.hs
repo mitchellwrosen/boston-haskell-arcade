@@ -7,6 +7,7 @@ module Internal.Bha.View
   , cursorRowL
   , text
   , rect
+  , rect'
   ) where
 
 import Termbox.Banana (Attr, Cell(..), Cursor(..))
@@ -60,6 +61,15 @@ rect :: Int -> Int -> Int -> Int -> Attr -> Cells
 rect c0 r0 w h bg =
   foldMap
     (\(r, c) -> set c r (Cell ' ' mempty bg))
+    ((,)
+      <$> [r0 .. r0 + h - 1]
+      <*> [c0 .. c0 + w - 1])
+
+-- TODO only one rect function?
+rect' :: Int -> Int -> Int -> Int -> Cell -> Cells
+rect' c0 r0 w h cell =
+  foldMap
+    (\(r, c) -> set c r cell)
     ((,)
       <$> [r0 .. r0 + h - 1]
       <*> [c0 .. c0 + w - 1])

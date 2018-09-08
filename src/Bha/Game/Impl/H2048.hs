@@ -2,7 +2,8 @@ module Bha.Game.Impl.H2048
   ( moment
   ) where
 
-import Data.List       (intercalate, sort, transpose)
+import Data.List       (intercalate, sortOn, transpose)
+import Data.Ord        (Down(Down))
 import System.FilePath ((</>))
 
 import Bha.Banana.Prelude
@@ -107,7 +108,7 @@ moment eEvent = mdo
   reactimate
     ((\score ->
       save (bhaDataDir </> "2048") "highScore"
-        (HighScores (take 10 (sort (score:highScores)))))
+        (HighScores (take 10 (sortOn Down (score:highScores)))))
     <$> bScore
     <@  eDone)
   pure (bScene, eDone)

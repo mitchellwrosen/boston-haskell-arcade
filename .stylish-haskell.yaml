@@ -225,8 +225,13 @@ newline: native
 #
 # No language extensions are enabled by default.
 language_extensions:
+  - DataKinds
+  - DefaultSignatures
+  - DeriveAnyClass
   - DeriveFunctor
+  - DeriveGeneric
   - DerivingStrategies
+  - FlexibleContexts
   - FlexibleInstances
   - FunctionalDependencies
   - GADTs
@@ -239,7 +244,11 @@ language_extensions:
   - NoImplicitPrelude
   - OverloadedStrings
   - PatternSynonyms
+  - PolyKinds
   - RankNTypes
   - RecursiveDo
   - ScopedTypeVariables
   - TupleSections
+  - TypeApplications
+  - TypeFamilies
+  - TypeOperators

@@ -7,17 +7,16 @@ module Bha.Banana.Prelude.Internal
   , save
   ) where
 
-import Data.Serialize             (Serialize)
 import Reactive.Banana
 import Reactive.Banana.Frameworks (MomentIO)
-import System.Directory (createDirectoryIfMissing)
-import System.FilePath ((</>))
+import System.Directory           (createDirectoryIfMissing)
+import System.FilePath            ((</>))
 
 import qualified Data.ByteString            as ByteString
-import qualified Data.Serialize             as Serialize
 import qualified Reactive.Banana.Frameworks as Reactive.Banana
 
 import Bha.Prelude
+import Internal.Bha.Versioned
 
 -- | A wrapper around MomentIO, used to control what effects games are allowed
 -- to use.
@@ -34,15 +33,15 @@ reactimate =
 
 -- TODO banana load/save implicit file path
 
-load :: Serialize a => FilePath -> Banana (Maybe a)
+load :: Versioned as a => FilePath -> Banana (Maybe a)
 load path = Banana . liftIO $ do
   asum
-    [ either (const Nothing) Just . Serialize.decode <$>
+    [ either (const Nothing) Just . decodeVersioned <$>
         ByteString.readFile path
     , pure Nothing
     ]
 
-save :: Serialize a => FilePath -> FilePath -> a -> IO ()
+save :: Versioned as a => FilePath -> FilePath -> a -> IO ()
 save dir key value = do
   createDirectoryIfMissing True dir
-  ByteString.writeFile (dir </> key) (Serialize.encode value)
+  ByteString.writeFile (dir </> key) (encodeVersioned value)

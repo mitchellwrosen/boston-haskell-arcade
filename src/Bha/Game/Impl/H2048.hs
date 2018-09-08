@@ -2,17 +2,24 @@ module Bha.Game.Impl.H2048
   ( moment
   ) where
 
-import Data.List       (transpose)
+import Data.List       (intercalate, sort, transpose)
 import System.FilePath ((</>))
 
 import Bha.Banana.Prelude
+import Bha.Versioned
+
+newtype HighScores
+  = HighScores [Int]
+  deriving stock (Generic)
+  deriving anyclass (Serialize, Versioned '[])
 
 moment
   :: Events TermEvent
   -> Banana (Behavior Scene, Events ())
 moment eEvent = mdo
-  highScore :: Maybe Int <-
-    load (bhaDataDir </> "2048" </> "highScore")
+  HighScores highScores <-
+    fromMaybe (HighScores []) <$>
+      load (bhaDataDir </> "2048" </> "highScore")
 
   -- TODO 2048 hjkl controls
   let
@@ -84,10 +91,10 @@ moment eEvent = mdo
   let
     bCells :: Behavior Cells
     bCells =
-      (mconcat . catMaybes)
-        [ Just (renderBoard <$> bBoard)
-        , Just (renderScore <$> bScore)
-        , pure . renderHighScore <$> highScore
+      mconcat
+        [ renderBoard <$> bBoard
+        , renderScore <$> bScore
+        , pure (renderHighScores highScores)
         ]
 
   let
@@ -99,8 +106,8 @@ moment eEvent = mdo
 
   reactimate
     ((\score ->
-      when (Just score > highScore)
-        (save (bhaDataDir </> "2048") "highScore" score))
+      save (bhaDataDir </> "2048") "highScore"
+        (HighScores (take 10 (sort (score:highScores)))))
     <$> bScore
     <@  eDone)
   pure (bScene, eDone)
@@ -150,9 +157,10 @@ renderScore :: Int -> Cells
 renderScore n =
   text 0 16 mempty mempty ("Score: " ++ show n)
 
-renderHighScore :: Int -> Cells
-renderHighScore n =
-  text 0 17 mempty mempty ("High score: " ++ show n)
+renderHighScores :: [Int] -> Cells
+renderHighScores [] = mempty
+renderHighScores ns =
+  text 0 17 mempty mempty ("High scores: " ++ intercalate ", " (map show ns))
 
 --------------------------------------------------------------------------------
 -- Board manipulation

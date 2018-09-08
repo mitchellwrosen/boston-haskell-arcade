@@ -10,4 +10,4 @@ data GameOutput a
   deriving (Eq, Functor)
 
 ɢameOver :: Prism' (GameOutput a) (Maybe a)
-ɢameOver = prism' GameOver (\case { GameOver x -> Just x; _ -> Nothing })
+ɢameOver = prism' GameOver (\case { GameOver x -> Just x; })

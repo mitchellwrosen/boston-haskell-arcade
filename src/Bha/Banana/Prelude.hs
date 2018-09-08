@@ -32,9 +32,8 @@ module Bha.Banana.Prelude
   , module X
   ) where
 
-import Control.Lens        as X (at, ix, (%~), (.~))
-import Termbox.Banana      as X (Cells, Cursor(..), Event(..), Key(..),
-                                 Scene(..))
+import Control.Lens   as X (at, ix, (%~), (.~))
+import Termbox.Banana as X (Cursor(..), Event(..), Key(..))
 
 import Bha.Game                    as X (GameOutput(..))
 import Bha.Prelude                 as X

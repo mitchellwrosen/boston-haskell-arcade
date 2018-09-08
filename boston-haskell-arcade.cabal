@@ -62,6 +62,7 @@ library
     Bha.Banana.Versioned
     Bha.Game
     Bha.Game.Impl.BananaExample
+    Bha.Game.Impl.BlimpBoy
     Bha.Game.Impl.ElmExample
     Bha.Game.Impl.GrainMan
     Bha.Game.Impl.H2048
@@ -78,6 +79,7 @@ library
     Internal.Bha.Elm.Prelude
     Internal.Bha.Orphans
     Internal.Bha.Versioned
+    Internal.Bha.View
   ghc-options:
     -Weverything
     -fno-warn-all-missed-specialisations

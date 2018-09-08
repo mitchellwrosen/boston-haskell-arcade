@@ -11,8 +11,10 @@ import qualified Termbox.Banana as Tb
 import Bha.Banana.Prelude
 import Bha.Main.Game
 import Bha.Main.Menu
+import Internal.Bha.View (sceneToTbScene)
 
 import qualified Bha.Game.Impl.BananaExample
+import qualified Bha.Game.Impl.BlimpBoy
 import qualified Bha.Game.Impl.ElmExample
 import qualified Bha.Game.Impl.GrainMan
 import qualified Bha.Game.Impl.H2048
@@ -28,6 +30,7 @@ gamelist =
   [ GameElm    "Snake"            Bha.Game.Impl.Snake.game
   , GameBanana "2048"             Bha.Game.Impl.H2048.moment
   , GameBanana "Paint"            Bha.Game.Impl.Paint.moment
+  , GameElm    "Blimp Boy"        Bha.Game.Impl.BlimpBoy.game
   , GameElm    "Grain Man"        Bha.Game.Impl.GrainMan.game
   , GameElm    "Elm Example 1"    Bha.Game.Impl.ElmExample.game
   , GameBanana "Banana Example 1" Bha.Game.Impl.BananaExample.moment
@@ -45,7 +48,7 @@ main = do
 main'
   :: Events TermEvent
   -> Behavior (Int, Int)
-  -> MomentIO (Behavior Scene, Events ())
+  -> MomentIO (Behavior Tb.Scene, Events ())
 main' eEvent _bSize = mdo
   -- Partition terminal events into two: those intended for the menu, and those
   -- intended for the game. How do we tell them apart? When there's an active
@@ -89,4 +92,4 @@ main' eEvent _bSize = mdo
         -- When the current game ends, switch back to the menu.
         (bMenuScene <$ eGameDone))
 
-  pure (bScene, eMenuDone)
+  pure (sceneToTbScene <$> bScene, eMenuDone)

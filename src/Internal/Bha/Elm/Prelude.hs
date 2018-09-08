@@ -14,9 +14,10 @@ module Internal.Bha.Elm.Prelude
 import Control.Monad.State
 import Control.Monad.Trans.Free
 import Data.Functor.Identity
-import Termbox.Banana           (Event, Scene)
+import Termbox.Banana           (Event)
 
 import Bha.Prelude
+import Internal.Bha.View (Scene)
 
 class Monad m => MonadElm m where
   interpretElm :: ElmF a -> m a

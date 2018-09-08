@@ -80,8 +80,9 @@ moment eEvent = mdo
         , eBoardRight'
         ])
 
-  bBoard :: Behavior [[Maybe Int]] <-
-    stepper initialBoard eBoard
+  bBoard :: Behavior [[Maybe Int]] <- do
+    board0 <- initialBoard
+    stepper board0 eBoard
 
   let
     bScore :: Behavior Int
@@ -169,14 +170,10 @@ renderHighScores ns =
 type Col = Int
 type Row = Int
 
--- TODO 2048 random initial board
-initialBoard :: [[Maybe Int]]
-initialBoard =
-  [ [ Nothing, Nothing, Just 2,  Nothing ]
-  , [ Nothing, Nothing, Nothing, Nothing ]
-  , [ Nothing, Nothing, Just 2,  Nothing ]
-  , [ Nothing, Nothing, Nothing, Nothing ]
-  ]
+initialBoard :: Banana [[Maybe Int]]
+initialBoard = do
+  n <- randomInt 0 15
+  pure (chunksOf 4 (map (\i -> if i == n then Just 2 else Nothing) [0..15]))
 
 boardLeft :: [[Maybe Int]] -> [[Maybe Int]]
 boardLeft =
@@ -230,3 +227,13 @@ ifChanged f x = do
   Just y
  where
   y = f x
+
+chunksOf :: Int -> [a] -> [[a]]
+chunksOf n xs =
+  let
+    (ys, zs) =
+      splitAt n xs
+  in
+    case zs of
+      [] -> [ys]
+      _  -> ys : chunksOf n zs

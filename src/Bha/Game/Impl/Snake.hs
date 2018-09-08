@@ -255,10 +255,10 @@ tickEvery model = do
     dir = model ^. dirL
 
   case dir of
-    DirUp    -> Just (1 / 14 * (1 + fromIntegral score / 100))
-    DirDown  -> Just (1 / 14 * (1 + fromIntegral score / 100))
-    DirLeft  -> Just (1 / 20 * (1 + fromIntegral score / 100))
-    DirRight -> Just (1 / 20 * (1 + fromIntegral score / 100))
+    DirUp    -> Just (1 / 14 * (1 - fromIntegral score / 100))
+    DirDown  -> Just (1 / 14 * (1 - fromIntegral score / 100))
+    DirLeft  -> Just (1 / 20 * (1 - fromIntegral score / 100))
+    DirRight -> Just (1 / 20 * (1 - fromIntegral score / 100))
 
 
 --------------------------------------------------------------------------------

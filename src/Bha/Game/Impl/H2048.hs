@@ -22,14 +22,13 @@ moment eEvent = mdo
     fromMaybe (HighScores []) <$>
       load (bhaDataDir </> "2048" </> "highScore")
 
-  -- TODO 2048 hjkl controls
   let
-    eUp    = filterE (== EventKey KeyArrowUp    False) eEvent
-    eDown  = filterE (== EventKey KeyArrowDown  False) eEvent
-    eLeft  = filterE (== EventKey KeyArrowLeft  False) eEvent
-    eRight = filterE (== EventKey KeyArrowRight False) eEvent
-    eEsc   = filterE (== EventKey KeyEsc        False) eEvent
+    eUp    = filterE ((||) <$> (== EventKey KeyArrowUp    False) <*> (== EventKey (KeyChar 'k') False)) eEvent
+    eDown  = filterE ((||) <$> (== EventKey KeyArrowDown  False) <*> (== EventKey (KeyChar 'j') False)) eEvent
+    eLeft  = filterE ((||) <$> (== EventKey KeyArrowLeft  False) <*> (== EventKey (KeyChar 'h') False)) eEvent
+    eRight = filterE ((||) <$> (== EventKey KeyArrowRight False) <*> (== EventKey (KeyChar 'l') False)) eEvent
 
+    eEsc = filterE (== EventKey KeyEsc False) eEvent
     eUDLR  = leftmostE [eUp, eDown, eLeft, eRight]
 
   let

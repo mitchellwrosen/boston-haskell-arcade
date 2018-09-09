@@ -26,8 +26,10 @@ module Internal.Bha.Banana.Prelude
   , unpairE
   , whenE
     -- * Randomness
+  , randomBool
   , randomInt
   , randomOneOf
+  , randomPct
   ) where
 
 import Reactive.Banana            hiding (Event)
@@ -103,6 +105,10 @@ unpairE :: Events (a, b) -> (Events a, Events b)
 unpairE e =
   (fst <$> e, snd <$> e)
 
+randomBool :: Banana Bool
+randomBool =
+  Banana (liftIO randomIO)
+
 randomInt :: Int -> Int -> Banana Int
 randomInt x y =
   Banana (liftIO (randomRIO (x, y)))
@@ -111,3 +117,7 @@ randomOneOf :: [a] -> Banana a
 randomOneOf [] = error "randomOneOf: []"
 randomOneOf xs =
   (xs !!) <$> randomInt 0 (length xs - 1)
+
+randomPct :: Banana Double
+randomPct =
+  Banana (liftIO randomIO)

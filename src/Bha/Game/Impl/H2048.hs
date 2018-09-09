@@ -65,7 +65,8 @@ moment eEvent = mdo
         f :: [[Maybe Int]] -> Banana [[Maybe Int]]
         f board = do
           coord <- randomOneOf (boardHoles board)
-          pure (boardSet coord 2 board)
+          pct <- randomPct
+          pure (boardSet coord (if pct >= 0.9 then 2 else 4) board)
 
     eBoardUp'    <- plus1 (filterCoincidentE eUp    eBoardUp)
     eBoardDown'  <- plus1 (filterCoincidentE eDown  eBoardDown)

@@ -26,8 +26,10 @@ module Bha.Banana.Prelude
   , unpairE
   , whenE
     -- * Randomness
+  , randomBool
   , randomInt
   , randomOneOf
+  , randomPct
     -- * Re-exports
   , module X
   ) where

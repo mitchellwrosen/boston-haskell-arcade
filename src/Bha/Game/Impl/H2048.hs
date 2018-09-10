@@ -66,7 +66,7 @@ moment eEvent = mdo
         f board = do
           coord <- randomOneOf (boardHoles board)
           pct <- randomPct
-          pure (boardSet coord (if pct >= 0.9 then 2 else 4) board)
+          pure (boardSet coord (if pct >= 0.9 then 4 else 2) board)
 
     eBoardUp'    <- plus1 (filterCoincidentE eUp    eBoardUp)
     eBoardDown'  <- plus1 (filterCoincidentE eDown  eBoardDown)
@@ -145,31 +145,23 @@ renderRow row =
 renderCell :: Int -> Int -> Maybe Int -> Cells
 renderCell row0 col0 = \case
   Nothing   -> rect' col row 8 4 (Cell '‧' white black)
-  Just 2    -> rect  col row 8 4 blue
-  Just 4    -> rect  col row 8 4 red
-  Just 8    -> rect  col row 8 4 yellow
-  Just 16   -> rect  col row 8 4 green
-  Just 32   -> rect  col row 8 4 magenta
-  Just 64   -> rect  col row 8 4 cyan
-  Just 128  -> rects col row 4 2 blue red
-  Just 256  -> rects col row 4 2 red yellow
-  Just 512  -> rects col row 4 2 yellow green
-  Just 1024 -> rects col row 4 2 green magenta
-  Just 2048 -> rects col row 4 2 magenta cyan
-  Just 4096 -> rects col row 4 2 cyan black
-  Just _    -> rect  col row 8 4 black
+  Just 2    -> rect  col row 8 4 255 -- yellow
+  Just 4    -> rect  col row 8 4 249 -- tangerine
+  Just 8    -> rect  col row 8 4 243 -- orange
+  Just 16   -> rect  col row 8 4 237 -- red
+  Just 32   -> rect  col row 8 4 yellow -- magenta
+  Just 64   -> rect  col row 8 4 tangerine -- green
+  Just 128  -> rect  col row 8 4 red -- cyan
+  Just 256  -> rect  col row 8 4 magenta -- blue
+  Just 512  -> rect  col row 8 4 green -- 30
+  Just 1024 -> rect  col row 8 4 cyan -- 104
+  Just 2048 -> rect  col row 8 4 blue -- 7
+  Just 4096 -> rect  col row 8 4 21 -- 20
+  Just _    -> rect  col row 8 4 15 -- 8
 
  where
   col = 1 + col0*8
   row = 1 + row0*4
-
-  rects c r w h bg1 bg2 =
-    mconcat
-      [ rect c     r     w h bg1
-      , rect (c+4) r     w h bg2
-      , rect c     (r+2) w h bg2
-      , rect (c+4) (r+2) w h bg1
-      ]
 
 renderScore :: Int -> Cells
 renderScore n =

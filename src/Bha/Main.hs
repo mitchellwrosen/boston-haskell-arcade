@@ -16,6 +16,7 @@ import Internal.Bha.View (sceneToTbScene)
 import qualified Bha.Game.Impl.BananaExample
 import qualified Bha.Game.Impl.BlimpBoy
 import qualified Bha.Game.Impl.ElmExample
+import qualified Bha.Game.Impl.FlappingJ
 import qualified Bha.Game.Impl.GrainMan
 import qualified Bha.Game.Impl.H2048
 import qualified Bha.Game.Impl.Paint
@@ -31,6 +32,7 @@ gamelist =
   , GameBanana "2048"             Bha.Game.Impl.H2048.moment
   , GameBanana "Paint"            Bha.Game.Impl.Paint.moment
   , GameElm    "Blimp Boy"        Bha.Game.Impl.BlimpBoy.game
+  , GameBanana "Flapping J"       Bha.Game.Impl.FlappingJ.moment
   , GameElm    "Grain Man"        Bha.Game.Impl.GrainMan.game
   , GameElm    "Elm Example 1"    Bha.Game.Impl.ElmExample.game
   , GameBanana "Banana Example 1" Bha.Game.Impl.BananaExample.moment
@@ -43,7 +45,7 @@ gamelist =
 main :: IO ()
 main = do
   createDirectoryIfMissing True bhaDataDir
-  Tb.main (InputModeEsc MouseModeYes) OutputModeNormal main'
+  Tb.main (InputModeEsc MouseModeYes) OutputMode256 main'
 
 main'
   :: Events TermEvent

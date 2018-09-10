@@ -64,6 +64,7 @@ library
     Bha.Game.Impl.BananaExample
     Bha.Game.Impl.BlimpBoy
     Bha.Game.Impl.ElmExample
+    Bha.Game.Impl.FlappingJ
     Bha.Game.Impl.GrainMan
     Bha.Game.Impl.H2048
     Bha.Game.Impl.Paint

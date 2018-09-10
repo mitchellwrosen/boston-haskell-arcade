@@ -16,6 +16,7 @@ module Bha.Banana.Prelude
   , filterJust
   , leftmostE
   , mergeE
+  , never
   , previewE
   , reactimate
   , stepper

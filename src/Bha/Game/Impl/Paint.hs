@@ -140,13 +140,13 @@ renderEasel :: Cells
 renderEasel =
   mconcat
     [ foldMap (\r -> set ccol (crow+cheight+r) (Cell '│' white black)) [4..7]
-    , foldMap (\r -> set (ccol+cwidth) (crow+cheight+r) (Cell '│' white black)) [4..7]
+    , foldMap (\r -> set (ccol+cwidth-1) (crow+cheight+r) (Cell '│' white black)) [4..7]
     , foldMap (\c -> set (ccol+c+1) (crow+cheight+3) (Cell '─' white black)) [0..cwidth-2]
     , foldMap (\c -> set (ccol+c+1) (crow+cheight+8) (Cell '─' white black)) [0..cwidth-2]
     , set ccol (crow+cheight+3) (Cell '┌' white black)
     , set ccol (crow+cheight+8) (Cell '└' white black)
-    , set (ccol+cwidth) (crow+cheight+3) (Cell '┐' white black)
-    , set (ccol+cwidth) (crow+cheight+8) (Cell '┘' white black)
+    , set (ccol+cwidth-1) (crow+cheight+3) (Cell '┐' white black)
+    , set (ccol+cwidth-1) (crow+cheight+8) (Cell '┘' white black)
     , foldMap
         (\(i, c) ->
           let

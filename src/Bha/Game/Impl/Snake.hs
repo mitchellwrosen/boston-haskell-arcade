@@ -71,15 +71,15 @@ init = do
 -- Update
 --------------------------------------------------------------------------------
 
-update :: Either NominalDiffTime Event -> Update Model ()
-update event = do
+update :: Input Void -> Update Model ()
+update input = do
   model <- get
 
   if
     -- When dead, <Esc> saves and quits the game.
     | not (model ^. aliveL) ->
-        case event of
-          Right (EventKey KeyEsc _) -> do
+        case input of
+          Key KeyEsc -> do
             when (Just (model ^. scoreL) > model ^. highScoreL)
               (save "highScore" (HighScore (model ^. scoreL)))
             gameover
@@ -89,45 +89,45 @@ update event = do
 
     -- When paused <Space> unpauses the game.
     | model ^. pauseL ->
-        case event of
-          Right (EventKey KeySpace _) ->
+        case input of
+          Key KeySpace ->
             pauseL .= False
 
           _ ->
             pure ()
 
     | otherwise ->
-        case event of
-          Left _ ->
+        case input of
+          Tick _ ->
             updateTick
 
-          Right (EventKey KeyEsc _) ->
+          Key KeyEsc ->
             gameover
 
-          Right (EventKey KeyArrowUp _) -> do
+          Key KeyArrowUp -> do
             dir <- use dirL
             dirL .= DirUp
             when (dir == DirDown) (snakeL %= Seq.reverse)
 
-          Right (EventKey KeyArrowDown _) -> do
+          Key KeyArrowDown -> do
             dir <- use dirL
             dirL .= DirDown
             when (dir == DirUp) (snakeL %= Seq.reverse)
 
-          Right (EventKey KeyArrowLeft _) -> do
+          Key KeyArrowLeft -> do
             dir <- use dirL
             dirL .= DirLeft
             when (dir == DirRight) (snakeL %= Seq.reverse)
 
-          Right (EventKey KeyArrowRight _) -> do
+          Key KeyArrowRight -> do
             dir <- use dirL
             dirL .= DirRight
             when (dir == DirLeft) (snakeL %= Seq.reverse)
 
-          Right (EventKey KeySpace _) ->
+          Key KeySpace ->
             pauseL .= True
 
-          Right _ ->
+          _ ->
             pure ()
 
 updateTick :: Update Model ()
@@ -265,6 +265,6 @@ tickEvery model = do
 -- Game
 --------------------------------------------------------------------------------
 
-game :: ElmGame Model
+game :: ElmGame Model Void
 game =
   ElmGame init update view tickEvery

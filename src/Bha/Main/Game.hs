@@ -16,14 +16,14 @@ import qualified Data.Text       as Text
 import Bha.Banana.Prelude
 import Bha.Banana.Tick             (TickControl(TickSetDelta, TickTeardown),
                                     momentTick)
-import Bha.Elm.Prelude             (ElmGame(..))
+import Bha.Elm.Prelude             (ElmGame(..), Input(..))
 import Internal.Bha.Banana.Prelude (Banana(..))
 import Internal.Bha.Elm.Prelude    (ElmF(..), runInit, runUpdate)
 
 data Game :: Type where
   GameElm
     :: [Char]
-    -> ElmGame a
+    -> ElmGame model message
     -> Game
 
   GameBanana
@@ -48,12 +48,37 @@ momentGame eEvent = \case
     unBanana (game eEvent)
 
 momentElmGame
-  :: forall model.
+  :: forall message model.
      [Char]
   -> Events TermEvent
-  -> ElmGame model
+  -> ElmGame model message
   -> MomentIO (Behavior Scene, Events ())
 momentElmGame name eEvent (ElmGame init update view tickEvery) = mdo
+  let
+    eKey :: Events (Input message)
+    eKey =
+      filterJust
+        ((\case
+          EventKey key _ -> Just (Key key)
+          _ -> Nothing)
+        <$> eEvent)
+
+    eMouse :: Events (Input message)
+    eMouse =
+      filterJust
+        ((\case
+          EventMouse mouse col row -> Just (Mouse mouse col row)
+          _ -> Nothing)
+        <$> eEvent)
+
+    eResize :: Events (Input message)
+    eResize =
+      filterJust
+        ((\case
+          EventResize col row -> Just (Resize col row)
+          _ -> Nothing)
+        <$> eEvent)
+
   model0 :: model <-
     runInit (interpretElmIO name) init
 
@@ -64,14 +89,18 @@ momentElmGame name eEvent (ElmGame init update view tickEvery) = mdo
 
   eUpdate :: Events (Maybe ((), model)) <-
     let
-      f model event =
-        runUpdate model (interpretElmIO name) (update event)
+      f :: model -> Input message -> MomentIO (Maybe ((), model))
+      f model input =
+        runUpdate model (interpretElmIO name) (update input)
 
-      eInput :: Events (Either NominalDiffTime TermEvent)
+      eInput :: Events (Input message)
       eInput =
         leftmostE
-          [ Left <$> eTick
-          , Right <$> eEvent
+          [ eKey
+          , eMouse
+          , eResize
+          , Tick <$> eTick
+          -- TODO Message
           ]
     in
       execute (f <$> bModel <@> eInput)

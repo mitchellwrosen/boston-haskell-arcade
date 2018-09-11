@@ -91,7 +91,7 @@ showTrade = \case
   Just (Sell res n) -> "Sell " ++ showResource res ++ " for " ++ show n
   Just (Buy res n)  -> "Buy "  ++ showResource res ++ " for " ++ show n
 
-game :: ElmGame Model
+game :: ElmGame Model Void
 game =
   ElmGame init update view tickEvery
 
@@ -107,15 +107,12 @@ init =
     , _modelExploredWaterL     = 0
     }
 
-update :: Either NominalDiffTime Event -> Update Model ()
+update :: Input Void -> Update Model ()
 update = \case
-  Left _ ->
-    pure ()
-
-  Right (EventKey KeyEsc _) ->
+  Key KeyEsc ->
     gameover
 
-  Right (EventKey (KeyChar c) _) -> do
+  Key (KeyChar c) -> do
     model <- get
     case model ^. dialogL of
       ActionDialog ->
@@ -130,7 +127,7 @@ update = \case
       TravelDialog ->
         put (handleTravel c model)
 
-  Right _ ->
+  _ ->
     pure ()
 
 handleAction :: Char -> Model -> Model

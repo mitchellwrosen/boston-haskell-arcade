@@ -1,6 +1,7 @@
 module Bha.Elm.Prelude
   ( -- * Elm game
     ElmGame(..)
+  , Input(..)
   , MonadElm
   , Init
   , Update

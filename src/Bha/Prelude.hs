@@ -23,6 +23,7 @@ import Data.Maybe                as X hiding (fromJust)
 import Data.Proxy                as X (Proxy(Proxy))
 import Data.Text                 as X (Text)
 import Data.Time                 as X (NominalDiffTime, UTCTime, getCurrentTime)
+import Data.Void                 as X (Void)
 import Data.Word                 as X
 import GHC.Generics              as X (Generic)
 -- TODO Don't export bad bits of Prelude

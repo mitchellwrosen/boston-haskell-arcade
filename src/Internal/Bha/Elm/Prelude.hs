@@ -1,5 +1,6 @@
 module Internal.Bha.Elm.Prelude
   ( ElmGame(..)
+  , Input(..)
   , ElmF(..)
   , Init(..)
   , runInit
@@ -14,23 +15,31 @@ module Internal.Bha.Elm.Prelude
 import Control.Monad.State
 import Control.Monad.Trans.Free
 import Data.Functor.Identity
-import Termbox.Banana           (Event)
+import Termbox.Banana           (Key, Mouse)
 
 import Bha.Prelude
 import Internal.Bha.View (Scene)
 
-class Monad m => MonadElm m where
-  interpretElm :: ElmF a -> m a
+--------------------------------------------------------------------------------
+-- Elm game
+--------------------------------------------------------------------------------
 
-instance MonadElm Init where
-  interpretElm :: ElmF a -> Init a
-  interpretElm =
-    Init . liftF
+-- | An Elm-style game.
+data ElmGame model message
+  = ElmGame
+      (Init model)
+      -- Initial model.
+      (Input message -> Update model ())
+      -- Update the model from a tick or terminal event.
+      (model -> Scene)
+      -- Render the model.
+      (model -> Maybe NominalDiffTime)
+      -- Tick, and if so, how often?
 
-instance MonadElm (Update s) where
-  interpretElm :: ElmF a -> Update s a
-  interpretElm =
-    Update . lift . liftF
+
+--------------------------------------------------------------------------------
+-- Init and Update monads
+--------------------------------------------------------------------------------
 
 newtype Init a
   = Init { unInit :: Free ElmF a }
@@ -39,6 +48,7 @@ newtype Init a
 runInit :: Monad m => (forall x. ElmF (m x) -> m x) -> Init a -> m a
 runInit phi =
   iterT phi . hoistFreeT (pure . runIdentity) . unInit
+
 
 newtype Update s a
   = Update { unUpdate :: StateT s (FreeT ElmF Maybe) a }
@@ -54,6 +64,21 @@ runUpdate
 runUpdate s phi (Update m) =
   runMaybeT (iterT phi (hoistFreeT (MaybeT . pure) (runStateT m s)))
 
+
+class Monad m => MonadElm m where
+  interpretElm :: ElmF a -> m a
+
+instance MonadElm Init where
+  interpretElm :: ElmF a -> Init a
+  interpretElm =
+    Init . liftF
+
+instance MonadElm (Update s) where
+  interpretElm :: ElmF a -> Update s a
+  interpretElm =
+    Update . lift . liftF
+
+
 data ElmF x
   = Save !Text !ByteString x
   | Load !Text (Maybe ByteString -> x)
@@ -61,17 +86,6 @@ data ElmF x
   | RandomPct (Double -> x)
   deriving Functor
 
--- | An Elm-style game.
-data ElmGame model
-  = ElmGame
-      (Init model)
-      -- Initial model.
-      (Either NominalDiffTime Event -> Update model ())
-      -- Update the model from a tick or terminal event.
-      (model -> Scene)
-      -- Render the model.
-      (model -> Maybe NominalDiffTime)
-      -- Tick, and if so, how often?
 
 gameover :: Update s a
 gameover =
@@ -85,3 +99,15 @@ randomInt lo hi =
 randomPct :: MonadElm m => m Double
 randomPct =
   interpretElm (RandomPct id)
+
+
+--------------------------------------------------------------------------------
+-- Input
+--------------------------------------------------------------------------------
+
+data Input a
+  = Key !Key
+  | Mouse !Mouse !Int !Int -- Col, then row
+  | Resize !Int !Int -- Col, then row
+  | Tick !NominalDiffTime
+  | Message !a

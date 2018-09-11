@@ -32,18 +32,21 @@ init =
 -- Update
 --------------------------------------------------------------------------------
 
-update :: Either NominalDiffTime Event -> Update Model ()
+update :: Input Void -> Update Model ()
 update = \case
-  Right (EventKey KeyEsc _) ->
+  Key KeyEsc ->
     empty
 
-  Right _ -> do
+  Key _ -> do
     n <- use countL
     guard (n < 10)
     countL .= (n+1)
 
-  Left delta ->
+  Tick delta ->
     elapsedL %= (+ delta)
+
+  _ -> do
+    pure ()
 
 
 --------------------------------------------------------------------------------
@@ -78,6 +81,6 @@ tickEvery _ =
 -- Game
 --------------------------------------------------------------------------------
 
-game :: ElmGame Model
+game :: ElmGame Model Void
 game =
   ElmGame init update view tickEvery

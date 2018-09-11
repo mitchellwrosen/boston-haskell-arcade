@@ -48,84 +48,81 @@ init = do
 -- Update
 --------------------------------------------------------------------------------
 
--- TODO Space bar to drop a bomb
+update :: Input Void -> Update Model ()
+update = \case
+  Tick _ -> do
+    health0 <- use healthL
+    guard (health0 > 0)
 
-update :: Either NominalDiffTime Event -> Update Model ()
-update event =
-  case event of
-    Left _ -> do
-      health0 <- use healthL
-      guard (health0 > 0)
+    enemies0 <- use enemiesL
+    bombs0   <- use bombL
 
-      enemies0 <- use enemiesL
-      bombs0   <- use bombL
+    -- March enemies forward by 1
+    let
+      enemies1 =
+        IntSet.map (+1) enemies0
 
-      -- March enemies forward by 1
-      let
-        enemies1 =
-          IntSet.map (+1) enemies0
+    -- Move bombs down
+    let
+      bombs1 =
+        IntSet.filter (<= enemyrow) (IntSet.map (+1) bombs0)
 
-      -- Move bombs down
-      let
-        bombs1 =
-          IntSet.filter (<= enemyrow) (IntSet.map (+1) bombs0)
+    -- Kill any enemy being bombed
+    let
+      enemies2 =
+        if IntSet.member enemyrow bombs1
+          then IntSet.delete blimpcol enemies1
+          else enemies1
 
-      -- Kill any enemy being bombed
-      let
-        enemies2 =
-          if IntSet.member enemyrow bombs1
-            then IntSet.delete blimpcol enemies1
-            else enemies1
+    -- Kill any enemy hitting the castle
+    let
+      enemies3 =
+        IntSet.delete castlecol enemies2
 
-      -- Kill any enemy hitting the castle
-      let
-        enemies3 =
-          IntSet.delete castlecol enemies2
+    -- Possibly spawn new enemy
+    enemies4 <- do
+      pct <- randomPct
+      if pct > 0.96
+        then pure (IntSet.insert enemycol enemies3)
+        else pure enemies3
 
-      -- Possibly spawn new enemy
-      enemies4 <- do
-        pct <- randomPct
-        if pct > 0.96
-          then pure (IntSet.insert enemycol enemies3)
-          else pure enemies3
+    timer <- use nextBombL
 
-      timer <- use nextBombL
+    numBombsL %=
+      if timer == 0
+        then min 3 . (+1)
+        else id
 
-      numBombsL %=
-        if timer == 0
-          then min 3 . (+1)
-          else id
+    nextBombL .=
+      if timer == 0
+        then bombtimer
+        else timer - 1
 
-      nextBombL .=
-        if timer == 0
-          then bombtimer
-          else timer - 1
+    enemiesL .= enemies4
+    bombL    .= bombs1
 
-      enemiesL .= enemies4
-      bombL    .= bombs1
+    -- If an enemy hit the castle, decrease health by 1
+    healthL %=
+      if IntSet.member castlecol enemies2
+        then subtract 1
+        else id
 
-      -- If an enemy hit the castle, decrease health by 1
-      healthL %=
-        if IntSet.member castlecol enemies2
-          then subtract 1
-          else id
+  Key KeySpace -> do
+    supply <- use numBombsL
 
-    Right (EventKey KeySpace _) -> do
-      supply <- use numBombsL
+    bombL %=
+      if supply >= 1
+        then IntSet.insert blimprow
+        else id
 
-      bombL %=
-        if supply >= 1
-          then IntSet.insert blimprow
-          else id
+    numBombsL %=
+      (max 0 . subtract 1)
 
-      numBombsL %=
-        (max 0 . subtract 1)
+  Key KeyEsc ->
+    empty
 
-    Right (EventKey KeyEsc _) ->
-      empty
-
-    Right _ ->
-      pure ()
+  _ ->
+    pure ()
 
 
 --------------------------------------------------------------------------------
@@ -187,6 +184,6 @@ tickEvery _ =
 -- Game
 --------------------------------------------------------------------------------
 
-game :: ElmGame Model
+game :: ElmGame Model Void
 game =
   ElmGame init update view tickEvery

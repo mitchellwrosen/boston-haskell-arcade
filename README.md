@@ -23,7 +23,7 @@ An Elm game has four components.
 
 - **init**. The initial model.
 
-- **update**. The update loop. Given an event, which is either a tick or a terminal event, update the current model.
+- **update**. The update loop. Given an input event, update the current model.
 
 - **view**. Render the current model.
 
@@ -32,10 +32,10 @@ An Elm game has four components.
 Here's what that looks like in Haskell.
 
 ```haskell
-data ElmGame model
+data ElmGame message model
   = ElmGame
       (Init model)
-      (Either NominalDiffTime TerminalEvent -> Update model ())
+      (Input message -> Update model ())
       (model -> Scene)
       (model -> Maybe NominalDiffTime)
 ```

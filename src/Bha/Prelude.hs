@@ -7,7 +7,8 @@ import Control.Applicative       as X (Alternative, empty, (<|>))
 import Control.Concurrent        as X (forkIO, threadDelay)
 import Control.Concurrent.STM    as X
 import Control.Lens              as X (Prism', Traversal', ix, mapped, over,
-                                       preview, prism', (^.), (^?), _1, _2, _3)
+                                       preview, prism', (^.), (^?), _1, _2, _3,
+                                       _4)
 import Control.Monad             as X
 import Control.Monad.Fix         as X
 import Control.Monad.IO.Class    as X
@@ -30,6 +31,7 @@ import GHC.Generics              as X (Generic)
 -- TODO Don't export bad bits of Prelude
 import Prelude as X hiding (init)
 
+import Internal.Bha.Debug as X (debug)
 import Internal.Bha.Orphans as X ()
 
 import System.Directory (XdgDirectory(..), getXdgDirectory)

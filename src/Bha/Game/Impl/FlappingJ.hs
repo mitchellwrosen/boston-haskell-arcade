@@ -8,7 +8,12 @@ import Bha.Banana.Tick
 moment
   :: Events (Text, Void)
   -> Events TermEvent
-  -> Banana (Behavior Scene, Events (Text, Void), Events ())
+  -> Banana
+       ( Behavior Scene
+       , Behavior (HashSet Text)
+       , Events (Text, Void)
+       , Events ()
+       )
 moment _ eEvent = mdo
   let
     eEsc   = filterE (== EventKey KeyEsc   False) eEvent
@@ -44,7 +49,7 @@ moment _ eEvent = mdo
         <$> bCells
         <*> pure NoCursor
 
-  pure (bScene, never, eDone)
+  pure (bScene, pure mempty, never, eDone)
 
 render :: Double -> Cells
 render j =

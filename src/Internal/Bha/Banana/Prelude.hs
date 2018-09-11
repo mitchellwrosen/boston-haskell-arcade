@@ -15,6 +15,7 @@ module Internal.Bha.Banana.Prelude
   , filterE
   , filterJust
   , leftmostE
+  , mapMaybeE
   , mergeE
   , never
   , previewE
@@ -72,6 +73,10 @@ filterCoincidentE e1 e2 =
 leftmostE :: [Events a] -> Events a
 leftmostE =
   foldr (unionWith const) never
+
+mapMaybeE :: (a -> Maybe b) -> Events a -> Events b
+mapMaybeE f x =
+  filterJust (f <$> x)
 
 data Merge a b
   = MergeL a

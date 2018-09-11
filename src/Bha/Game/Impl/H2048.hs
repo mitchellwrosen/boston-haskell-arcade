@@ -17,7 +17,12 @@ newtype HighScores
 moment
   :: Events (Text, Void)
   -> Events TermEvent
-  -> Banana (Behavior Scene, Events (Text, Void), Events ())
+  -> Banana
+       ( Behavior Scene
+       , Behavior (HashSet Text)
+       , Events (Text, Void)
+       , Events ()
+       )
 moment _ eEvent = mdo
   HighScores highScores <-
     fromMaybe (HighScores []) <$>
@@ -52,10 +57,10 @@ moment _ eEvent = mdo
 
   let
     eBoardUp :: Events [[Maybe Int]]
-    eBoardUp    = filterJust (ifChanged boardUp    <$> bBoard <@ eUDLR)
-    eBoardDown  = filterJust (ifChanged boardDown  <$> bBoard <@ eUDLR)
-    eBoardLeft  = filterJust (ifChanged boardLeft  <$> bBoard <@ eUDLR)
-    eBoardRight = filterJust (ifChanged boardRight <$> bBoard <@ eUDLR)
+    eBoardUp    = mapMaybeE (ifChanged boardUp)    (bBoard <@ eUDLR)
+    eBoardDown  = mapMaybeE (ifChanged boardDown)  (bBoard <@ eUDLR)
+    eBoardLeft  = mapMaybeE (ifChanged boardLeft)  (bBoard <@ eUDLR)
+    eBoardRight = mapMaybeE (ifChanged boardRight) (bBoard <@ eUDLR)
 
   eBoard :: Events [[Maybe Int]] <- do
     let
@@ -114,7 +119,7 @@ moment _ eEvent = mdo
     <$> bScore
     <@  eDone)
 
-  pure (bScene, never, eDone)
+  pure (bScene, pure mempty, never, eDone)
 
 --------------------------------------------------------------------------------
 -- Rendering

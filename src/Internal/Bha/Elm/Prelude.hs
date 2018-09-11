@@ -61,14 +61,14 @@ newtype Update model message a
   deriving newtype (Alternative, Applicative, Functor, Monad, MonadState model)
 
 runUpdate
-  :: forall a m message model.
+  :: forall m message model.
      Monad m
   => model
   -> (forall x. ElmF message (MaybeT m x) -> MaybeT m x)
-  -> Update model message a
-  -> m (Maybe (a, model))
+  -> Update model message ()
+  -> m (Maybe model)
 runUpdate s phi (Update m) =
-  runMaybeT (iterT phi (hoistFreeT (MaybeT . pure) (runStateT m s)))
+  runMaybeT (iterT phi (hoistFreeT (MaybeT . pure) (execStateT m s)))
 
 
 class Monad m => MonadElm message m | m -> message where
@@ -123,3 +123,4 @@ data Input a
   | Resize !Int !Int -- Col, then row
   | Tick !NominalDiffTime
   | Message !Text !a
+  deriving (Eq, Show)

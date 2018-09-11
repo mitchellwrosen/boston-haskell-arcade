@@ -9,6 +9,8 @@ module Bha.Elm.Prelude
     -- ** Randomness
   , randomInt
   , randomPct
+    -- **
+  , send
     -- * Re-exports
   , module X
   ) where

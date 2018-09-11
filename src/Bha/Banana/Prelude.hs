@@ -15,6 +15,7 @@ module Bha.Banana.Prelude
   , filterE
   , filterJust
   , leftmostE
+  , mapMaybeE
   , mergeE
   , never
   , previewE

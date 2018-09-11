@@ -12,6 +12,7 @@ data Location
   = LocGrain
   | LocPyramid
   | LocWater
+  deriving (Show)
 
 data Trade
   = Buy Resource Int
@@ -26,6 +27,7 @@ data Dialog
   | ExploreDialog
   | TradeDialog
   | TravelDialog
+  deriving (Show)
 
 data Model
   = Model
@@ -36,7 +38,7 @@ data Model
   , _modelGoldL              :: Int
   , _modelGrainWorldWaterL   :: Int -- Grain world's water
   , _modelExploredWaterL     :: Int
-  }
+  } deriving (Show)
 makeFields ''Model
 
 data ModelView

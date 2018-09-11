@@ -1,10 +1,11 @@
--- | Example Elm-style game.
-
 {-# LANGUAGE TemplateHaskell #-}
 
-module Bha.Game.Impl.ElmExample
+module Bha.Game.Impl.LambdaChat
   ( game
   ) where
+
+import qualified Data.HashSet as HashSet
+import qualified Data.Text as Text
 
 import Bha.Elm.Prelude
 
@@ -15,16 +16,16 @@ import Bha.Elm.Prelude
 
 data Model
   = Model
-  { _modelCountL   :: !Int
-  , _modelElapsedL :: !NominalDiffTime
+  { _modelInputL :: !Text
+  , _modelChatL  :: ![Text]
   } deriving (Show)
 makeFields ''Model
 
-init :: Init Void Model
+init :: Init Text Model
 init =
   pure Model
-    { _modelCountL = 0
-    , _modelElapsedL = 0
+    { _modelInputL = ""
+    , _modelChatL  = []
     }
 
 
@@ -32,21 +33,35 @@ init =
 -- Update
 --------------------------------------------------------------------------------
 
-update :: Input Void -> Update Model Void ()
+update :: Input Text -> Update Model Text ()
 update = \case
   Key KeyEsc ->
     gameover
 
-  Key _ -> do
-    n <- use countL
-    guard (n < 10)
-    countL .= (n+1)
+  Key (KeyChar c) ->
+    inputL %= (`Text.snoc` c)
 
-  Tick delta ->
-    elapsedL %= (+ delta)
+  Key KeyBackspace2 ->
+    inputL %= \s ->
+      if Text.null s
+        then s
+        else Text.init s
 
-  _ -> do
+  Key KeyEnter -> do
+    input <- use inputL
+    inputL .= mempty
+    updateChatLog input
+    send "chat" input
+
+  Message _topic msg ->
+    updateChatLog msg
+
+  _ ->
     pure ()
+
+updateChatLog :: Text -> Update Model Text ()
+updateChatLog msg =
+  chatL %= take 15 . (++ [msg])
 
 
 --------------------------------------------------------------------------------
@@ -54,28 +69,32 @@ update = \case
 --------------------------------------------------------------------------------
 
 view :: Model -> Scene
-view (Model n elapsed) =
-  let
-    cells :: Cells
-    cells =
-      mconcat
-        [ text 0 0 mempty mempty "I am an Elm game!"
-        , text 0 2 mempty mempty "Let's count to 10."
-        , text 2 4 mempty mempty (show n)
-        , text 0 6 mempty mempty ("Elapsed time: " ++ show elapsed)
-        ]
-  in
-    Scene cells NoCursor
+view model =
+  Scene (render model) NoCursor
+
+render :: Model -> Cells
+render model =
+  mconcat
+    [ renderChat (model ^. chatL)
+    , renderInput (model ^. inputL)
+    ]
+
+renderChat :: [Text] -> Cells
+renderChat =
+  foldMap (\(i, s) -> text 0 i mempty mempty (Text.unpack s)) . zip [0..]
+
+renderInput :: Text -> Cells
+renderInput s =
+  text 0 15 mempty mempty ("> " ++ Text.unpack s)
 
 
 --------------------------------------------------------------------------------
 -- Tick
 --------------------------------------------------------------------------------
 
--- Tick once per second.
 tickEvery :: Model -> Maybe NominalDiffTime
 tickEvery _ =
-  Just 1
+  Nothing
 
 
 --------------------------------------------------------------------------------
@@ -84,13 +103,13 @@ tickEvery _ =
 
 subscribe :: Model -> HashSet Text
 subscribe _ =
-  mempty
+  HashSet.singleton "chat"
 
 
 --------------------------------------------------------------------------------
 -- Game
 --------------------------------------------------------------------------------
 
-game :: ElmGame Model Void
+game :: ElmGame Model Text
 game =
   ElmGame init update view tickEvery subscribe

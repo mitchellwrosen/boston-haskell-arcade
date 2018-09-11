@@ -30,7 +30,7 @@ data Model
   , _modelNumBombsL :: !Int
   , _modelNextBombL :: !Int
   , _modelHealthL   :: !Int
-  }
+  } deriving (Show)
 makeFields ''Model
 
 init :: Init Void Model

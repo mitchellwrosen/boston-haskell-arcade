@@ -32,7 +32,12 @@ data Color
 moment
   :: Events (Text, Void)
   -> Events TermEvent
-  -> Banana (Behavior Scene, Events (Text, Void), Events ())
+  -> Banana
+       ( Behavior Scene
+       , Behavior (HashSet Text)
+       , Events (Text, Void)
+       , Events ()
+       )
 moment _ eEvent = mdo
   let
     eUp        = filterE (== EventKey KeyArrowUp    False) eEvent
@@ -85,7 +90,7 @@ moment _ eEvent = mdo
         <$> bCells
         <*> pure NoCursor
 
-  pure (bScene, never, () <$ eEsc)
+  pure (bScene, pure mempty, never, () <$ eEsc)
 
 cycleSelected :: Color -> Color
 cycleSelected =

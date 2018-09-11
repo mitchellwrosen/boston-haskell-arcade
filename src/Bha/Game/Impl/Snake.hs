@@ -24,7 +24,7 @@ data Direction
   | DirDown
   | DirLeft
   | DirRight
-  deriving (Eq)
+  deriving (Eq, Show)
 
 newtype HighScore
   = HighScore { unHighScore :: Int }
@@ -40,7 +40,7 @@ data Model
   , _modelHighScoreL :: !(Maybe Int)
   , _modelPauseL     :: !Bool
   , _modelAliveL     :: !Bool
-  }
+  } deriving (Show)
 makeFields ''Model
 
 rmax :: Row

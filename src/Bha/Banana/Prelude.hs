@@ -38,7 +38,6 @@ module Bha.Banana.Prelude
 import Control.Lens   as X (at, ix, (%~), (.~))
 import Termbox.Banana as X (Cursor(..), Event(..), Key(..))
 
-import Bha.Game                    as X (GameOutput(..))
 import Bha.Prelude                 as X
 import Bha.View                    as X
 import Internal.Bha.Banana.Prelude

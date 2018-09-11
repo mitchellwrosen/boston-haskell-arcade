@@ -79,22 +79,25 @@ data Merge a b
   | MergeLR a b
 
 mergeE
-  :: (a -> c)
+  :: forall a b c.
+     (a -> c)
   -> (b -> c)
   -> (a -> b -> c)
   -> Events a
   -> Events b
   -> Events c
 mergeE f g h xs ys =
-  (\case
+  resolve <$> unionWith both (MergeL <$> xs) (MergeR <$> ys)
+ where
+  resolve :: Merge a b -> c
+  resolve = \case
     MergeL x -> f x
     MergeR y -> g y
-    MergeLR x y -> h x y)
-  <$>
-  unionWith
-    (\(MergeL x) (MergeR y) -> MergeLR x y)
-    (MergeL <$> xs)
-    (MergeR <$> ys)
+    MergeLR x y -> h x y
+
+  both :: Merge a b -> Merge a b -> Merge a b
+  both (MergeL x) (MergeR y) = MergeLR x y
+  both _ _ = undefined
 
 -- | Filter an 'Event' with a 'Prism''.
 previewE :: Prism' s a -> Events s -> Events a

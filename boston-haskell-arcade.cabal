@@ -60,7 +60,6 @@ library
     Bha.Banana.Prelude
     Bha.Banana.Tick
     Bha.Banana.Versioned
-    Bha.Game
     Bha.Game.Impl.BananaExample
     Bha.Game.Impl.BlimpBoy
     Bha.Game.Impl.ElmExample

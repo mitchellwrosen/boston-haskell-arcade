@@ -33,7 +33,7 @@ data Model
   }
 makeFields ''Model
 
-init :: Init Model
+init :: Init Void Model
 init = do
   pure Model
     { _modelEnemiesL  = mempty
@@ -48,7 +48,7 @@ init = do
 -- Update
 --------------------------------------------------------------------------------
 
-update :: Input Void -> Update Model ()
+update :: Input Void -> Update Model Void ()
 update = \case
   Tick _ -> do
     health0 <- use healthL

@@ -10,6 +10,7 @@ module Internal.Bha.Elm.Prelude
   , gameover
   , randomInt
   , randomPct
+  , send
   ) where
 
 import Control.Monad.State
@@ -27,9 +28,9 @@ import Internal.Bha.View (Scene)
 -- | An Elm-style game.
 data ElmGame model message
   = ElmGame
-      (Init model)
+      (Init message model)
       -- Initial model.
-      (Input message -> Update model ())
+      (Input message -> Update model message ())
       -- Update the model from a tick or terminal event.
       (model -> Scene)
       -- Render the model.
@@ -42,64 +43,74 @@ data ElmGame model message
 -- Init and Update monads
 --------------------------------------------------------------------------------
 
-newtype Init a
-  = Init { unInit :: Free ElmF a }
+newtype Init message a
+  = Init { unInit :: Free (ElmF message) a }
   deriving newtype (Applicative, Functor, Monad)
 
-runInit :: Monad m => (forall x. ElmF (m x) -> m x) -> Init a -> m a
+runInit
+  :: Monad m
+  => (forall x. ElmF message (m x) -> m x)
+  -> Init message a
+  -> m a
 runInit phi =
   iterT phi . hoistFreeT (pure . runIdentity) . unInit
 
 
-newtype Update s a
-  = Update { unUpdate :: StateT s (FreeT ElmF Maybe) a }
-  deriving newtype (Alternative, Applicative, Functor, Monad, MonadState s)
+newtype Update model message a
+  = Update { unUpdate :: StateT model (FreeT (ElmF message) Maybe) a }
+  deriving newtype (Alternative, Applicative, Functor, Monad, MonadState model)
 
 runUpdate
-  :: forall a m s.
+  :: forall a m message model.
      Monad m
-  => s
-  -> (forall x. ElmF (MaybeT m x) -> MaybeT m x)
-  -> Update s a
-  -> m (Maybe (a, s))
+  => model
+  -> (forall x. ElmF message (MaybeT m x) -> MaybeT m x)
+  -> Update model message a
+  -> m (Maybe (a, model))
 runUpdate s phi (Update m) =
   runMaybeT (iterT phi (hoistFreeT (MaybeT . pure) (runStateT m s)))
 
 
-class Monad m => MonadElm m where
-  interpretElm :: ElmF a -> m a
+class Monad m => MonadElm message m | m -> message where
+  interpretElm :: ElmF message a -> m a
 
-instance MonadElm Init where
-  interpretElm :: ElmF a -> Init a
+instance MonadElm message (Init message) where
+  interpretElm :: ElmF message a -> Init message a
   interpretElm =
     Init . liftF
 
-instance MonadElm (Update s) where
-  interpretElm :: ElmF a -> Update s a
+instance MonadElm message (Update model message) where
+  interpretElm :: ElmF message a -> Update model message a
   interpretElm =
     Update . lift . liftF
 
 
-data ElmF x
+data ElmF message x
   = Save !Text !ByteString x
   | Load !Text (Maybe ByteString -> x)
   | RandomInt !Int !Int (Int -> x)
   | RandomPct (Double -> x)
-  deriving Functor
+  | Send !Text !message x
+  deriving (Functor)
 
 
-gameover :: Update s a
+gameover :: Update model message a
 gameover =
   empty
 
 -- | Generate a random 'Int' in the given bounds (inclusive).
-randomInt :: MonadElm m => Int -> Int -> m Int
+randomInt :: MonadElm message m => Int -> Int -> m Int
 randomInt lo hi =
   interpretElm (RandomInt lo hi id)
 
-randomPct :: MonadElm m => m Double
+randomPct :: MonadElm message m => m Double
 randomPct =
   interpretElm (RandomPct id)
+
+
+send :: MonadElm message m => Text -> message -> m ()
+send topic message =
+  interpretElm (Send topic message ())
 
 
 --------------------------------------------------------------------------------

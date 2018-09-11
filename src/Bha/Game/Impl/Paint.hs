@@ -30,9 +30,10 @@ data Color
   deriving (Bounded, Enum, Eq)
 
 moment
-  :: Events TermEvent
-  -> Banana (Behavior Scene, Events ())
-moment eEvent = mdo
+  :: Events (Text, Void)
+  -> Events TermEvent
+  -> Banana (Behavior Scene, Events (Text, Void), Events ())
+moment _ eEvent = mdo
   let
     eUp        = filterE (== EventKey KeyArrowUp    False) eEvent
     eDown      = filterE (== EventKey KeyArrowDown  False) eEvent
@@ -84,7 +85,7 @@ moment eEvent = mdo
         <$> bCells
         <*> pure NoCursor
 
-  pure (bScene, () <$ eEsc)
+  pure (bScene, never, () <$ eEsc)
 
 cycleSelected :: Color -> Color
 cycleSelected =

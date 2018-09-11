@@ -95,7 +95,7 @@ game :: ElmGame Model Void
 game =
   ElmGame init update view tickEvery subscribe
 
-init :: Init Model
+init :: Init Void Model
 init =
   pure Model
     { _modelLocL               = LocGrain
@@ -107,7 +107,7 @@ init =
     , _modelExploredWaterL     = 0
     }
 
-update :: Input Void -> Update Model ()
+update :: Input Void -> Update Model Void ()
 update = \case
   Key KeyEsc ->
     gameover

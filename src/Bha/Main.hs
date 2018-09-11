@@ -2,16 +2,23 @@ module Bha.Main
   ( main
   ) where
 
-import Reactive.Banana.Frameworks (MomentIO, execute)
+import Control.Concurrent
+import Control.Exception          (throwIO)
+import Data.List.Split            (splitOn)
+import Reactive.Banana.Frameworks (MomentIO, execute, newEvent, reactimate)
 import System.Directory           (createDirectoryIfMissing)
+import System.Environment         (getArgs)
 import Termbox.Banana             (InputMode(..), MouseMode(..), OutputMode(..))
+import Text.Read                  (readMaybe)
 
-import qualified Termbox.Banana as Tb
+import qualified Data.Aeson         as Aeson
+import qualified Network.WebSockets as WebSockets
+import qualified Termbox.Banana     as Tb
 
-import Bha.Banana.Prelude
+import Bha.Banana.Prelude hiding (reactimate)
 import Bha.Main.Game
 import Bha.Main.Menu
-import Internal.Bha.View (sceneToTbScene)
+import Internal.Bha.View  (sceneToTbScene)
 
 import qualified Bha.Game.Impl.BananaExample
 import qualified Bha.Game.Impl.BlimpBoy
@@ -43,15 +50,61 @@ gamelist =
 ------------------------------------------------------------------------------
 
 main :: IO ()
-main = do
-  createDirectoryIfMissing True bhaDataDir
-  Tb.main (InputModeEsc MouseModeYes) OutputMode256 main'
+main =
+  getArgs >>= \case
+    [splitOn ":" -> [host, readMaybe -> Just port]] ->
+      WebSockets.runClient host port "/" (\conn -> main' (Just conn))
 
-main'
-  :: Events TermEvent
+    _ ->
+      main' Nothing
+
+main' :: Maybe WebSockets.Connection -> IO ()
+main' mconn = do
+  createDirectoryIfMissing True bhaDataDir
+
+  Tb.main (InputModeEsc MouseModeYes) OutputMode256 $ \eEvent bSize -> do
+    eMessage :: Events ServerMessage <-
+      case mconn of
+        Nothing ->
+          pure never
+
+        Just conn -> do
+          (eMessage, fireMessage) <-
+            newEvent
+
+          tid <- liftIO myThreadId
+          let killMain _ = killThread tid
+
+          (liftIO . void . (`forkFinally` killMain) . forever) $ do
+            bytes <- WebSockets.receiveData conn
+            case Aeson.eitherDecodeStrict' bytes of
+              Left err ->
+                throwIO (userError err)
+
+              Right message ->
+                fireMessage message
+
+          pure eMessage
+
+    let
+      send :: ByteString -> IO ()
+      send =
+        case mconn of
+          Nothing ->
+            const (throwIO (userError "Not connected"))
+          Just conn ->
+            WebSockets.sendTextData conn
+
+    main'' send eMessage eEvent bSize
+
+main''
+  :: (ByteString -> IO ())
+  -> Events ServerMessage
+  -> Events TermEvent
   -> Behavior (Int, Int)
   -> MomentIO (Behavior Tb.Scene, Events ())
-main' eEvent _bSize = mdo
+main'' send eMessage eEvent _bSize = mdo
+
   -- Partition terminal events into two: those intended for the menu, and those
   -- intended for the game. How do we tell them apart? When there's an active
   -- game, it gets all of the input.
@@ -69,12 +122,25 @@ main' eEvent _bSize = mdo
     eMenuDone = previewE ᴍainMenuOutputDone eMenuOutput :: Events ()
     eMenuGame = previewE ᴍainMenuOutputGame eMenuOutput :: Events Game
 
-  (ebGameScene, eeGameOutput) :: (Events (Behavior Scene), Events (Events ())) <-
-    unpairE <$> execute (momentGame eEventForGame <$> eMenuGame)
+  (ebGameScene, eeGameOutput, eeGameDone)
+      :: ( Events (Behavior Scene)
+         , Events (Events ByteString)
+         , Events (Events ())
+         ) <- do
+    let
+      f :: Events (a, b, c) -> (Events a, Events b, Events c)
+      f xs =
+        ((^. _1) <$> xs, (^. _2) <$> xs, (^. _3) <$> xs)
+
+    f <$> execute (momentGame eMessage eEventForGame <$> eMenuGame)
+
+  -- Event that fires when the current game emits a payload for the server.
+  eGameOutput :: Events ByteString <-
+    switchE eeGameOutput
 
   -- Event that fires when the current game ends.
   eGameDone :: Events () <-
-    switchE eeGameOutput
+    switchE eeGameDone
 
   -- The game currently being played.
   bGame :: Behavior (Maybe Game) <-
@@ -93,5 +159,7 @@ main' eEvent _bSize = mdo
         ebGameScene
         -- When the current game ends, switch back to the menu.
         (bMenuScene <$ eGameDone))
+
+  reactimate (send <$> eGameOutput)
 
   pure (sceneToTbScene <$> bScene, eMenuDone)

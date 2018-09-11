@@ -15,12 +15,12 @@ import Bha.Elm.Prelude
 
 data Model
   = Model
-  { _modelCountL :: !Int
+  { _modelCountL   :: !Int
   , _modelElapsedL :: !NominalDiffTime
   }
 makeFields ''Model
 
-init :: Init Model
+init :: Init Void Model
 init =
   pure Model
     { _modelCountL = 0
@@ -32,10 +32,10 @@ init =
 -- Update
 --------------------------------------------------------------------------------
 
-update :: Input Void -> Update Model ()
+update :: Input Void -> Update Model Void ()
 update = \case
   Key KeyEsc ->
-    empty
+    gameover
 
   Key _ -> do
     n <- use countL

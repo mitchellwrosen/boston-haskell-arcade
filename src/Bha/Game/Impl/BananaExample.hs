@@ -8,9 +8,10 @@ import Bha.Banana.Prelude
 import Bha.Banana.Tick
 
 moment
-  :: Events TermEvent
-  -> Banana (Behavior Scene, Events ())
-moment eEvent = mdo
+  :: Events (Text, Void)
+  -> Events TermEvent
+  -> Banana (Behavior Scene, Events (Text, Void), Events ())
+moment _ eEvent = mdo
   eTick :: Events NominalDiffTime <-
     momentTick (Just 1) (TickTeardown <$ eDone)
 
@@ -51,4 +52,4 @@ moment eEvent = mdo
         <$> bCells
         <*> pure NoCursor
 
-  pure (bScene, eDone)
+  pure (bScene, never, eDone)

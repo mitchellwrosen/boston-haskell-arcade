@@ -231,6 +231,7 @@ language_extensions:
   - DeriveFunctor
   - DeriveGeneric
   - DerivingStrategies
+  - ExistentialQuantification
   - FlexibleContexts
   - FlexibleInstances
   - FunctionalDependencies
@@ -248,7 +249,9 @@ language_extensions:
   - RankNTypes
   - RecursiveDo
   - ScopedTypeVariables
+  - StandaloneDeriving
   - TupleSections
   - TypeApplications
   - TypeFamilies
   - TypeOperators
+  - ViewPatterns

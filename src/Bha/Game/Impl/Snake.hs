@@ -49,7 +49,7 @@ rmax = 20
 cmax :: Col
 cmax = 40
 
-init :: Init Model
+init :: Init Void Model
 init = do
   highScore :: Maybe Int <-
     (fmap.fmap) unHighScore (load "highScore")
@@ -71,7 +71,7 @@ init = do
 -- Update
 --------------------------------------------------------------------------------
 
-update :: Input Void -> Update Model ()
+update :: Input Void -> Update Model Void ()
 update input = do
   model <- get
 
@@ -130,7 +130,7 @@ update input = do
           _ ->
             pure ()
 
-updateTick :: Update Model ()
+updateTick :: Update Model Void ()
 updateTick = do
   model :: Model <-
     get
@@ -190,7 +190,7 @@ inBounds :: (Col, Row) -> Bool
 inBounds (col, row) =
   and [ col >= 0, col < cmax, row >= 0, row < rmax ]
 
-randomCell :: MonadElm m => m (Col, Row)
+randomCell :: MonadElm message m => m (Col, Row)
 randomCell =
   (,) <$> randomInt 0 (cmax-1) <*> randomInt 0 (rmax-1)
 

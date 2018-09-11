@@ -6,9 +6,10 @@ import Bha.Banana.Prelude
 import Bha.Banana.Tick
 
 moment
-  :: Events TermEvent
-  -> Banana (Behavior Scene, Events ())
-moment eEvent = mdo
+  :: Events (Text, Void)
+  -> Events TermEvent
+  -> Banana (Behavior Scene, Events (Text, Void), Events ())
+moment _ eEvent = mdo
   let
     eEsc   = filterE (== EventKey KeyEsc   False) eEvent
     eSpace = filterE (== EventKey KeySpace False) eEvent
@@ -43,7 +44,7 @@ moment eEvent = mdo
         <$> bCells
         <*> pure NoCursor
 
-  pure (bScene, eDone)
+  pure (bScene, never, eDone)
 
 render :: Double -> Cells
 render j =

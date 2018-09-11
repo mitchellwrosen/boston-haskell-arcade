@@ -15,9 +15,10 @@ newtype HighScores
   deriving anyclass (Serialize, Versioned '[])
 
 moment
-  :: Events TermEvent
-  -> Banana (Behavior Scene, Events ())
-moment eEvent = mdo
+  :: Events (Text, Void)
+  -> Events TermEvent
+  -> Banana (Behavior Scene, Events (Text, Void), Events ())
+moment _ eEvent = mdo
   HighScores highScores <-
     fromMaybe (HighScores []) <$>
       load (bhaDataDir </> "2048" </> "highScore")
@@ -112,7 +113,8 @@ moment eEvent = mdo
         (HighScores (take 10 (sortOn Down (score:highScores)))))
     <$> bScore
     <@  eDone)
-  pure (bScene, eDone)
+
+  pure (bScene, never, eDone)
 
 --------------------------------------------------------------------------------
 -- Rendering

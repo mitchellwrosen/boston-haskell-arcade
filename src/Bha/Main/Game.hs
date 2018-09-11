@@ -1,17 +1,23 @@
 module Bha.Main.Game
   ( Game(..)
   , gameName
+  , ServerMessage(..)
   , momentGame
   ) where
 
+import Control.Exception          (throwIO)
 import Control.Monad.Except
-import Reactive.Banana.Frameworks (MomentIO, execute)
+import Data.Aeson                 (FromJSON(..), ToJSON, Value, (.:), (.=))
+import Reactive.Banana.Frameworks (MomentIO, execute, newEvent)
 import System.Directory           (createDirectoryIfMissing)
 import System.FilePath            ((</>))
 import System.Random              (randomIO, randomRIO)
 
-import qualified Data.ByteString as ByteString
-import qualified Data.Text       as Text
+import qualified Data.Aeson           as Aeson (encode)
+import qualified Data.Aeson.Types     as Aeson
+import qualified Data.ByteString      as ByteString
+import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.Text            as Text
 
 import Bha.Banana.Prelude
 import Bha.Banana.Tick             (TickControl(TickSetDelta, TickTeardown),
@@ -22,13 +28,18 @@ import Internal.Bha.Elm.Prelude    (ElmF(..), runInit, runUpdate)
 
 data Game :: Type where
   GameElm
-    :: [Char]
+    :: (FromJSON message, ToJSON message)
+    => [Char]
     -> ElmGame model message
     -> Game
 
   GameBanana
-    :: [Char]
-    -> (Events TermEvent -> Banana (Behavior Scene, Events ()))
+    :: (FromJSON message, ToJSON message)
+    => [Char]
+    -> (  Events (Text, message)
+       -> Events TermEvent
+       -> Banana (Behavior Scene, Events (Text, message), Events ())
+       )
     -> Game
 
 gameName :: Game -> [Char]
@@ -36,24 +47,47 @@ gameName = \case
   GameElm    name _ -> name
   GameBanana name _ -> name
 
-momentGame
-  :: Events TermEvent
-  -> Game
-  -> MomentIO (Behavior Scene, Events ())
-momentGame eEvent = \case
-  GameElm name game ->
-    momentElmGame name eEvent game
 
-  GameBanana _ game ->
-    unBanana (game eEvent)
+data ServerMessage
+  = ServerMessage !Text !Value
+
+instance FromJSON ServerMessage where
+  parseJSON =
+    Aeson.withObject "ServerMessage" $ \o ->
+      ServerMessage
+        <$> o .: "topic"
+        <*> o .: "message"
+
+
+momentGame
+  :: Events ServerMessage
+  -> Events TermEvent
+  -> Game
+  -> MomentIO (Behavior Scene, Events ByteString, Events ())
+momentGame eMessage eEvent = \case
+  GameElm name game ->
+    momentElmGame name eMessage eEvent game
+
+  GameBanana _ game -> do
+    eInput <- execute (parseInput <$> eMessage)
+
+    (bScene, eOutput, eDone) <-
+      unBanana (game eInput eEvent)
+
+    pure (bScene, uncurry formatOutput <$> eOutput, eDone)
+
+-- TODO (un)subscribe to topics
 
 momentElmGame
   :: forall message model.
-     [Char]
+     (FromJSON message, ToJSON message)
+  => [Char]
+  -> Events ServerMessage
   -> Events TermEvent
   -> ElmGame model message
-  -> MomentIO (Behavior Scene, Events ())
-momentElmGame name eEvent (ElmGame init update view tickEvery _subscribe) = mdo
+  -> MomentIO (Behavior Scene, Events ByteString, Events ())
+momentElmGame
+    name eMessage eEvent (ElmGame init update view tickEvery _subscribe) = mdo
   let
     eKey :: Events (Input message)
     eKey =
@@ -79,8 +113,14 @@ momentElmGame name eEvent (ElmGame init update view tickEvery _subscribe) = mdo
           _ -> Nothing)
         <$> eEvent)
 
+  eServerInput <-
+    execute (parseInput <$> eMessage)
+
+  (eOutput, fireOutput) <-
+    newEvent
+
   model0 :: model <-
-    runInit (interpretElmIO name) init
+    runInit (interpretElmIO name fireOutput) init
 
   let
     tickEvery0 :: Maybe NominalDiffTime
@@ -91,7 +131,7 @@ momentElmGame name eEvent (ElmGame init update view tickEvery _subscribe) = mdo
     let
       f :: model -> Input message -> MomentIO (Maybe ((), model))
       f model input =
-        runUpdate model (interpretElmIO name) (update input)
+        runUpdate model (interpretElmIO name fireOutput) (update input)
 
       eInput :: Events (Input message)
       eInput =
@@ -100,7 +140,7 @@ momentElmGame name eEvent (ElmGame init update view tickEvery _subscribe) = mdo
           , eMouse
           , eResize
           , Tick <$> eTick
-          -- TODO Message
+          , (\(topic, message) -> Message topic message) <$> eServerInput
           ]
     in
       execute (f <$> bModel <@> eInput)
@@ -146,10 +186,15 @@ momentElmGame name eEvent (ElmGame init update view tickEvery _subscribe) = mdo
   bScene :: Behavior Scene <-
     stepper (view model0) eScene
 
-  pure (bScene, eDone)
+  pure (bScene, eOutput, eDone)
 
-interpretElmIO :: MonadIO m => [Char] -> ElmF (m x) -> m x
-interpretElmIO name = \case
+interpretElmIO
+  :: (MonadIO m, ToJSON message)
+  => [Char]
+  -> (ByteString -> IO ())
+  -> ElmF message (m x)
+  -> m x
+interpretElmIO name send = \case
   Save key value k -> do
     let dir = bhaDataDir </> name
     let file = dir </> Text.unpack key
@@ -172,3 +217,22 @@ interpretElmIO name = \case
 
   RandomPct k ->
     liftIO randomIO >>= k
+
+  Send topic message k -> do
+    liftIO (send (formatOutput topic message))
+    k
+
+parseInput :: (FromJSON a, MonadIO m) => ServerMessage -> m (Text, a)
+parseInput (ServerMessage topic value) =
+  case Aeson.parseEither Aeson.parseJSON value of
+    Left err ->
+      liftIO (throwIO (userError err))
+    Right message ->
+      pure (topic, message)
+
+formatOutput :: ToJSON a => Text -> a -> ByteString
+formatOutput topic message =
+  (LazyByteString.toStrict . Aeson.encode . Aeson.object)
+    [ "topic"   .= topic
+    , "message" .= message
+    ]

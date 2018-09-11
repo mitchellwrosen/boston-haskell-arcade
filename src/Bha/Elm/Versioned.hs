@@ -13,13 +13,13 @@ import Bha.Prelude
 import Internal.Bha.Elm.Prelude
 import Internal.Bha.Versioned
 
-save :: (MonadElm m, Versioned as a) => Text -> a -> m ()
+save :: (MonadElm message m, Versioned as a) => Text -> a -> m ()
 save k v =
   interpretElm (Save k (encodeVersioned v) ())
 
 load
-  :: forall a as m.
-     (MonadElm m, Versioned as a)
+  :: forall a as m message.
+     (MonadElm message m, Versioned as a)
   => Text
   -> m (Maybe a)
 load k =

@@ -7,7 +7,8 @@ tested-with: GHC == 8.4.3
 
 library
   build-depends:
-      base
+      aeson
+    , base
     , bytestring
     , cereal
     , containers
@@ -18,13 +19,14 @@ library
     , mtl
     , random
     , reactive-banana ^>= 1.2.0
+    , split
     , stm ^>= 2.4.5
     , termbox-banana ^>= 0.1.0
     , text ^>= 1.2.3
     , time
-    -- ^>= 1.9.2
     , transformers
     , unordered-containers
+    , websockets
   default-extensions:
     DataKinds
     DefaultSignatures
@@ -32,6 +34,7 @@ library
     DeriveFunctor
     DeriveGeneric
     DerivingStrategies
+    ExistentialQuantification
     FlexibleContexts
     FlexibleInstances
     FunctionalDependencies
@@ -49,10 +52,12 @@ library
     RankNTypes
     RecursiveDo
     ScopedTypeVariables
+    StandaloneDeriving
     TupleSections
     TypeApplications
     TypeFamilies
     TypeOperators
+    ViewPatterns
   default-language:
     Haskell2010
   exposed-modules:

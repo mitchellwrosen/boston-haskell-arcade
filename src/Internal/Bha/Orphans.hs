@@ -2,8 +2,10 @@
 
 module Internal.Bha.Orphans () where
 
-import Reactive.Banana
+import Data.Aeson      (FromJSON(..), ToJSON(..))
+import Data.Void       (Void, absurd)
 import Prelude
+import Reactive.Banana
 
 instance Monoid a => Monoid (Behavior a) where
   mempty = pure mempty
@@ -11,3 +13,10 @@ instance Monoid a => Monoid (Behavior a) where
 
 instance Semigroup a => Semigroup (Behavior a) where
   (<>) = liftA2 (<>)
+
+instance FromJSON Void where
+  parseJSON _ =
+    fail "Void"
+
+instance ToJSON Void where
+  toJSON = absurd

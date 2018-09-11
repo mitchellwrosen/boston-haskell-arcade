@@ -93,7 +93,7 @@ showTrade = \case
 
 game :: ElmGame Model Void
 game =
-  ElmGame init update view tickEvery
+  ElmGame init update view tickEvery subscribe
 
 init :: Init Model
 init =
@@ -453,3 +453,7 @@ viewHud model =
 tickEvery :: Model -> Maybe NominalDiffTime
 tickEvery _ =
   Nothing
+
+subscribe :: Model -> HashSet Text
+subscribe _ =
+  mempty

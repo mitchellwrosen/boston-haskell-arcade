@@ -53,7 +53,7 @@ momentElmGame
   -> Events TermEvent
   -> ElmGame model message
   -> MomentIO (Behavior Scene, Events ())
-momentElmGame name eEvent (ElmGame init update view tickEvery) = mdo
+momentElmGame name eEvent (ElmGame init update view tickEvery _subscribe) = mdo
   let
     eKey :: Events (Input message)
     eKey =

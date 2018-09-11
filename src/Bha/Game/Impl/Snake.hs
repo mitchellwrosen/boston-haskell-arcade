@@ -261,10 +261,20 @@ tickEvery model = do
     DirRight -> Just (1 / 20 * (1 - fromIntegral score / 100))
 
 
+
+--------------------------------------------------------------------------------
+-- Subscribe
+--------------------------------------------------------------------------------
+
+subscribe :: Model -> HashSet Text
+subscribe _ =
+  mempty
+
+
 --------------------------------------------------------------------------------
 -- Game
 --------------------------------------------------------------------------------
 
 game :: ElmGame Model Void
 game =
-  ElmGame init update view tickEvery
+  ElmGame init update view tickEvery subscribe

@@ -77,10 +77,20 @@ tickEvery :: Model -> Maybe NominalDiffTime
 tickEvery _ =
   Just 1
 
+
+--------------------------------------------------------------------------------
+-- Subscribe
+--------------------------------------------------------------------------------
+
+subscribe :: Model -> HashSet Text
+subscribe _ =
+  mempty
+
+
 --------------------------------------------------------------------------------
 -- Game
 --------------------------------------------------------------------------------
 
 game :: ElmGame Model Void
 game =
-  ElmGame init update view tickEvery
+  ElmGame init update view tickEvery subscribe

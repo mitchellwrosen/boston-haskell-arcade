@@ -35,6 +35,7 @@ data ElmGame model message
       -- Render the model.
       (model -> Maybe NominalDiffTime)
       -- Tick, and if so, how often?
+      (model -> HashSet Text)
 
 
 --------------------------------------------------------------------------------
@@ -110,4 +111,4 @@ data Input a
   | Mouse !Mouse !Int !Int -- Col, then row
   | Resize !Int !Int -- Col, then row
   | Tick !NominalDiffTime
-  | Message !a
+  | Message !Text !a

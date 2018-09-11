@@ -16,6 +16,7 @@ import Data.ByteString           as X (ByteString)
 import Data.Foldable             as X (asum, find)
 import Data.Function             as X (fix, (&))
 import Data.HashMap.Strict       as X (HashMap)
+import Data.HashSet              as X (HashSet)
 import Data.IntSet               as X (IntSet)
 import Data.IORef                as X
 import Data.Kind                 as X (Type)

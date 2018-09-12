@@ -2,7 +2,6 @@ module Bha.Main
   ( main
   ) where
 
-import Control.Concurrent
 import Control.Exception          (throwIO)
 import Data.Aeson                 ((.=))
 import Data.List.Split            (splitOn)
@@ -19,6 +18,7 @@ import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.HashSet         as HashSet
 import qualified Network.WebSockets   as WebSockets
 import qualified Termbox.Banana       as Tb
+import qualified SlaveThread
 
 import Bha.Banana.Prelude hiding (reactimate)
 import Bha.Main.Game
@@ -41,13 +41,13 @@ import qualified Bha.Game.Impl.Snake
 
 gamelist :: [Game]
 gamelist =
-  [ GameElm    "LambdaChat"       Bha.Game.Impl.LambdaChat.game
-  , GameElm    "Snake"            Bha.Game.Impl.Snake.game
+  [ GameElm    "Snake"            Bha.Game.Impl.Snake.game
   , GameBanana "2048"             Bha.Game.Impl.H2048.moment
   , GameBanana "Paint"            Bha.Game.Impl.Paint.moment
   , GameElm    "Blimp Boy"        Bha.Game.Impl.BlimpBoy.game
   , GameBanana "Flapping J"       Bha.Game.Impl.FlappingJ.moment
   , GameElm    "Grain Man"        Bha.Game.Impl.GrainMan.game
+  , GameElm    "LambdaChat"       Bha.Game.Impl.LambdaChat.game
   , GameElm    "Elm Example 1"    Bha.Game.Impl.ElmExample.game
   , GameBanana "Banana Example 1" Bha.Game.Impl.BananaExample.moment
   ]
@@ -79,10 +79,10 @@ main' mconn = do
           (eMessage, fireMessage) <-
             newEvent
 
-          tid <- liftIO myThreadId
-          let killMain _ = killThread tid
-          (liftIO . void . (`forkFinally` killMain) . forever) $ do
-            bytes <- WebSockets.receiveData conn
+          (void . liftIO . SlaveThread.fork . forever) $ do
+            bytes :: ByteString <-
+              WebSockets.receiveData conn
+
             case Aeson.eitherDecodeStrict' bytes of
               Left err ->
                 throwIO (userError (show (err, bytes)))
@@ -97,7 +97,8 @@ main' mconn = do
       send =
         case mconn of
           Nothing ->
-            \b -> throwIO (userError ("Not connected: " ++ show b))
+            const (throwIO (userError "Not connected"))
+
           Just conn ->
             WebSockets.sendTextData conn
 

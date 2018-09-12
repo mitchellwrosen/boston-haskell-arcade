@@ -4,8 +4,11 @@ module Bha.Game.Impl.LambdaChat
   ( game
   ) where
 
-import qualified Data.HashSet as HashSet
-import qualified Data.Text as Text
+import Data.Sequence (Seq)
+
+import qualified Data.HashSet  as HashSet
+import qualified Data.Sequence as Seq
+import qualified Data.Text     as Text
 
 import Bha.Elm.Prelude
 
@@ -17,7 +20,7 @@ import Bha.Elm.Prelude
 data Model
   = Model
   { _modelInputL :: !Text
-  , _modelChatL  :: ![Text]
+  , _modelChatL  :: !(Seq Text)
   } deriving (Show)
 makeFields ''Model
 
@@ -25,7 +28,7 @@ init :: Init Text Model
 init =
   pure Model
     { _modelInputL = ""
-    , _modelChatL  = []
+    , _modelChatL  = mempty
     }
 
 
@@ -39,7 +42,10 @@ update = \case
     gameover
 
   Key (KeyChar c) ->
-    inputL %= (`Text.snoc` c)
+    inputL %= (`snoc` c)
+
+  Key KeySpace ->
+    inputL %= (`snoc` ' ')
 
   Key KeyBackspace2 ->
     inputL %= \s ->
@@ -61,7 +67,10 @@ update = \case
 
 updateChatLog :: Text -> Update Model Text ()
 updateChatLog msg =
-  chatL %= take 15 . (++ [msg])
+  chatL %= \chat ->
+    if length chat == 15
+      then snoc (Seq.drop 1 chat) msg
+      else snoc chat msg
 
 
 --------------------------------------------------------------------------------
@@ -79,9 +88,10 @@ render model =
     , renderInput (model ^. inputL)
     ]
 
-renderChat :: [Text] -> Cells
+renderChat :: Seq Text -> Cells
 renderChat =
-  foldMap (\(i, s) -> text 0 i mempty mempty (Text.unpack s)) . zip [0..]
+  foldMap (\(i, s) -> text 0 i mempty mempty (Text.unpack s)) . zip [0..] .
+    toList
 
 renderInput :: Text -> Cells
 renderInput s =

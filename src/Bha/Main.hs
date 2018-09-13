@@ -110,7 +110,7 @@ main''
   -> Events TermEvent
   -> Behavior (Int, Int)
   -> MomentIO (Behavior Tb.Scene, Events ())
-main'' send eMessage eEvent _bSize = mdo
+main'' send eMessage eEvent bSize = mdo
   -- Partition terminal events into two: those intended for the menu, and those
   -- intended for the game. How do we tell them apart? When there's an active
   -- game, it gets all of the input.
@@ -120,7 +120,7 @@ main'' send eMessage eEvent _bSize = mdo
 
   -- Create the menu.
   (bMenuScene, eMenuOutput) :: (Behavior Scene, Events MainMenuOutput) <-
-    momentMainMenu gamelist eEventForMenu
+    momentMainMenu gamelist eEventForMenu bSize
 
   -- Partition the menu's output into two: "I'm done" (escape) and "play this
   -- game" (enter).
@@ -147,20 +147,23 @@ main'' send eMessage eEvent _bSize = mdo
   -- The game currently being played.
   bGame :: Behavior (Maybe Game) <-
     stepper Nothing
-      (unionWith const
-        (Just    <$> eMenuGame)  -- When a game begins, step to it.
-        (Nothing <$  eGameDone)) -- When the current game ends, step to Nothing.
+      (leftmostE
+        [ Just    <$> eMenuGame -- When a game begins, step to it.
+        , Nothing <$  eGameDone -- When the current game ends, step to Nothing.
+        ])
 
   -- The scene to render.
   bScene :: Behavior Scene <-
     switchB
       -- Start by rendering the menu.
       bMenuScene
-      (unionWith const
-        -- When a new game starts, switch to it.
-        ebGameScene
-        -- When the current game ends, switch back to the menu.
-        (bMenuScene <$ eGameDone))
+      (leftmostE
+        [ --When a new game starts, switch to it.
+          ebGameScene
+
+          -- When the current game ends, switch back to the menu.
+        , bMenuScene <$ eGameDone
+        ])
 
   manageSubscriptions send ebGameSubscribe eGameDone
 

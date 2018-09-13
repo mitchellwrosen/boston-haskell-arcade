@@ -26,8 +26,9 @@ momentMainMenu
   :: MonadMoment m
   => [Game] -- ^ Non-empty game list.
   -> Events TermEvent
+  -> Behavior (Int, Int)
   -> m (Behavior Scene, Events MainMenuOutput)
-momentMainMenu games eEvent = do
+momentMainMenu games eEvent bSize = do
   let
     eEsc   = filterE (== EventKey KeyEsc   False) eEvent
     eEnter = filterE (== EventKey KeyEnter False) eEvent
@@ -37,16 +38,17 @@ momentMainMenu games eEvent = do
 
   (bMenuScene, eGame) <-
     makeMenu
-      (\selected i game ->
-        if selected
-          then text 0 (i+2) mempty mempty ("> " ++ gameName game)
-          else text 0 (i+2) mempty mempty ("  " ++ gameName game))
       games
       (leftmostE
         [ MenuUp    <$ eUp
         , MenuDown  <$ eDown
         , MenuEnter <$ eEnter
         ])
+      ((\(w, _) selected i game ->
+        if selected
+          then text (menucol w) (i+3) mempty mempty ("> " ++ gameName game)
+          else text (menucol w) (i+3) mempty mempty ("  " ++ gameName game))
+      <$> bSize)
 
   let
     eOutput :: Events MainMenuOutput
@@ -60,13 +62,20 @@ momentMainMenu games eEvent = do
     bScene =
       Scene
         <$> mconcat
-              [ pure renderTitle
+              [ renderTitle <$> bSize
               , bMenuScene
               ]
         <*> pure NoCursor
 
   pure (bScene, eOutput)
+ where
+  menucol :: Int -> Int
+  menucol w =
+    div w 2 - div (maximum (map (length . gameName) games) + 2) 2
 
-renderTitle :: Cells
-renderTitle =
-  text 0 0 mempty mempty "* Welcome to the Boston Haskell Arcade! *"
+renderTitle :: (Int, Int) -> Cells
+renderTitle (w, _h) =
+  text (div w 2 - div (length s) 2) 1 mempty mempty s
+ where
+  s :: [Char]
+  s = "* Welcome to the Boston Haskell Arcade! *"

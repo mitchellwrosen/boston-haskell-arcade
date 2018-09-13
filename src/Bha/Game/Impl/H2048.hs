@@ -151,7 +151,7 @@ renderRow row =
 
 renderCell :: Int -> Int -> Maybe Int -> Cells
 renderCell row0 col0 = \case
-  Nothing   -> rect' col row 8 4 (Cell '‧' white black)
+  Nothing   -> rect' col row 8 4 (Cell '•' white black)
   Just 2    -> rect  col row 8 4 255 -- yellow
   Just 4    -> rect  col row 8 4 249 -- tangerine
   Just 8    -> rect  col row 8 4 243 -- orange

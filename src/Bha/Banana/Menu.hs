@@ -14,11 +14,11 @@ data MenuControl
 makeMenu
   :: forall a m.
      MonadMoment m
-  => (Bool -> Int -> a -> Cells)
-  -> [a]
+  => [a]
   -> Events MenuControl
+  -> Behavior (Bool -> Int -> a -> Cells)
   -> m (Behavior Cells, Events a)
-makeMenu render menu0 eControl = mdo
+makeMenu menu0 eControl bRender = mdo
   let
     eUp    = filterE (== MenuUp)    eControl
     eDown  = filterE (== MenuDown)  eControl
@@ -38,10 +38,10 @@ makeMenu render menu0 eControl = mdo
   let
     bCells :: Behavior Cells
     bCells =
-      f <$> bIndex
+      f <$> bRender <*> bIndex
      where
-      f :: Int -> Cells
-      f i =
+      f :: (Bool -> Int -> a -> Cells) -> Int -> Cells
+      f render i =
         foldMap
           (\(j, x) -> render (i == j) j x)
           (zip [0..] menu0)

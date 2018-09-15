@@ -6,9 +6,13 @@ module Bha.Game.Impl.BlimpBoy
 
 import Bha.Elm.Prelude
 
-import qualified Data.IntSet as IntSet
 import qualified Data.Set as Set
 
+
+-- TODO Blimp boy - blimp movement: drift left or right
+-- TODO Blimp boy - enemies that fire upwards
+-- TODO Blimp boy - enemy blimps that fire downwards
+-- TODO Blimp boy - levels
 
 --------------------------------------------------------------------------------
 -- Model
@@ -16,37 +20,52 @@ import qualified Data.Set as Set
 
 type Row = Int
 type Col = Int
+type X   = Double
+type Y   = Double
+type Vel = Double
 
-blimprow  = 5  :: Row
-castlecol = 40 :: Col
-enemycol  = 0  :: Col
-enemyrow  = 20 :: Row
-bombtimer = 5  :: Int
+blimprow    = 5   :: Row
+castlecol   = 40  :: Col
+enemycol    = 0   :: X
+enemyrow    = 20  :: Row
+enemyvel    = 7   :: Vel
+pebblevel   = 6   :: Vel
+pebbletimer = 1.0 :: NominalDiffTime
+bombvel     = 4   :: Vel
+bombtimer   = 3.0 :: NominalDiffTime
 
 data Model
   = Model
-  { _modelBlimpL       :: !Col
-  , _modelEnemiesL     :: !IntSet
-  , _modelBombL        :: !(Set (Col, Row))
-  , _modelNumBombsL    :: !Int
-  , _modelMaxNumBombsL :: !Int
-  , _modelNextBombL    :: !Int
-  , _modelHealthL      :: !Int
-  , _modelMoneyL       :: !Int
+  { _modelBlimpL         :: !Col
+  , _modelEnemiesL       :: !(Set X)
+  , _modelPebbleL        :: !(Set (X, Y))
+  , _modelNumPebblesL    :: !Int
+  , _modelMaxNumPebblesL :: !Int
+  , _modelNextPebbleL    :: !NominalDiffTime
+  , _modelBombsL         :: !(Set (X, Y))
+  , _modelNumBombsL      :: !Int
+  , _modelMaxNumBombsL   :: !Int
+  , _modelNextBombL      :: !NominalDiffTime
+  , _modelHealthL        :: !Int
+  , _modelMoneyL         :: !Int
   } deriving (Show)
 makeFields ''Model
 
 init :: Init Void Model
 init = do
   pure Model
-    { _modelBlimpL       = 35
-    , _modelEnemiesL     = mempty
-    , _modelBombL        = mempty
-    , _modelNumBombsL    = 1
-    , _modelMaxNumBombsL = 2
-    , _modelNextBombL    = bombtimer
-    , _modelHealthL      = 50
-    , _modelMoneyL       = 0
+    { _modelBlimpL         = 35
+    , _modelEnemiesL       = mempty
+    , _modelPebbleL        = mempty
+    , _modelNumPebblesL    = 1
+    , _modelMaxNumPebblesL = 2
+    , _modelNextPebbleL    = pebbletimer
+    , _modelBombsL         = mempty
+    , _modelNumBombsL      = 1
+    , _modelMaxNumBombsL   = 2
+    , _modelNextBombL      = bombtimer
+    , _modelHealthL        = 50
+    , _modelMoneyL         = 0
     }
 
 
@@ -56,8 +75,8 @@ init = do
 
 update :: Input Void -> Update Model Void ()
 update = \case
-  Tick _ ->
-    tickUpdate
+  Tick dt ->
+    tickUpdate dt
 
   Key KeyArrowLeft ->
     blimpL %= max 1 . subtract 1
@@ -65,22 +84,47 @@ update = \case
   Key KeyArrowRight ->
     blimpL %= min 55 . (+ 1)
 
+  Key (KeyChar 'p') -> do
+    money         <- use moneyL
+    maxNumPebbles <- use maxNumPebblesL
+
+    when (money >= 1 && maxNumPebbles < 5) $ do
+      moneyL -= 1
+      maxNumPebblesL += 1
+
   Key (KeyChar 'b') -> do
     money       <- use moneyL
     maxNumBombs <- use maxNumBombsL
 
-    when (money >= 1 && maxNumBombs < 5) $ do
-      moneyL -= 1
+    when (money >= 3 && maxNumBombs < 5) $ do
+      moneyL -= 3
       maxNumBombsL += 1
 
   Key KeySpace -> do
+    supply   <- use numPebblesL
+    blimpcol <- use blimpL
+
+    pebbleL %=
+      if supply >= 1
+        then
+          Set.insert (fromIntegral blimpcol + 0.5, fromIntegral blimprow + 0.5)
+        else
+            id
+
+    numPebblesL %=
+      (max 0 . subtract 1)
+
+  Key (KeyChar '1') -> do
     supply   <- use numBombsL
     blimpcol <- use blimpL
 
-    bombL %=
+    bombsL %=
       if supply >= 1
-        then Set.insert (blimpcol, blimprow)
-        else id
+        then
+          Set.insert
+            (fromIntegral blimpcol + 0.5, fromIntegral blimprow + 0.5)
+        else
+          id
 
     numBombsL %=
       (max 0 . subtract 1)
@@ -91,61 +135,112 @@ update = \case
   _ ->
     pure ()
 
-tickUpdate :: Update Model Void ()
-tickUpdate = do
-  use healthL >>= isCastleAlive
-  enemiesL %= enemiesAdvance
-  bombL %= bombsFallDownward
-  use bombL >>= removeBombedEnemies
-  use enemiesL >>= enemiesHitCastle
+tickUpdate :: NominalDiffTime -> Update Model Void ()
+tickUpdate dt = do
+  isCastleAlive
+  enemiesAdvance dt
+  stuffFallsDownward dt
+  removePebbledEnemies
+  removeBombedEnemies
+  enemiesHitCastle
   possiblySpawnNewEnemy
-  use nextBombL >>= checkIfNewBombAvailable
-  nextBombL %= possiblyResetBombTimer
+  updatePebbleSupply dt
+  updateBombSupply dt
 
-isCastleAlive :: Int -> Update Model Void ()
-isCastleAlive health = do
+isCastleAlive :: Update Model Void ()
+isCastleAlive = do
+  health <- use healthL
   guard (health > 0)
 
-enemiesAdvance :: IntSet -> IntSet
-enemiesAdvance =
-  IntSet.map (+1)
+enemiesAdvance :: NominalDiffTime -> Update Model Void ()
+enemiesAdvance dt =
+  enemiesL %= Set.map (\x -> x + enemyvel * realToFrac dt)
 
-bombsFallDownward :: Ord a => Set (a, Row) -> Set (a, Row)
-bombsFallDownward = do
-  Set.filter ((<= enemyrow) . snd) . Set.map (over _2 (+1))
+stuffFallsDownward :: NominalDiffTime -> Update Model Void ()
+stuffFallsDownward dt = do
+  pebbleL %=
+    Set.filter ((\y -> y <= fromIntegral enemyrow + 1) . snd) .
+      Set.map (over _2 (\y -> y + pebblevel * realToFrac dt))
 
-removeBombedEnemies :: Set (Row, Col) -> Update Model Void ()
-removeBombedEnemies bombs = do
-  for_ bombs $ \(bombcol, bombrow) -> do
-    enemies <- use enemiesL
+  bombsL %=
+    Set.filter ((\y -> y <= fromIntegral enemyrow + 1) . snd) .
+      Set.map (over _2 (\y -> y + bombvel * realToFrac dt))
 
-    when (bombrow == enemyrow && IntSet.member bombcol enemies) $ do
-      moneyL += 1
-      enemiesL %= IntSet.delete bombcol
+removePebbledEnemies :: Update Model Void ()
+removePebbledEnemies = do
+  pebbles <- use pebbleL
 
-enemiesHitCastle :: IntSet -> Update Model Void ()
-enemiesHitCastle enemies = do
-  when (IntSet.member castlecol enemies) (healthL -= 1)
-  enemiesL %= IntSet.delete castlecol
+  for_ pebbles $ \(pebblex, pebbley) -> do
+    when (floor pebbley == enemyrow) $ do
+      enemies <- use enemiesL
+
+      let
+        (dead, alive) =
+          Set.partition
+            (\x -> x >= pebblex - 0.5 && x <= pebblex + 0.5)
+            enemies
+
+      moneyL += length dead
+      enemiesL .= alive
+
+removeBombedEnemies :: Update Model Void ()
+removeBombedEnemies = do
+  bombs <- use bombsL
+
+  for_ bombs $ \(bombx, bomby) -> do
+    when (floor bomby == enemyrow) $ do
+      enemies <- use enemiesL
+
+      let
+        (dead, alive) =
+          Set.partition (\x -> x >= bombx - 1.5 && x <= bombx + 1.5) enemies
+
+      enemiesL .= alive
+      moneyL += length dead
+
+enemiesHitCastle :: Update Model Void ()
+enemiesHitCastle = do
+  enemies <- use enemiesL
+
+  let
+    (splat, walking) =
+      Set.partition (\x -> floor x >= castlecol) enemies
+
+  enemiesL .= walking
+  healthL -= length splat
 
 possiblySpawnNewEnemy :: Update Model Void ()
 possiblySpawnNewEnemy = do
   pct <- randomPct
-  when (pct > 0.96) (enemiesL %= IntSet.insert enemycol)
+  when (pct > 0.99) (enemiesL %= Set.insert enemycol)
 
-checkIfNewBombAvailable :: Int -> Update Model Void ()
-checkIfNewBombAvailable nextBombTimer = do
-  maxNumBombs <- use maxNumBombsL
+updatePebbleSupply :: NominalDiffTime -> Update Model Void ()
+updatePebbleSupply dt = do
+  nextPebbleTimer <- use nextPebbleL
+  maxNumPebbles   <- use maxNumPebblesL
+  numPebblesL %=
+    if nextPebbleTimer <= 0
+      then min maxNumPebbles . (+1)
+      else id
+  nextPebbleL %=
+    \timer ->
+      if timer <= 0
+        then timer - dt + pebbletimer
+        else timer - dt
+
+updateBombSupply :: NominalDiffTime -> Update Model Void ()
+updateBombSupply dt = do
+  nextBombTimer <- use nextBombL
+  maxNumBombs   <- use maxNumBombsL
   numBombsL %=
-    if nextBombTimer == 0
+    if nextBombTimer <= 0
       then min maxNumBombs . (+1)
       else id
-
-possiblyResetBombTimer :: Int -> Int
-possiblyResetBombTimer timer =
-  if timer == 0
-    then bombtimer
-    else timer - 1
+  nextBombL %=
+    \timer ->
+      if timer <= 0
+        then timer - dt + bombtimer
+        else timer - dt
 
 --------------------------------------------------------------------------------
 -- View
@@ -162,40 +257,59 @@ view model =
       , renderGround
       , renderCastle
       , renderBlimp (model ^. blimpL)
-      , renderBombs (model ^. bombL)
+      , renderPebbles (model ^. pebbleL)
+      , renderBombs (model ^. bombsL)
       , renderEnemies (model ^. enemiesL)
       , renderMoney (model ^. moneyL)
-      , renderHealth (model ^. healthL)
+      , renderNumPebbles (model ^. numPebblesL)
       , renderNumBombs (model ^. numBombsL)
+      , renderHealth (model ^. healthL)
       ]
 
 renderSky    = rect 0 0 60 (enemyrow+1) blue
 renderGround = rect 0 (enemyrow+1) 60 10 green
-renderCastle = rect castlecol 5 10 (enemyrow - 5 + 1) red
+renderCastle = rect castlecol 5 10 (enemyrow - 5 + 1) 253
 
 renderBlimp :: Int -> Cells
 renderBlimp col =
   rect (col-1) (blimprow-1) 3 2 yellow
 
-renderBombs :: Set (Col, Row) -> Cells
-renderBombs =
-  foldMap (\(c, r) -> set c r (Cell '•' black blue)) . Set.toList
+renderPebbles :: Set (X, Y) -> Cells
+renderPebbles =
+  foldMap (\(floor -> c, floor -> r) -> set c r (Cell '‧' black blue)) .
+    Set.toList
 
-renderEnemies :: IntSet -> Cells
+renderBombs :: Set (X, Y) -> Cells
+renderBombs =
+  foldMap render . Set.toList
+ where
+  render :: (X, Y) -> Cells
+  render (floor -> c, floor -> r) =
+    if r == enemyrow
+      then
+        rect (c-1) r 3 1 red
+      else
+        set c r (Cell '•' black blue)
+
+renderEnemies :: Set X -> Cells
 renderEnemies =
-  foldMap (\c -> set c enemyrow (Cell 'o' black blue)) . IntSet.toList
+  foldMap (\c -> set (round c) enemyrow (Cell 'o' black blue)) . Set.toList
 
 renderMoney :: Int -> Cells
 renderMoney money =
   text 0 (enemyrow+11) white black ("Money: " ++ show money)
 
+renderNumPebbles :: Int -> Cells
+renderNumPebbles pebbles =
+  text 0 (enemyrow+12) white black ("Pebbles: " ++ replicate pebbles '‧')
+
 renderNumBombs :: Int -> Cells
 renderNumBombs bombs =
-  text 0 (enemyrow+12) white black ("Bombs: " ++ show bombs)
+  text 0 (enemyrow+13) white black ("Bombs: " ++ replicate bombs '•')
 
 renderHealth :: Int -> Cells
 renderHealth health =
-  text 0 (enemyrow+13) white black ("Health: " ++ show health)
+  text 0 (enemyrow+14) white black ("Health: " ++ show health)
 
 
 --------------------------------------------------------------------------------
@@ -204,7 +318,7 @@ renderHealth health =
 
 tickEvery :: Model -> Maybe NominalDiffTime
 tickEvery _ =
-  Just 0.1
+  Just (1/30)
 
 
 --------------------------------------------------------------------------------

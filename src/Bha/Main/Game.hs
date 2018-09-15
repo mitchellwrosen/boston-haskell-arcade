@@ -115,12 +115,12 @@ momentElmGame
       tickEvery model0
 
   eUpdate :: Events (Maybe model) <- do
-    eServerInput :: Events (Text, message)  <-
+    eServerInput :: Events (Text, message) <-
       execute (parseInput <$> eMessage)
 
     let
       step :: model -> Input message -> MomentIO (Maybe model)
-      step model input =
+      step model input = do
         runUpdate model (interpretElmIO name send) (update input)
 
     let

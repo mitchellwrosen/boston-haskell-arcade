@@ -111,16 +111,9 @@ main''
   -> Behavior (Int, Int)
   -> MomentIO (Behavior Tb.Scene, Events ())
 main'' send eMessage eEvent bSize = mdo
-  -- Partition terminal events into two: those intended for the menu, and those
-  -- intended for the game. How do we tell them apart? When there's an active
-  -- game, it gets all of the input.
-  let
-    eEventForMenu = whenE (isNothing <$> bGame) eEvent :: Events TermEvent
-    eEventForGame = whenE (isJust    <$> bGame) eEvent :: Events TermEvent
-
   -- Create the menu.
   (bMenuScene, eMenuOutput) :: (Behavior Scene, Events MainMenuOutput) <-
-    momentMainMenu gamelist eEventForMenu bSize
+    momentMainMenu gamelist (whenE (isNothing <$> bGame) eEvent) bSize
 
   -- Partition the menu's output into two: "I'm done" (escape) and "play this
   -- game" (enter).
@@ -134,11 +127,27 @@ main'' send eMessage eEvent bSize = mdo
          , Events (Events ())
          ) <- do
     let
+      doRunGame
+        :: Game
+        -> MomentIO
+             ( Behavior Scene
+             , Behavior (HashSet Text)
+             , Events ()
+             )
+      doRunGame game = mdo
+        bGate :: Behavior Bool <-
+          stepper True (False <$ eThisGameDone)
+
+        (bThisGameScene, bThisGameSubscribe, eThisGameDone) <-
+          momentGame send eMessage (whenE bGate eEvent) game
+
+        pure (bThisGameScene, bThisGameSubscribe, eThisGameDone)
+
       f :: Events (a, b, c) -> (Events a, Events b, Events c)
       f xs =
         ((^. _1) <$> xs, (^. _2) <$> xs, (^. _3) <$> xs)
 
-    f <$> execute (momentGame send eMessage eEventForGame <$> eMenuGame)
+    f <$> execute (doRunGame <$> eMenuGame)
 
   -- Event that fires when the current game ends.
   eGameDone :: Events () <-

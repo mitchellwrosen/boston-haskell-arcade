@@ -29,8 +29,8 @@ moment _ eEvent = mdo
 
   bJvel :: Behavior Double <-
     accumB 1 $ unions
-      [ (\dt v -> v + 20 * realToFrac dt) <$> eTick
-      , const (-20) <$ ePulse
+      [ (\dt v -> v + 80 * realToFrac dt) <$> eTick
+      , const (-40) <$ ePulse
       ]
 
   bJ :: Behavior Double <-

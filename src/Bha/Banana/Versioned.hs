@@ -7,9 +7,11 @@ module Bha.Banana.Versioned
   , Serialize
   ) where
 
-import Data.Serialize   (Serialize)
-import System.Directory (createDirectoryIfMissing)
-import System.FilePath  ((</>))
+import Control.Monad.Reader
+import Data.Serialize             (Serialize)
+import Reactive.Banana.Frameworks (reactimate)
+import System.Directory           (createDirectoryIfMissing)
+import System.FilePath            ((</>))
 
 import qualified Data.ByteString as ByteString
 
@@ -17,18 +19,28 @@ import Bha.Prelude
 import Internal.Bha.Banana.Prelude
 import Internal.Bha.Versioned
 
--- TODO banana load/save implicit file path
+save
+  :: forall a as.
+     Versioned as a
+  => FilePath
+  -> Events a
+  -> Banana ()
+save path eValue =
+  Banana $ ReaderT $ \name ->
+    reactimate (doSave name <$> eValue)
 
-
-save :: Versioned as a => FilePath -> FilePath -> a -> IO ()
-save dir key value = do
-  createDirectoryIfMissing True dir
-  ByteString.writeFile (dir </> key) (encodeVersioned value)
+ where
+  doSave :: [Char] -> a -> IO ()
+  doSave name value = do
+    let dir = bhaDataDir </> name
+    createDirectoryIfMissing True dir
+    ByteString.writeFile (dir </> path) (encodeVersioned value)
 
 load :: Versioned as a => FilePath -> Banana (Maybe a)
-load path = Banana . liftIO $ do
-  asum
-    [ either (const Nothing) Just . decodeVersioned <$>
-        ByteString.readFile path
-    , pure Nothing
-    ]
+load path =
+  Banana $ ReaderT $ \name -> liftIO $ do
+    asum
+      [ either (const Nothing) Just . decodeVersioned <$>
+          ByteString.readFile (bhaDataDir </> name </> path)
+      , pure Nothing
+      ]

@@ -19,11 +19,11 @@ import qualified Data.ByteString      as ByteString
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Text            as Text
 
-import Bha.Banana.Prelude          hiding (reactimate)
+import Bha.Banana.Prelude
 import Bha.Banana.Tick             (TickControl(TickSetDelta, TickTeardown),
                                     momentTick)
 import Bha.Elm.Prelude             (ElmGame(..), Input(..))
-import Internal.Bha.Banana.Prelude (Banana(..))
+import Internal.Bha.Banana.Prelude (Banana, runBanana)
 import Internal.Bha.Elm.Prelude    (ElmF(..), runInit, runUpdate)
 
 data Game :: Type where
@@ -79,11 +79,11 @@ momentGame send eMessage eEvent = \case
   GameElm name game ->
     momentElmGame name send eMessage eEvent game
 
-  GameBanana _ game -> do
+  GameBanana name game -> do
     eInput <- execute (parseInput <$> eMessage)
 
     (bScene, bSubscribe, eOutput, eDone) <-
-      unBanana (game eInput eEvent)
+      runBanana (game eInput eEvent) name
 
     reactimate (send . uncurry formatOutput <$> eOutput)
 
@@ -145,7 +145,7 @@ momentElmGame
     stepper model0 eModel
 
   eTick :: Events NominalDiffTime <-
-    unBanana (momentTick tickEvery0 eTickControl)
+    runBanana (momentTick tickEvery0 eTickControl) name
 
   let
     eTickControl :: Events TickControl

@@ -20,7 +20,7 @@ import qualified Network.WebSockets   as WebSockets
 import qualified Termbox.Banana       as Tb
 import qualified SlaveThread
 
-import Bha.Banana.Prelude hiding (reactimate)
+import Bha.Banana.Prelude
 import Bha.Main.Game
 import Bha.Main.Menu
 import Internal.Bha.View  (sceneToTbScene)

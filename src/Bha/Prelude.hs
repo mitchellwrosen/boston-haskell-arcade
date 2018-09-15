@@ -12,6 +12,7 @@ import Control.Lens              as X (Prism', Traversal', ix, mapped, over,
 import Control.Monad             as X
 import Control.Monad.Fix         as X
 import Control.Monad.IO.Class    as X
+import Control.Monad.Trans.Class as X (lift)
 import Control.Monad.Trans.Maybe as X
 import Data.ByteString           as X (ByteString)
 import Data.Foldable             as X (asum, find, for_, toList)

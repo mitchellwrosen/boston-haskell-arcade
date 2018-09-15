@@ -19,7 +19,6 @@ module Bha.Banana.Prelude
   , mergeE
   , never
   , previewE
-  , reactimate
   , stepper
   , switchB
   , switchE

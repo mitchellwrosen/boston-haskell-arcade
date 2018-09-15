@@ -3,6 +3,7 @@ module Internal.Bha.Banana.Prelude
     TermEvent
     -- * Banana
   , Banana(..)
+  , runBanana
   , Events
   , Behavior
   , MonadMoment
@@ -19,7 +20,6 @@ module Internal.Bha.Banana.Prelude
   , mergeE
   , never
   , previewE
-  , reactimate
   , stepper
   , switchB
   , switchE
@@ -34,13 +34,14 @@ module Internal.Bha.Banana.Prelude
   , randomPct
   ) where
 
+import Control.Monad.Reader
+
 import Reactive.Banana            hiding (Event)
-import Reactive.Banana.Frameworks hiding (reactimate)
+import Reactive.Banana.Frameworks
 import System.Random
 import Termbox.Banana             (Event)
 
 import qualified Reactive.Banana
-import qualified Reactive.Banana.Frameworks as Reactive.Banana
 
 import Bha.Prelude
 
@@ -53,18 +54,22 @@ type Events
 -- | A wrapper around MomentIO, used to control what effects games are allowed
 -- to use.
 newtype Banana a
-  = Banana { unBanana :: MomentIO a }
-  deriving newtype (Applicative, Functor, Monad, MonadFix, MonadMoment)
+  = Banana { unBanana :: ReaderT [Char] MomentIO a }
+  deriving newtype (Applicative, Functor, Monad, MonadFix)
 
--- TODO IO wrapper
+instance MonadMoment Banana where
+  liftMoment :: Moment a -> Banana a
+  liftMoment =
+    Banana . lift . liftMoment
 
-reactimate :: Events (IO ()) -> Banana ()
-reactimate =
-  Banana . Reactive.Banana.reactimate
+runBanana :: Banana a -> [Char] -> MomentIO a
+runBanana =
+  runReaderT . unBanana
 
 executeE :: Events (Banana a) -> Banana (Events a)
 executeE e =
-  Banana (execute (unBanana <$> e))
+  Banana $ ReaderT $ \name -> do
+    execute ((`runBanana` name) <$> e)
 
 filterCoincidentE :: Events b -> Events a -> Events a
 filterCoincidentE e1 e2 =

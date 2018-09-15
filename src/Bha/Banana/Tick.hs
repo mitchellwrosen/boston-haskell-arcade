@@ -5,7 +5,7 @@ module Bha.Banana.Tick
 
 import Reactive.Banana.Frameworks
 
-import Bha.Banana.Prelude          hiding (reactimate)
+import Bha.Banana.Prelude
 import Internal.Bha.Banana.Prelude (Banana(..))
 
 data TickControl
@@ -22,7 +22,7 @@ momentTick
   -> Events TickControl
      -- ^ Updates to the tick thread behavior.
   -> Banana (Events NominalDiffTime)
-momentTick delta0 eControl = Banana $ do
+momentTick delta0 eControl = Banana $ lift $ do
   (eTick, fireTick) :: (Events NominalDiffTime, NominalDiffTime -> IO ()) <-
     newEvent
 

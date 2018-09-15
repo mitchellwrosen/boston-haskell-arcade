@@ -4,7 +4,6 @@ module Bha.Game.Impl.H2048
 
 import Data.List       (intercalate, sortOn, transpose)
 import Data.Ord        (Down(Down))
-import System.FilePath ((</>))
 
 import Bha.Banana.Prelude
 import Bha.Banana.Versioned
@@ -26,7 +25,7 @@ moment
 moment _ eEvent = mdo
   HighScores highScores <-
     fromMaybe (HighScores []) <$>
-      load (bhaDataDir </> "2048" </> "highScore")
+      load "highScore"
 
   let
     eUp    = filterE ((||) <$> (== EventKey KeyArrowUp    False) <*> (== EventKey (KeyChar 'k') False)) eEvent
@@ -112,12 +111,10 @@ moment _ eEvent = mdo
         <$> bCells
         <*> pure NoCursor
 
-  reactimate
-    ((\score ->
-      save (bhaDataDir </> "2048") "highScore"
-        (HighScores (take 10 (sortOn Down (score:highScores)))))
-    <$> bScore
-    <@  eDone)
+  save "highScore"
+    ((\score -> HighScores (take 10 (sortOn Down (score:highScores))))
+      <$> bScore
+      <@  eDone)
 
   pure (bScene, pure mempty, never, eDone)
 

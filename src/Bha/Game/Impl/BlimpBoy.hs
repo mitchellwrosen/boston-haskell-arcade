@@ -56,65 +56,8 @@ init = do
 
 update :: Input Void -> Update Model Void ()
 update = \case
-  Tick _ -> do
-    health0 <- use healthL
-    guard (health0 > 0)
-
-    bombs0   <- use bombL
-
-    -- March enemies forward by 1
-    enemiesL %= IntSet.map (+1)
-
-    -- Move bombs down
-    let
-      bombs1 =
-        Set.filter ((<= enemyrow) . snd) (Set.map (over _2 (+1)) bombs0)
-
-    -- Kill any enemy being bombed
-    -- foldlM :: (Foldable t, Monad m) => (b -> a -> m b) -> b -> t a -> m b
-    for_ bombs1 $ \(bombcol, bombrow) -> do
-      enemies <- use enemiesL
-
-      when (bombrow == enemyrow && IntSet.member bombcol enemies) $ do
-        moneyL += 1
-        enemiesL %= IntSet.delete bombcol
-
-    enemies2 <-
-      use enemiesL
-
-    -- Kill any enemy hitting the castle
-    let
-      enemies3 =
-        IntSet.delete castlecol enemies2
-
-    -- Possibly spawn new enemy
-    enemies4 <- do
-      pct <- randomPct
-      if pct > 0.96
-        then pure (IntSet.insert enemycol enemies3)
-        else pure enemies3
-
-    timer <- use nextBombL
-
-    maxNumBombs <- use maxNumBombsL
-    numBombsL %=
-      if timer == 0
-        then min maxNumBombs . (+1)
-        else id
-
-    nextBombL .=
-      if timer == 0
-        then bombtimer
-        else timer - 1
-
-    enemiesL .= enemies4
-    bombL    .= bombs1
-
-    -- If an enemy hit the castle, decrease health by 1
-    healthL %=
-      if IntSet.member castlecol enemies2
-        then subtract 1
-        else id
+  Tick _ ->
+    tickUpdate
 
   Key KeyArrowLeft ->
     blimpL %= max 1 . subtract 1
@@ -148,6 +91,61 @@ update = \case
   _ ->
     pure ()
 
+tickUpdate :: Update Model Void ()
+tickUpdate = do
+  use healthL >>= isCastleAlive
+  enemiesL %= enemiesAdvance
+  bombL %= bombsFallDownward
+  use bombL >>= removeBombedEnemies
+  use enemiesL >>= enemiesHitCastle
+  possiblySpawnNewEnemy
+  use nextBombL >>= checkIfNewBombAvailable
+  nextBombL %= possiblyResetBombTimer
+
+isCastleAlive :: Int -> Update Model Void ()
+isCastleAlive health = do
+  guard (health > 0)
+
+enemiesAdvance :: IntSet -> IntSet
+enemiesAdvance =
+  IntSet.map (+1)
+
+bombsFallDownward :: Ord a => Set (a, Row) -> Set (a, Row)
+bombsFallDownward = do
+  Set.filter ((<= enemyrow) . snd) . Set.map (over _2 (+1))
+
+removeBombedEnemies :: Set (Row, Col) -> Update Model Void ()
+removeBombedEnemies bombs = do
+  for_ bombs $ \(bombcol, bombrow) -> do
+    enemies <- use enemiesL
+
+    when (bombrow == enemyrow && IntSet.member bombcol enemies) $ do
+      moneyL += 1
+      enemiesL %= IntSet.delete bombcol
+
+enemiesHitCastle :: IntSet -> Update Model Void ()
+enemiesHitCastle enemies = do
+  when (IntSet.member castlecol enemies) (healthL -= 1)
+  enemiesL %= IntSet.delete castlecol
+
+possiblySpawnNewEnemy :: Update Model Void ()
+possiblySpawnNewEnemy = do
+  pct <- randomPct
+  when (pct > 0.96) (enemiesL %= IntSet.insert enemycol)
+
+checkIfNewBombAvailable :: Int -> Update Model Void ()
+checkIfNewBombAvailable nextBombTimer = do
+  maxNumBombs <- use maxNumBombsL
+  numBombsL %=
+    if nextBombTimer == 0
+      then min maxNumBombs . (+1)
+      else id
+
+possiblyResetBombTimer :: Int -> Int
+possiblyResetBombTimer timer =
+  if timer == 0
+    then bombtimer
+    else timer - 1
 
 --------------------------------------------------------------------------------
 -- View

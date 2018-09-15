@@ -245,7 +245,7 @@ viewHighScore score =
 -- Tick
 --------------------------------------------------------------------------------
 
-tickEvery :: Model -> Maybe NominalDiffTime
+tickEvery :: Model -> Maybe Seconds
 tickEvery model = do
   guard (not (model ^. pauseL))
   guard (model ^. aliveL)

@@ -1,5 +1,6 @@
 module Bha.Prelude
-  ( bhaDataDir
+  ( type Seconds
+  , bhaDataDir
   , module X
   ) where
 
@@ -26,7 +27,6 @@ import Data.Maybe                as X hiding (fromJust)
 import Data.Proxy                as X (Proxy(Proxy))
 import Data.Set                  as X (Set)
 import Data.Text                 as X (Text)
-import Data.Time                 as X (NominalDiffTime, UTCTime, getCurrentTime)
 import Data.Void                 as X (Void)
 import Data.Word                 as X
 import GHC.Generics              as X (Generic)
@@ -36,8 +36,12 @@ import Prelude as X hiding (init)
 import Internal.Bha.Debug   as X (debug)
 import Internal.Bha.Orphans as X ()
 
+import Data.Time (NominalDiffTime)
 import System.Directory (XdgDirectory(..), getXdgDirectory)
 import System.IO.Unsafe (unsafePerformIO)
+
+type Seconds
+  = NominalDiffTime
 
 bhaDataDir :: FilePath
 bhaDataDir =

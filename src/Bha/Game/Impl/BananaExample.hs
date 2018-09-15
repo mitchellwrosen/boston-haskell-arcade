@@ -17,10 +17,10 @@ moment
        , Events ()
        )
 moment _ eEvent = mdo
-  eTick :: Events NominalDiffTime <-
+  eTick :: Events Seconds <-
     momentTick (Just 1) (TickTeardown <$ eDone)
 
-  bElapsed :: Behavior NominalDiffTime <-
+  bElapsed :: Behavior Seconds <-
     accumB 0 ((+) <$> eTick)
 
   let
@@ -42,7 +42,7 @@ moment _ eEvent = mdo
     bCells =
       f <$> bCount <*> bElapsed
      where
-      f :: Int -> NominalDiffTime -> Cells
+      f :: Int -> Seconds -> Cells
       f n elapsed =
         mconcat
           [ text 0 0 mempty mempty "I am a banana game!"

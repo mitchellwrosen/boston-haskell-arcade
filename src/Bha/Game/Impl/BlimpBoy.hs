@@ -30,9 +30,9 @@ enemycol    = 0   :: X
 enemyrow    = 20  :: Row
 enemyvel    = 7   :: Vel
 pebblevel   = 6   :: Vel
-pebbletimer = 1.0 :: NominalDiffTime
+pebbletimer = 1.0 :: Seconds
 bombvel     = 4   :: Vel
-bombtimer   = 3.0 :: NominalDiffTime
+bombtimer   = 3.0 :: Seconds
 
 data Model
   = Model
@@ -41,11 +41,11 @@ data Model
   , _modelPebbleL        :: !(Set (X, Y))
   , _modelNumPebblesL    :: !Int
   , _modelMaxNumPebblesL :: !Int
-  , _modelNextPebbleL    :: !NominalDiffTime
+  , _modelNextPebbleL    :: !Seconds
   , _modelBombsL         :: !(Set (X, Y))
   , _modelNumBombsL      :: !Int
   , _modelMaxNumBombsL   :: !Int
-  , _modelNextBombL      :: !NominalDiffTime
+  , _modelNextBombL      :: !Seconds
   , _modelHealthL        :: !Int
   , _modelMoneyL         :: !Int
   } deriving (Show)
@@ -135,7 +135,7 @@ update = \case
   _ ->
     pure ()
 
-tickUpdate :: NominalDiffTime -> Update Model Void ()
+tickUpdate :: Seconds -> Update Model Void ()
 tickUpdate dt = do
   isCastleAlive
   enemiesAdvance dt
@@ -152,11 +152,11 @@ isCastleAlive = do
   health <- use healthL
   guard (health > 0)
 
-enemiesAdvance :: NominalDiffTime -> Update Model Void ()
+enemiesAdvance :: Seconds -> Update Model Void ()
 enemiesAdvance dt =
   enemiesL %= Set.map (\x -> x + enemyvel * realToFrac dt)
 
-stuffFallsDownward :: NominalDiffTime -> Update Model Void ()
+stuffFallsDownward :: Seconds -> Update Model Void ()
 stuffFallsDownward dt = do
   pebbleL %=
     Set.filter ((\y -> y <= fromIntegral enemyrow + 1) . snd) .
@@ -214,7 +214,7 @@ possiblySpawnNewEnemy = do
   pct <- randomPct
   when (pct > 0.99) (enemiesL %= Set.insert enemycol)
 
-updatePebbleSupply :: NominalDiffTime -> Update Model Void ()
+updatePebbleSupply :: Seconds -> Update Model Void ()
 updatePebbleSupply dt = do
   nextPebbleTimer <- use nextPebbleL
   maxNumPebbles   <- use maxNumPebblesL
@@ -228,7 +228,7 @@ updatePebbleSupply dt = do
         then timer - dt + pebbletimer
         else timer - dt
 
-updateBombSupply :: NominalDiffTime -> Update Model Void ()
+updateBombSupply :: Seconds -> Update Model Void ()
 updateBombSupply dt = do
   nextBombTimer <- use nextBombL
   maxNumBombs   <- use maxNumBombsL
@@ -316,7 +316,7 @@ renderHealth health =
 -- Tick
 --------------------------------------------------------------------------------
 
-tickEvery :: Model -> Maybe NominalDiffTime
+tickEvery :: Model -> Maybe Seconds
 tickEvery _ =
   Just (1/30)
 

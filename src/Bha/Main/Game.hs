@@ -110,7 +110,7 @@ momentElmGame
     runInit (interpretElmIO name send) init
 
   let
-    tickEvery0 :: Maybe NominalDiffTime
+    tickEvery0 :: Maybe Seconds
     tickEvery0 =
       tickEvery model0
 
@@ -144,7 +144,7 @@ momentElmGame
   bModel :: Behavior model <-
     stepper model0 eModel
 
-  eTick :: Events NominalDiffTime <-
+  eTick :: Events Seconds <-
     runBanana (momentTick tickEvery0 eTickControl) name
 
   let
@@ -161,7 +161,7 @@ momentElmGame
             pure (TickSetDelta new))
         <$> bTickEvery <@> eUpdate)
 
-  bTickEvery :: Behavior (Maybe NominalDiffTime) <-
+  bTickEvery :: Behavior (Maybe Seconds) <-
     stepper tickEvery0 (tickEvery <$> eModel)
 
   let

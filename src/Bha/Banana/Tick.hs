@@ -9,7 +9,7 @@ import Bha.Banana.Prelude
 import Internal.Bha.Banana.Prelude (Banana(..))
 
 data TickControl
-  = TickSetDelta (Maybe NominalDiffTime)
+  = TickSetDelta (Maybe Seconds)
     -- ^ Update the rate at which ticks occur.
   | TickTeardown
     -- ^ Stop ticking forever; tears down the tick thread.
@@ -17,18 +17,18 @@ data TickControl
 -- | Create a dynamic tick event that carries the delta since the last tick.
 -- Tick speed is dynamic, and can be "frozen".
 momentTick
-  :: Maybe NominalDiffTime
+  :: Maybe Seconds
      -- ^ Initial tick rate.
   -> Events TickControl
      -- ^ Updates to the tick thread behavior.
-  -> Banana (Events NominalDiffTime)
+  -> Banana (Events Seconds)
 momentTick delta0 eControl = Banana $ lift $ do
-  (eTick, fireTick) :: (Events NominalDiffTime, NominalDiffTime -> IO ()) <-
+  (eTick, fireTick) :: (Events Seconds, Seconds -> IO ()) <-
     newEvent
 
   -- Two mutable cells to communicate with the background ticking thread: how
   -- often to tick, and whether or not the game is done.
-  tickDeltaVar :: TVar (Maybe NominalDiffTime) <-
+  tickDeltaVar :: TVar (Maybe Seconds) <-
     liftIO (newTVarIO delta0)
   doneVar :: TMVar () <-
     liftIO newEmptyTMVarIO
@@ -60,7 +60,7 @@ momentTick delta0 eControl = Banana $ lift $ do
   pure eTick
 
 handleControl
-  :: TVar (Maybe NominalDiffTime)
+  :: TVar (Maybe Seconds)
   -> TMVar ()
   -> TickControl
   -> IO ()

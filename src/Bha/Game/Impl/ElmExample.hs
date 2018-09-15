@@ -16,7 +16,7 @@ import Bha.Elm.Prelude
 data Model
   = Model
   { _modelCountL   :: !Int
-  , _modelElapsedL :: !NominalDiffTime
+  , _modelElapsedL :: !Seconds
   } deriving (Show)
 makeFields ''Model
 
@@ -73,7 +73,7 @@ view (Model n elapsed) =
 --------------------------------------------------------------------------------
 
 -- Tick once per second.
-tickEvery :: Model -> Maybe NominalDiffTime
+tickEvery :: Model -> Maybe Seconds
 tickEvery _ =
   Just 1
 

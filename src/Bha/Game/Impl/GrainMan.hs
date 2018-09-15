@@ -452,7 +452,7 @@ viewHud model =
         pure ("water " ++ show (model ^. waterL))
     ]
 
-tickEvery :: Model -> Maybe NominalDiffTime
+tickEvery :: Model -> Maybe Seconds
 tickEvery _ =
   Nothing
 

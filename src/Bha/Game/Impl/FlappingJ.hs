@@ -21,7 +21,7 @@ moment _ eEvent = mdo
 
     eDone = () <$ eEsc
 
-  eTick :: Events NominalDiffTime <-
+  eTick :: Events Seconds <-
     momentTick (Just (1/30)) (TickTeardown <$ eDone)
 
   let

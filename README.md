@@ -54,14 +54,14 @@ data ElmGame model message
       (Init message model)
       (Input message -> Update model message ())
       (model -> Scene)
-      (model -> Maybe NominalDiffTime)
+      (model -> Maybe Seconds)
       (model -> HashSet Text)
 
 data Input message
   = Key Key
   | Mouse Mouse Int Int
   | Resize Int Int
-  | Tick NominalDiffTime
+  | Tick Seconds
   | Message Text message
 ```
 

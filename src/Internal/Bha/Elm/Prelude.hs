@@ -34,7 +34,7 @@ data ElmGame model message
       -- Update the model from a tick or terminal event.
       (model -> Scene)
       -- Render the model.
-      (model -> Maybe NominalDiffTime)
+      (model -> Maybe Seconds)
       -- Tick, and if so, how often?
       (model -> HashSet Text)
 
@@ -121,6 +121,6 @@ data Input a
   = Key !Key
   | Mouse !Mouse !Int !Int -- Col, then row
   | Resize !Int !Int -- Col, then row
-  | Tick !NominalDiffTime
+  | Tick !Seconds
   | Message !Text !a
   deriving (Eq, Show)

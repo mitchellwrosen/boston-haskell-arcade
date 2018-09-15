@@ -102,7 +102,7 @@ renderInput s =
 -- Tick
 --------------------------------------------------------------------------------
 
-tickEvery :: Model -> Maybe NominalDiffTime
+tickEvery :: Model -> Maybe Seconds
 tickEvery _ =
   Nothing
 

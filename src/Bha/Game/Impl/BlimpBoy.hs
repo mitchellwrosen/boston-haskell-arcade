@@ -9,7 +9,6 @@ import Bha.Elm.Prelude
 import qualified Data.Set as Set
 
 
--- TODO Blimp boy - blimp movement: drift left or right
 -- TODO Blimp boy - enemies that fire upwards
 -- TODO Blimp boy - enemy blimps that fire downwards
 -- TODO Blimp boy - levels
@@ -18,25 +17,28 @@ import qualified Data.Set as Set
 -- Model
 --------------------------------------------------------------------------------
 
+blimpx      = 35  :: X
+blimprow    = 5   :: Row
+blimpvel    = 3   :: Vel
+castlecol   = 40  :: Col
+enemycol    = 0   :: X
+enemyrow    = 20  :: Row
+enemyvel    = 7   :: Vel
+pebblevel   = 24  :: Vel
+pebbletimer = 1.0 :: Seconds
+bombvel     = 18  :: Vel
+bombtimer   = 3.0 :: Seconds
+
 type Row = Int
 type Col = Int
 type X   = Double
 type Y   = Double
 type Vel = Double
 
-blimprow    = 5   :: Row
-castlecol   = 40  :: Col
-enemycol    = 0   :: X
-enemyrow    = 20  :: Row
-enemyvel    = 7   :: Vel
-pebblevel   = 6   :: Vel
-pebbletimer = 1.0 :: Seconds
-bombvel     = 4   :: Vel
-bombtimer   = 3.0 :: Seconds
-
 data Model
   = Model
-  { _modelBlimpL         :: !Col
+  { _modelBlimpL         :: !X
+  , _modelBlimpVelL      :: !Vel
   , _modelEnemiesL       :: !(Set X)
   , _modelPebbleL        :: !(Set (X, Y))
   , _modelNumPebblesL    :: !Int
@@ -54,7 +56,8 @@ makeFields ''Model
 init :: Init Void Model
 init = do
   pure Model
-    { _modelBlimpL         = 35
+    { _modelBlimpL         = blimpx
+    , _modelBlimpVelL      = -blimpvel
     , _modelEnemiesL       = mempty
     , _modelPebbleL        = mempty
     , _modelNumPebblesL    = 1
@@ -79,10 +82,10 @@ update = \case
     tickUpdate dt
 
   Key KeyArrowLeft ->
-    blimpL %= max 1 . subtract 1
+    blimpVelL %= negate . abs
 
   Key KeyArrowRight ->
-    blimpL %= min 55 . (+ 1)
+    blimpVelL %= abs
 
   Key (KeyChar 'p') -> do
     money         <- use moneyL
@@ -107,7 +110,7 @@ update = \case
     pebbleL %=
       if supply >= 1
         then
-          Set.insert (fromIntegral blimpcol + 0.5, fromIntegral blimprow + 0.5)
+          Set.insert (blimpcol + 0.5, fromIntegral blimprow + 0.5)
         else
             id
 
@@ -121,8 +124,7 @@ update = \case
     bombsL %=
       if supply >= 1
         then
-          Set.insert
-            (fromIntegral blimpcol + 0.5, fromIntegral blimprow + 0.5)
+          Set.insert (blimpcol + 0.5, fromIntegral blimprow + 0.5)
         else
           id
 
@@ -138,8 +140,11 @@ update = \case
 tickUpdate :: Seconds -> Update Model Void ()
 tickUpdate dt = do
   isCastleAlive
+
+  blimpDrifts dt
   enemiesAdvance dt
   stuffFallsDownward dt
+
   removePebbledEnemies
   removeBombedEnemies
   enemiesHitCastle
@@ -151,6 +156,11 @@ isCastleAlive :: Update Model Void ()
 isCastleAlive = do
   health <- use healthL
   guard (health > 0)
+
+blimpDrifts :: Seconds -> Update Model Void ()
+blimpDrifts dt = do
+  blimpVel <- use blimpVelL
+  blimpL %= max 1 . min 55 . \x -> x + blimpVel * realToFrac dt
 
 enemiesAdvance :: Seconds -> Update Model Void ()
 enemiesAdvance dt =
@@ -270,8 +280,8 @@ renderSky    = rect 0 0 60 (enemyrow+1) blue
 renderGround = rect 0 (enemyrow+1) 60 10 green
 renderCastle = rect castlecol 5 10 (enemyrow - 5 + 1) 253
 
-renderBlimp :: Int -> Cells
-renderBlimp col =
+renderBlimp :: X -> Cells
+renderBlimp (round -> col) =
   rect (col-1) (blimprow-1) 3 2 yellow
 
 renderPebbles :: Set (X, Y) -> Cells
@@ -293,7 +303,7 @@ renderBombs =
 
 renderEnemies :: Set X -> Cells
 renderEnemies =
-  foldMap (\c -> set (round c) enemyrow (Cell 'o' black blue)) . Set.toList
+  foldMap (\c -> set (round c) enemyrow (Cell '∞' black blue)) . Set.toList
 
 renderMoney :: Int -> Cells
 renderMoney money =

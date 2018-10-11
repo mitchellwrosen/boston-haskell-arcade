@@ -7,7 +7,7 @@ tested-with: GHC == 8.4.3
 
 library
   build-depends:
-      aeson
+      aeson ^>= 1.4.1.0
     , base
     , bytestring
     , cereal

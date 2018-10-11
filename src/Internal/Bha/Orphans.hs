@@ -13,10 +13,3 @@ instance Monoid a => Monoid (Behavior a) where
 
 instance Semigroup a => Semigroup (Behavior a) where
   (<>) = liftA2 (<>)
-
-instance FromJSON Void where
-  parseJSON _ =
-    fail "Void"
-
-instance ToJSON Void where
-  toJSON = absurd

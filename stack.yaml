@@ -1,5 +1,6 @@
 resolver: lts-12.9
 extra-deps:
+  - aeson-1.4.1.0
   - lens-4.17
   - reactive-banana-1.2.0.0
   - termbox-0.1.0

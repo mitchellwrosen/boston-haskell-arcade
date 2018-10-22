@@ -2,9 +2,10 @@ module Internal.Bha.Debug
   ( debug
   ) where
 
-import Control.Monad.IO.Class
-import Prelude
+import File.Text (appendFile)
+import Mitchell.Prelude
+import Text (pack)
 
-debug :: (MonadIO m, Show a) => String -> a -> m ()
+debug :: (MonadIO m, Show a) => Text -> a -> m ()
 debug s x =
-  liftIO (appendFile "bha-debug.txt" (s  ++ ": " ++ show x ++ "\n"))
+  liftIO (appendFile "bha-debug.txt" (s  <> ": " <> pack (show x) <> "\n"))

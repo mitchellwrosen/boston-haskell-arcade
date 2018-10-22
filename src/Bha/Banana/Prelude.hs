@@ -35,8 +35,8 @@ module Bha.Banana.Prelude
   , module X
   ) where
 
-import Control.Lens   as X (at, ix, (%~), (.~))
-import Termbox.Banana as X (Cursor(..), Event(..), Key(..))
+import Optic.Traversal as X (ix)
+import Termbox.Banana  as X (Cursor(..), Event(..), Key(..))
 
 import Bha.Prelude                 as X
 import Bha.View                    as X

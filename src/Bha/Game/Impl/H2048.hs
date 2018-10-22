@@ -2,8 +2,9 @@ module Bha.Game.Impl.H2048
   ( moment
   ) where
 
-import Data.List       (intercalate, sortOn, transpose)
-import Data.Ord        (Down(Down))
+import Function (uncurry)
+import List     (intercalate, reverse, sortOn, splitAt, take, transpose, zip)
+import Ord      (Down(Down))
 
 import Bha.Banana.Prelude
 import Bha.Banana.Versioned
@@ -65,7 +66,7 @@ moment _ eEvent = mdo
     let
       plus1 :: Events [[Maybe Int]] -> Banana (Events [[Maybe Int]])
       plus1 =
-        executeE . fmap f
+        fmap f⨾ executeE
        where
         f :: [[Maybe Int]] -> Banana [[Maybe Int]]
         f board = do
@@ -112,7 +113,7 @@ moment _ eEvent = mdo
         <*> pure NoCursor
 
   save "highScore"
-    ((\score -> HighScores (take 10 (sortOn Down (score:highScores))))
+    (((:highScores)⨾ sortOn Down⨾ take 10⨾ HighScores)
       <$> bScore
       <@  eDone)
 
@@ -125,7 +126,7 @@ moment _ eEvent = mdo
 renderBoard :: [[Maybe Int]] -> Cells
 renderBoard cells = do
   mconcat
-    [ (foldMap (uncurry renderRow) . zip [0..]) cells
+    [ (zip [0..]⨾ foldMap (uncurry renderRow)) cells
     , renderBorder
     ]
 
@@ -194,21 +195,21 @@ boardLeft =
 
 boardRight :: [[Maybe Int]] -> [[Maybe Int]]
 boardRight =
-  map (reverse . rowLeft . reverse)
+  map (reverse⨾ rowLeft⨾ reverse)
 
 boardUp :: [[Maybe Int]] -> [[Maybe Int]]
 boardUp =
-  transpose . boardLeft . transpose
+  transpose⨾ boardLeft⨾ transpose
 
 boardDown :: [[Maybe Int]] -> [[Maybe Int]]
 boardDown =
-  transpose . boardRight . transpose
+  transpose⨾ boardRight⨾ transpose
 
 boardHoles :: [[Maybe Int]] -> [(Row, Col)]
 boardHoles board = do
   (r, xs) <- zip [0..] board
   (c, x) <- zip [0..] xs
-  guard (isNothing x)
+  guard (is _Nothing x)
   pure (r, c)
 
 boardSet :: (Row, Col) -> Int -> [[Maybe Int]] -> [[Maybe Int]]
@@ -223,7 +224,7 @@ boardScore board = sum $ do
 
 rowLeft :: [Maybe Int] -> [Maybe Int]
 rowLeft xs0 =
-  (take (length xs0) . (++ repeat Nothing) . map Just . go . catMaybes) xs0
+  (catMaybes⨾ go⨾ map Just⨾ (++ repeat Nothing)⨾ take (length xs0)) xs0
  where
   go :: [Int] -> [Int]
   go = \case

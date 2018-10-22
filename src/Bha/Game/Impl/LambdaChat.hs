@@ -4,11 +4,14 @@ module Bha.Game.Impl.LambdaChat
   ( game
   ) where
 
-import Data.Sequence (Seq)
+import Optic.Prism (snoc)
+import Sequence    (Seq)
 
-import qualified Data.HashSet  as HashSet
-import qualified Data.Sequence as Seq
-import qualified Data.Text     as Text
+import qualified List
+import qualified Sequence     as Seq
+import qualified Set.Hash
+import qualified Text
+import qualified Text.Partial
 
 import Bha.Elm.Prelude
 
@@ -51,7 +54,7 @@ update = \case
     inputL %= \s ->
       if Text.null s
         then s
-        else Text.init s
+        else Text.Partial.init s
 
   Key KeyEnter -> do
     input <- use inputL
@@ -90,7 +93,8 @@ render model =
 
 renderChat :: Seq Text -> Cells
 renderChat =
-  foldMap (\(i, s) -> text 0 i mempty mempty (Text.unpack s)) . zip [0..] .
+  foldMap (\(i, s) -> text 0 i mempty mempty (Text.unpack s)) .
+    List.zip [0..] .
     toList
 
 renderInput :: Text -> Cells
@@ -113,7 +117,7 @@ tickEvery _ =
 
 subscribe :: Model -> HashSet Text
 subscribe _ =
-  HashSet.singleton "chat"
+  Set.Hash.singleton "chat"
 
 
 --------------------------------------------------------------------------------

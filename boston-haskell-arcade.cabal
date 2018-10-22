@@ -7,26 +7,13 @@ tested-with: GHC == 8.4.3
 
 library
   build-depends:
-      aeson ^>= 1.4.1.0
-    , base
-    , bytestring
+      base
+    , planet-mitchell == 0.1.0
     , cereal
-    , containers
-    , directory
-    , filepath
-    , free
     , lens ^>= 4.17
-    , mtl
     , random
-    , reactive-banana ^>= 1.2.0
     , slave-thread ^>= 1.0.2
-    , split
-    , stm ^>= 2.4.5
     , termbox-banana ^>= 0.1.0
-    , text ^>= 1.2.3
-    , time
-    , transformers
-    , unordered-containers
     , websockets
   default-extensions:
     DataKinds

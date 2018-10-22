@@ -3,6 +3,9 @@ module Bha.Banana.Menu
   , makeMenu
   ) where
 
+import List              (zip)
+import Optic.Fold.Unsafe ((^?!))
+
 import Bha.Banana.Prelude
 
 data MenuControl
@@ -33,7 +36,7 @@ makeMenu menu0 eControl bRender = mdo
   let
     eEntered :: Events a
     eEntered =
-      (menu0 !!) <$> bIndex <@ eEnter
+      (\i -> menu0 ^?! ix i) <$> bIndex <@ eEnter
 
   let
     bCells :: Behavior Cells

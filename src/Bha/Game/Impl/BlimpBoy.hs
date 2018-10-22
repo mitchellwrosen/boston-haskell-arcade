@@ -6,7 +6,7 @@ module Bha.Game.Impl.BlimpBoy
 
 import Bha.Elm.Prelude
 
-import qualified Data.Set as Set
+import qualified Set
 
 
 -- TODO Blimp boy - enemies that fire upwards
@@ -92,16 +92,16 @@ update = \case
     maxNumPebbles <- use maxNumPebblesL
 
     when (money >= 1 && maxNumPebbles < 5) $ do
-      moneyL -= 1
-      maxNumPebblesL += 1
+      moneyL %= subtract 1
+      maxNumPebblesL %= (+1)
 
   Key (KeyChar 'b') -> do
     money       <- use moneyL
     maxNumBombs <- use maxNumBombsL
 
     when (money >= 3 && maxNumBombs < 5) $ do
-      moneyL -= 3
-      maxNumBombsL += 1
+      moneyL %= subtract 3
+      maxNumBombsL %= (+1)
 
   Key KeySpace -> do
     supply   <- use numPebblesL
@@ -190,7 +190,7 @@ removePebbledEnemies = do
             (\x -> x >= pebblex - 0.5 && x <= pebblex + 0.5)
             enemies
 
-      moneyL += length dead
+      moneyL %= (+ length dead)
       enemiesL .= alive
 
 removeBombedEnemies :: Update Model Void ()
@@ -206,7 +206,7 @@ removeBombedEnemies = do
           Set.partition (\x -> x >= bombx - 1.5 && x <= bombx + 1.5) enemies
 
       enemiesL .= alive
-      moneyL += length dead
+      moneyL %= (+ length dead)
 
 enemiesHitCastle :: Update Model Void ()
 enemiesHitCastle = do
@@ -217,7 +217,7 @@ enemiesHitCastle = do
       Set.partition (\x -> floor x >= castlecol) enemies
 
   enemiesL .= walking
-  healthL -= length splat
+  healthL %= subtract (length splat)
 
 possiblySpawnNewEnemy :: Update Model Void ()
 possiblySpawnNewEnemy = do

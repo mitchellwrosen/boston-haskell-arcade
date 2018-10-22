@@ -2,23 +2,24 @@ module Bha.Main
   ( main
   ) where
 
-import Control.Exception          (throwIO)
-import Data.Aeson                 ((.=))
-import Data.List.Split            (splitOn)
-import Reactive.Banana.Frameworks (Future, MomentIO, changes, execute, newEvent,
-                                   reactimate')
-import System.Directory           (createDirectoryIfMissing)
-import System.Environment         (getArgs)
-import Termbox.Banana             (InputMode(..), MouseMode(..), OutputMode(..))
-import Text.Read                  (readMaybe)
+import Environment    (getArgs)
+import Exception (userError)
+import File           (createDirectoryIfMissing)
+import FRP            (Future, MomentIO, changes, execute, newEvent,
+                       reactimate')
+import Json.Encode    ((.=))
+import List           (splitOn)
+import Termbox.Banana (InputMode(..), MouseMode(..), OutputMode(..))
+import Text.Read      (readMaybe)
 
-import qualified Data.Aeson           as Aeson
-import qualified Data.Aeson.Types     as Aeson (Pair)
-import qualified Data.ByteString.Lazy as LazyByteString
-import qualified Data.HashSet         as HashSet
-import qualified Network.WebSockets   as WebSockets
-import qualified Termbox.Banana       as Tb
+import qualified ByteString.Lazy
+import qualified Json
+import qualified Json.Decode
+import qualified Json.Encode
+import qualified Network.WebSockets as WebSockets
+import qualified Set.Hash
 import qualified SlaveThread
+import qualified Termbox.Banana     as Tb
 
 import Bha.Banana.Prelude
 import Bha.Main.Game
@@ -83,7 +84,7 @@ main' mconn = do
             bytes :: ByteString <-
               WebSockets.receiveData conn
 
-            case Aeson.eitherDecodeStrict' bytes of
+            case Json.Decode.eitherDecodeStrict' bytes of
               Left err ->
                 throwIO (userError (show (err, bytes)))
 
@@ -113,7 +114,7 @@ main''
 main'' send eMessage eEvent bSize = mdo
   -- Create the menu.
   (bMenuScene, eMenuOutput) :: (Behavior Scene, Events MainMenuOutput) <-
-    momentMainMenu gamelist (whenE (isNothing <$> bGame) eEvent) bSize
+    momentMainMenu gamelist (whenE (is _Nothing <$> bGame) eEvent) bSize
 
   -- Partition the menu's output into two: "I'm done" (escape) and "play this
   -- game" (enter).
@@ -210,25 +211,25 @@ resubscribe send old =
     let
       toSubscribe :: HashSet Text
       toSubscribe =
-        HashSet.difference new old
+        Set.Hash.difference new old
 
     let
       toUnsubscribe :: HashSet Text
       toUnsubscribe =
-        HashSet.difference old new
+        Set.Hash.difference old new
 
     unless (null toUnsubscribe) $
       bloop
         [ "type"   .= ("unsubscribe" :: Text)
-        , "topics" .= HashSet.difference old new
+        , "topics" .= Set.Hash.difference old new
         ]
 
     unless (null toSubscribe) $ do
       bloop
         [ "type"   .= ("subscribe" :: Text)
-        , "topics" .= HashSet.difference new old
+        , "topics" .= Set.Hash.difference new old
         ]
 
-  bloop :: [Aeson.Pair] -> IO ()
+  bloop :: [(Text, Json.Value)] -> IO ()
   bloop =
-    send . LazyByteString.toStrict . Aeson.encode . Aeson.object
+    send . ByteString.Lazy.toStrict . Json.Encode.encode . Json.Encode.object

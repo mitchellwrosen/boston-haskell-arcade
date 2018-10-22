@@ -2,10 +2,9 @@
 
 module Internal.Bha.Orphans () where
 
-import Data.Aeson      (FromJSON(..), ToJSON(..))
-import Data.Void       (Void, absurd)
-import Prelude
-import Reactive.Banana
+import Mitchell.Prelude
+import Data.Monoid (mappend)
+import FRP (Behavior)
 
 instance Monoid a => Monoid (Behavior a) where
   mempty = pure mempty

@@ -9,8 +9,11 @@ module Internal.Bha.Versioned
   ) where
 
 import Data.Serialize
-import GHC.Generics (Rep)
+import GHC.Generics    (Rep)
 import GHC.TypeLits
+import Monad.Fail      (fail)
+import Optic.Traversal (ix)
+import Proxy           (Proxy(..))
 
 import qualified GHC.Generics
 
@@ -29,7 +32,7 @@ encodeVersioned x =
     putWord8 (fromIntegral (natVal @(Length as) Proxy))
     put x
 
-decodeVersioned :: forall as a. Versioned as a => ByteString -> Either String a
+decodeVersioned :: forall as a. Versioned as a => ByteString -> Either [Char] a
 decodeVersioned =
   runGet $ do
     ver <- getWord8

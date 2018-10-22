@@ -2,9 +2,11 @@ module Bha.Game.Impl.Paint
   ( moment
   ) where
 
-import Data.Maybe (fromJust)
+import Maybe.Partial (fromJust)
 
-import qualified Data.HashMap.Strict as HashMap
+import qualified List
+import qualified List.Partial
+import qualified Map.Hash
 
 import Bha.Banana.Prelude
 
@@ -59,8 +61,8 @@ moment _ eEvent = mdo
 
   bCanvas :: Behavior (HashMap (Col, Row) Color) <-
     accumB mempty $ unions
-      [ HashMap.insert <$> bCursor <*> bColor <@ eEnter
-      , HashMap.delete <$> bCursor <@ eBackspace
+      [ Map.Hash.insert <$> bCursor <*> bColor <@ eEnter
+      , Map.Hash.delete <$> bCursor <@ eBackspace
       ]
 
   bColor :: Behavior Color <-
@@ -94,7 +96,7 @@ moment _ eEvent = mdo
 
 cycleSelected :: Color -> Color
 cycleSelected =
-  fromJust . flip lookup (zip xs (tail xs))
+  fromJust . flip List.lookup (List.zip xs (List.Partial.tail xs))
  where
   xs = cycle [minBound..maxBound] :: [Color]
 
@@ -130,7 +132,7 @@ renderCanvas background cells =
 
     , foldMap
         (\((c, r), x) -> set c r (Cell ' ' mempty (attr x)))
-        (HashMap.toList cells)
+        (Map.Hash.toList cells)
     ]
 
 renderCursor :: (Col, Row) -> Color -> Cells
@@ -160,7 +162,7 @@ renderEasel =
             h = 3 :: Int
           in
             rect (ccol+1+i*w) (crow+cheight+h+1) w h (attr c))
-        (zip [0..] [minBound..maxBound])
+        (List.zip [0..] [minBound..maxBound])
     ]
 
 renderSelected :: Color -> Cells

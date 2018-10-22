@@ -7,9 +7,12 @@ module Bha.Main.Menu
   , momentMainMenu
   ) where
 
+import Foldable.Partial (maximum)
+import Optic.Prism      (prism')
+
 import Bha.Banana.Menu
 import Bha.Banana.Prelude
-import Bha.Main.Game (Game(..), gameName)
+import Bha.Main.Game      (Game(..), gameName)
 
 data MainMenuOutput
   = MainMenuOutputGame Game -- ^ A game was selected.

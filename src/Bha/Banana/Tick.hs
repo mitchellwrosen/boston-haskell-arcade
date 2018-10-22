@@ -3,10 +3,14 @@ module Bha.Banana.Tick
   , momentTick
   ) where
 
-import Reactive.Banana.Frameworks
-
 import Bha.Banana.Prelude
+import Concurrency                 (STM, TMVar, TVar, atomically, forkIO,
+                                    newEmptyTMVarIO, newTVarIO, readTMVar,
+                                    readTVar, threadDelay, tryPutTMVar,
+                                    writeTVar)
+import FRP                         (newEvent, reactimate)
 import Internal.Bha.Banana.Prelude (Banana(..))
+import Monad                       (join)
 
 data TickControl
   = TickSetDelta (Maybe Seconds)

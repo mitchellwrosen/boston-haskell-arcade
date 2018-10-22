@@ -13,10 +13,11 @@ module Internal.Bha.Elm.Prelude
   , send
   ) where
 
-import Control.Monad.State
-import Control.Monad.Trans.Free
 import Data.Functor.Identity
-import Termbox.Banana           (Key, Mouse)
+import MaybeT                (MaybeT(..))
+import Monad.Trans           (Free, FreeT, hoistFreeT, iterT, liftF)
+import State                 (MonadState, StateT, execStateT)
+import Termbox.Banana        (Key, Mouse)
 
 import Bha.Prelude
 import Internal.Bha.View (Scene)

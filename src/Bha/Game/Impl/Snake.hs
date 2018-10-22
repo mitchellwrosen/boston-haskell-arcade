@@ -4,12 +4,12 @@ module Bha.Game.Impl.Snake
   ( game
   ) where
 
-import Data.Sequence (pattern (:|>), Seq, (|>))
+import Sequence (pattern (:|>), Seq, (|>))
 
 import Bha.Elm.Prelude
 import Bha.Elm.Versioned
 
-import qualified Data.Sequence as Seq
+import qualified Sequence as Seq
 
 
 --------------------------------------------------------------------------------
@@ -164,7 +164,7 @@ updateTick = do
   else do
     if model ^. foodL == target
     then do
-      scoreL += 1
+      scoreL %= (+1)
 
       let
         newSnake =

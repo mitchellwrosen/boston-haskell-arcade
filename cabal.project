@@ -1,1 +1,3 @@
-packages: .
+packages:
+  ./boston-haskell-arcade.cabal
+  server/boston-haskell-arcade-server.cabal

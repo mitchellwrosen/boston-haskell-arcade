@@ -2,9 +2,9 @@
 
 ## Getting started
 
-- Build the code with `./build`.
-- Build the haddocks with `./docs`.
-- Run the arcade with `./run [server]`, where `server` is an optional host and
+- Build the code with `./do build`.
+- Build the haddocks with `./do docs`.
+- Run the arcade with `./do run [server]`, where `server` is an optional host and
   port separated by a `:`, e.g. `127.0.0.1:8000`.
 
 ## Making a game

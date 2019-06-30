@@ -1,5 +1,0 @@
-#!/bin/sh
-
-set -e
-
-exec cabal new-build exe:boston-haskell-arcade -- "$@"

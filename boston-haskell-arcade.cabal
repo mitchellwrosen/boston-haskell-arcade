@@ -1,4 +1,4 @@
-cabal-version: 2.0
+cabal-version: 2.4
 
 name: boston-haskell-arcade
 version: 0
@@ -7,28 +7,28 @@ tested-with: GHC == 8.4.3
 
 library
   build-depends:
-      aeson ^>= 1.4.4
-    , base
-    , bytestring ^>= 0.10.8
-    , cereal
-    , containers ^>= 0.6.1
-    , directory ^>= 1.3.3
-    , filepath ^>= 1.4.2
-    , free ^>= 5.1.1
-    , lens ^>= 4.17
-    , mtl ^>= 2.2.2
-    , random
-    , reactive-banana ^>= 1.2.1
-    , slave-thread ^>= 1.0.2
-    , split ^>= 0.2.3
-    , stm ^>= 2.5.0
-    , termbox-banana ^>= 0.1.0
-    , text
-    , time ^>= 1.8 || ^>= 1.9
-    , transformers ^>= 0.5.6
-    , unliftio ^>= 0.2.9
-    , unordered-containers ^>= 0.2.10
-    , websockets
+    aeson ^>= 1.4.4,
+    base,
+    bytestring ^>= 0.10.8,
+    cereal,
+    containers ^>= 0.6.1,
+    directory ^>= 1.3.3,
+    filepath ^>= 1.4.2,
+    free ^>= 5.1.1,
+    lens ^>= 4.17,
+    mtl ^>= 2.2.2,
+    random,
+    reactive-banana ^>= 1.2.1,
+    slave-thread ^>= 1.0.2,
+    split ^>= 0.2.3,
+    stm ^>= 2.5.0,
+    termbox-banana ^>= 0.1.0,
+    text,
+    time ^>= 1.8 || ^>= 1.9,
+    transformers ^>= 0.5.6,
+    unliftio ^>= 0.2.9,
+    unordered-containers ^>= 0.2.10,
+    websockets,
 
   default-extensions:
     DataKinds

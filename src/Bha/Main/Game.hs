@@ -5,27 +5,27 @@ module Bha.Main.Game
   , momentGame
   ) where
 
-import Exception     (userError)
-import File          (createDirectoryIfMissing, (</>))
-import FRP           (MomentIO, execute, reactimate)
-import Function      (uncurry)
-import Json          (Value)
-import Json.Decode   (FromJSON(..), (.:))
-import Json.Encode   (ToJSON, (.=))
-import System.Random (randomIO, randomRIO)
-
-import qualified ByteString.Lazy
-import qualified File.Binary
-import qualified Json.Decode
-import qualified Json.Encode
-import qualified Text
-
 import Bha.Banana.Prelude
 import Bha.Banana.Tick             (TickControl(TickSetDelta, TickTeardown),
                                     momentTick)
 import Bha.Elm.Prelude             (ElmGame(..), Input(..))
 import Internal.Bha.Banana.Prelude (Banana, runBanana)
 import Internal.Bha.Elm.Prelude    (ElmF(..), runInit, runUpdate)
+
+import Data.Aeson                 (FromJSON(..), ToJSON, Value, (.:), (.=))
+import Data.Tuple                 (uncurry)
+import Reactive.Banana.Frameworks (MomentIO, execute, reactimate)
+import System.Directory           (createDirectoryIfMissing)
+import System.FilePath            ((</>))
+import System.IO.Error            (userError)
+import System.Random              (randomIO, randomRIO)
+
+import qualified Data.Aeson           as Aeson
+import qualified Data.Aeson.Types     as Aeson
+import qualified Data.ByteString      as ByteString
+import qualified Data.ByteString.Lazy as ByteString.Lazy
+import qualified Data.Text            as Text
+
 
 data Game :: Type where
   GameElm
@@ -60,7 +60,7 @@ data ServerMessage
 
 instance FromJSON ServerMessage where
   parseJSON =
-    Json.Decode.withObject "ServerMessage" $ \o ->
+    Aeson.withObject "ServerMessage" $ \o ->
       ServerMessage
         <$> o .: "topic"
         <*> o .: "message"
@@ -223,14 +223,14 @@ interpretElmIO name send = \case
     let file = dir </> Text.unpack key
     liftIO $ do
       createDirectoryIfMissing True dir
-      File.Binary.writeFile file value
+      ByteString.writeFile file value
     k
 
   Load key k -> do
     let file = bhaDataDir </> name </> Text.unpack key
     value :: Maybe ByteString <- liftIO $
       asum
-        [ Just <$> File.Binary.readFile file
+        [ Just <$> ByteString.readFile file
         , pure Nothing
         ]
     k value
@@ -247,7 +247,7 @@ interpretElmIO name send = \case
 
 parseInput :: (FromJSON a, MonadIO m) => ServerMessage -> m (Text, a)
 parseInput (ServerMessage topic value) =
-  case Json.Decode.parseEither Json.Decode.parseJSON value of
+  case Aeson.parseEither Aeson.parseJSON value of
     Left err ->
       throwIO (userError err)
 
@@ -256,7 +256,7 @@ parseInput (ServerMessage topic value) =
 
 formatOutput :: ToJSON a => Text -> a -> ByteString
 formatOutput topic message =
-  (ByteString.Lazy.toStrict . Json.Encode.encode . Json.Encode.object)
+  (ByteString.Lazy.toStrict . Aeson.encode . Aeson.object)
     [ "type"    .= ("publish" :: Text)
     , "topic"   .= topic
     , "message" .= message

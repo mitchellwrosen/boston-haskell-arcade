@@ -4,12 +4,12 @@ module Bha.Game.Impl.Snake
   ( game
   ) where
 
-import Sequence (pattern (:|>), Seq, (|>))
-
 import Bha.Elm.Prelude
 import Bha.Elm.Versioned
 
-import qualified Sequence as Seq
+import Data.Sequence (pattern (:|>), (|>))
+
+import qualified Data.Sequence as Seq
 
 
 --------------------------------------------------------------------------------

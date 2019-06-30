@@ -6,7 +6,8 @@ module Bha.Game.Impl.GrainMan
 
 import Bha.Elm.Prelude
 
-import qualified List
+import qualified Data.List as List
+
 
 data Location
   = LocGrain

@@ -2,9 +2,9 @@ module Bha.Game.Impl.H2048
   ( moment
   ) where
 
-import Function (uncurry)
-import List     (intercalate, reverse, sortOn, splitAt, take, transpose, zip)
-import Ord      (Down(Down))
+import Data.List  (intercalate, sortOn, transpose)
+import Data.Ord   (Down(Down))
+import Data.Tuple (uncurry)
 
 import Bha.Banana.Prelude
 import Bha.Banana.Versioned
@@ -66,7 +66,7 @@ moment _ eEvent = mdo
     let
       plus1 :: Events [[Maybe Int]] -> Banana (Events [[Maybe Int]])
       plus1 =
-        fmap f⨾ executeE
+        fmap f >>> executeE
        where
         f :: [[Maybe Int]] -> Banana [[Maybe Int]]
         f board = do
@@ -113,7 +113,7 @@ moment _ eEvent = mdo
         <*> pure NoCursor
 
   save "highScore"
-    (((:highScores)⨾ sortOn Down⨾ take 10⨾ HighScores)
+    (((:highScores) >>> sortOn Down >>> take 10 >>> HighScores)
       <$> bScore
       <@  eDone)
 
@@ -126,7 +126,7 @@ moment _ eEvent = mdo
 renderBoard :: [[Maybe Int]] -> Cells
 renderBoard cells = do
   mconcat
-    [ (zip [0..]⨾ foldMap (uncurry renderRow)) cells
+    [ (zip [0..] >>> foldMap (uncurry renderRow)) cells
     , renderBorder
     ]
 
@@ -195,15 +195,15 @@ boardLeft =
 
 boardRight :: [[Maybe Int]] -> [[Maybe Int]]
 boardRight =
-  map (reverse⨾ rowLeft⨾ reverse)
+  map (reverse >>> rowLeft >>> reverse)
 
 boardUp :: [[Maybe Int]] -> [[Maybe Int]]
 boardUp =
-  transpose⨾ boardLeft⨾ transpose
+  transpose >>> boardLeft >>> transpose
 
 boardDown :: [[Maybe Int]] -> [[Maybe Int]]
 boardDown =
-  transpose⨾ boardRight⨾ transpose
+  transpose >>> boardRight >>> transpose
 
 boardHoles :: [[Maybe Int]] -> [(Row, Col)]
 boardHoles board = do
@@ -224,7 +224,7 @@ boardScore board = sum $ do
 
 rowLeft :: [Maybe Int] -> [Maybe Int]
 rowLeft xs0 =
-  (catMaybes⨾ go⨾ map Just⨾ (++ repeat Nothing)⨾ take (length xs0)) xs0
+  (catMaybes >>> go >>> map Just >>> (++ repeat Nothing) >>> take (length xs0)) xs0
  where
   go :: [Int] -> [Int]
   go = \case

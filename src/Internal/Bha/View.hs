@@ -10,15 +10,15 @@ module Internal.Bha.View
   , rect'
   ) where
 
+import Bha.Prelude
+
+import Data.List      (zip)
 import Data.Monoid    (mappend)
-import List           (zip)
-import Map.Hash       (HashMap)
 import Termbox.Banana (Attr, Cell(..), Cursor(..))
 
-import qualified Map.Hash
-import qualified Termbox.Banana as Tb
+import qualified Data.HashMap.Strict as HashMap
+import qualified Termbox.Banana      as Tb
 
-import Bha.Prelude
 
 newtype Cells
   = Cells (HashMap (Int, Int) Cell)
@@ -36,11 +36,11 @@ data Scene
 
 set :: Int -> Int -> Cell -> Cells
 set c r x =
-  Cells (Map.Hash.singleton (c, r) x)
+  Cells (HashMap.singleton (c, r) x)
 
 cellsToTbCells :: Cells -> Tb.Cells
 cellsToTbCells (Cells cells) =
-  foldMap (\((c, r), x) -> Tb.set c r x) (Map.Hash.toList cells)
+  foldMap (\((c, r), x) -> Tb.set c r x) (HashMap.toList cells)
 
 sceneToTbScene :: Scene -> Tb.Scene
 sceneToTbScene (Scene cells cursor) =
@@ -58,7 +58,7 @@ cursorRowL f = \case
 
 text :: Int -> Int -> Attr -> Attr -> [Char] -> Cells
 text col0 row fg bg =
-  foldMap (\(col, c) -> set col row (Cell c fg bg)) . List.zip [col0..]
+  foldMap (\(col, c) -> set col row (Cell c fg bg)) . zip [col0..]
 
 rect :: Int -> Int -> Int -> Int -> Attr -> Cells
 rect c0 r0 w h bg =

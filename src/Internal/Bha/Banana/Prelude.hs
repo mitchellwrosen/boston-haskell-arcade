@@ -5,28 +5,28 @@ module Internal.Bha.Banana.Prelude
   , Banana(..)
   , runBanana
   , Events
-  , FRP.Behavior
-  , FRP.MonadMoment
-  , (FRP.<@)
-  , (FRP.<@>)
-  , FRP.accumB
-  , FRP.accumE
+  , Reactive.Banana.Behavior
+  , Reactive.Banana.MonadMoment
+  , (Reactive.Banana.<@)
+  , (Reactive.Banana.<@>)
+  , Reactive.Banana.accumB
+  , Reactive.Banana.accumE
   , executeE
   , filterCoincidentE
-  , FRP.filterE
-  , FRP.filterJust
+  , Reactive.Banana.filterE
+  , Reactive.Banana.filterJust
   , leftmostE
   , mapMaybeE
   , mergeE
-  , FRP.never
+  , Reactive.Banana.never
   , previewE
-  , FRP.stepper
-  , FRP.switchB
-  , FRP.switchE
-  , FRP.unionWith
-  , FRP.unions
+  , Reactive.Banana.stepper
+  , Reactive.Banana.switchB
+  , Reactive.Banana.switchE
+  , Reactive.Banana.unionWith
+  , Reactive.Banana.unions
   , unpairE
-  , FRP.whenE
+  , Reactive.Banana.whenE
     -- * Randomness
   , randomBool
   , randomInt
@@ -34,54 +34,55 @@ module Internal.Bha.Banana.Prelude
   , randomPct
   ) where
 
-import Monad.Fix
-import Optic.Fold.Unsafe ((^?!))
-import Optic.Traversal   (ix)
-import Reader
-import System.Random
-import Termbox.Banana    (Event)
-
-import qualified FRP
-
 import Bha.Prelude
+
+import Control.Lens         ((^?!))
+import Control.Monad.Fix
+import Control.Monad.Reader
+import System.Random
+import Termbox.Banana       (Event)
+
+import qualified Reactive.Banana
+import qualified Reactive.Banana.Frameworks as Reactive.Banana
+
 
 type TermEvent
   = Event
 
 type Events
-  = FRP.Event
+  = Reactive.Banana.Event
 
 -- | A wrapper around MomentIO, used to control what effects games are allowed
 -- to use.
 newtype Banana a
-  = Banana { unBanana :: ReaderT [Char] FRP.MomentIO a }
+  = Banana { unBanana :: ReaderT [Char] Reactive.Banana.MomentIO a }
   deriving newtype (Applicative, Functor, Monad, MonadFix)
 
-instance FRP.MonadMoment Banana where
-  liftMoment :: FRP.Moment a -> Banana a
+instance Reactive.Banana.MonadMoment Banana where
+  liftMoment :: Reactive.Banana.Moment a -> Banana a
   liftMoment =
-    Banana . lift . FRP.liftMoment
+    Banana . lift . Reactive.Banana.liftMoment
 
-runBanana :: Banana a -> [Char] -> FRP.MomentIO a
+runBanana :: Banana a -> [Char] -> Reactive.Banana.MomentIO a
 runBanana =
   runReaderT . unBanana
 
 executeE :: Events (Banana a) -> Banana (Events a)
 executeE e =
   Banana $ ReaderT $ \name -> do
-    FRP.execute ((`runBanana` name) <$> e)
+    Reactive.Banana.execute ((`runBanana` name) <$> e)
 
 filterCoincidentE :: Events b -> Events a -> Events a
 filterCoincidentE e1 e2 =
-  FRP.filterJust (mergeE (const Nothing) (const Nothing) (const Just) e1 e2)
+  Reactive.Banana.filterJust (mergeE (const Nothing) (const Nothing) (const Just) e1 e2)
 
 leftmostE :: [Events a] -> Events a
 leftmostE =
-  foldr (FRP.unionWith const) FRP.never
+  foldr (Reactive.Banana.unionWith const) Reactive.Banana.never
 
 mapMaybeE :: (a -> Maybe b) -> Events a -> Events b
 mapMaybeE f x =
-  FRP.filterJust (f <$> x)
+  Reactive.Banana.filterJust (f <$> x)
 
 data Merge a b
   = MergeL a
@@ -97,7 +98,7 @@ mergeE
   -> Events b
   -> Events c
 mergeE f g h xs ys =
-  resolve <$> FRP.unionWith both (MergeL <$> xs) (MergeR <$> ys)
+  resolve <$> Reactive.Banana.unionWith both (MergeL <$> xs) (MergeR <$> ys)
  where
   resolve :: Merge a b -> c
   resolve = \case
@@ -112,7 +113,7 @@ mergeE f g h xs ys =
 -- | Filter an 'Event' with a 'Prism''.
 previewE :: Prism' s a -> Events s -> Events a
 previewE p e =
-  FRP.filterJust (preview p <$> e)
+  Reactive.Banana.filterJust (preview p <$> e)
 
 -- | Split an event of @(a, b)@ into two coindicent events of @a@ and @b@.
 unpairE :: Events (a, b) -> (Events a, Events b)

@@ -4,13 +4,11 @@ module Bha.Banana.Tick
   ) where
 
 import Bha.Banana.Prelude
-import Concurrency                 (STM, TMVar, TVar, atomically, forkIO,
-                                    newEmptyTMVarIO, newTVarIO, readTMVar,
-                                    readTVar, threadDelay, tryPutTMVar,
-                                    writeTVar)
-import FRP                         (newEvent, reactimate)
 import Internal.Bha.Banana.Prelude (Banana(..))
-import Monad                       (join)
+
+import Control.Monad              (join)
+import Reactive.Banana.Frameworks (newEvent, reactimate)
+
 
 data TickControl
   = TickSetDelta (Maybe Seconds)

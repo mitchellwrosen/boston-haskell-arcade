@@ -3,3 +3,4 @@
 .stack-work/
 dist-newstyle/
 dist/
+stack.yaml.lock

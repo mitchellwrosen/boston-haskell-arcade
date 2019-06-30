@@ -3,16 +3,17 @@ module Bha.Banana.Menu
   , makeMenu
   ) where
 
-import List              (zip)
-import Optic.Fold.Unsafe ((^?!))
-
 import Bha.Banana.Prelude
+import Control.Lens ((^?!))
+
+import Data.List    (zip)
+
 
 data MenuControl
   = MenuUp
   | MenuDown
   | MenuEnter
-  deriving Eq
+  deriving stock (Eq)
 
 makeMenu
   :: forall a m.

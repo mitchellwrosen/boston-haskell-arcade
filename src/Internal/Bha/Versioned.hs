@@ -8,16 +8,15 @@ module Internal.Bha.Versioned
   , Migrations
   ) where
 
+import Bha.Prelude
+
+import Control.Monad.Fail (fail)
+import Data.Proxy         (Proxy(..))
 import Data.Serialize
-import GHC.Generics    (Rep)
+import GHC.Generics       (Rep)
 import GHC.TypeLits
-import Monad.Fail      (fail)
-import Optic.Traversal (ix)
-import Proxy           (Proxy(..))
 
 import qualified GHC.Generics
-
-import Bha.Prelude
 
 class
   ( Generic a

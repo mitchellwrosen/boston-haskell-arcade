@@ -6,7 +6,7 @@ module Bha.Game.Impl.BlimpBoy
 
 import Bha.Elm.Prelude
 
-import qualified Set
+import qualified Data.Set as Set
 
 
 -- TODO Blimp boy - enemies that fire upwards

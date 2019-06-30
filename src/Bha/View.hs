@@ -1,6 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-missing-exported-signatures #-}
-{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
-
 module Bha.View
   ( Cells
   , set
@@ -29,14 +26,16 @@ import Termbox.Banana as X (Attr, Cell(..), Cursor(..))
 
 import Internal.Bha.View
 
-red       =   1 :: Attr
-green     =   2 :: Attr
-yellow    =   3 :: Attr
-blue      =   4 :: Attr
-magenta   =   5 :: Attr
-cyan      =   6 :: Attr
-white     =  15 :: Attr
-tangerine =  16 :: Attr
-orange    =  17 :: Attr
-cement    =  20 :: Attr
-black     = 232 :: Attr
+
+red, green, yellow, blue, magenta, cyan, white, tangerine, orange, cement, black :: Attr
+red       =   1
+green     =   2
+yellow    =   3
+blue      =   4
+magenta   =   5
+cyan      =   6
+white     =  15
+tangerine =  16
+orange    =  17
+cement    =  20
+black     = 232

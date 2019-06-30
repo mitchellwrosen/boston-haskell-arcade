@@ -2,25 +2,6 @@ module Bha.Main
   ( main
   ) where
 
-import Environment    (getArgs)
-import Exception (userError)
-import File           (createDirectoryIfMissing)
-import FRP            (Future, MomentIO, changes, execute, newEvent,
-                       reactimate')
-import Json.Encode    ((.=))
-import List           (splitOn)
-import Termbox.Banana (InputMode(..), MouseMode(..), OutputMode(..))
-import Text.Read      (readMaybe)
-
-import qualified ByteString.Lazy
-import qualified Json
-import qualified Json.Decode
-import qualified Json.Encode
-import qualified Network.WebSockets as WebSockets
-import qualified Set.Hash
-import qualified SlaveThread
-import qualified Termbox.Banana     as Tb
-
 import Bha.Banana.Prelude
 import Bha.Main.Game
 import Bha.Main.Menu
@@ -35,6 +16,24 @@ import qualified Bha.Game.Impl.H2048
 import qualified Bha.Game.Impl.LambdaChat
 import qualified Bha.Game.Impl.Paint
 import qualified Bha.Game.Impl.Snake
+
+import Data.Aeson                 ((.=))
+import Data.List.Split            (splitOn)
+import Reactive.Banana.Frameworks (Future, MomentIO, changes, execute, newEvent,
+                                   reactimate')
+import System.Directory           (createDirectoryIfMissing)
+import System.Environment         (getArgs)
+import System.IO.Error            (userError)
+import Termbox.Banana             (InputMode(..), MouseMode(..), OutputMode(..))
+import Text.Read                  (readMaybe)
+
+import qualified Data.Aeson           as Aeson
+import qualified Data.ByteString.Lazy as ByteString.Lazy
+import qualified Data.HashSet         as HashSet
+import qualified Network.WebSockets   as WebSockets
+import qualified SlaveThread
+import qualified Termbox.Banana       as Tb
+
 
 ------------------------------------------------------------------------------
 -- Game list
@@ -84,7 +83,7 @@ main' mconn = do
             bytes :: ByteString <-
               WebSockets.receiveData conn
 
-            case Json.Decode.eitherDecodeStrict' bytes of
+            case Aeson.eitherDecodeStrict' bytes of
               Left err ->
                 throwIO (userError (show (err, bytes)))
 
@@ -211,25 +210,25 @@ resubscribe send old =
     let
       toSubscribe :: HashSet Text
       toSubscribe =
-        Set.Hash.difference new old
+        HashSet.difference new old
 
     let
       toUnsubscribe :: HashSet Text
       toUnsubscribe =
-        Set.Hash.difference old new
+        HashSet.difference old new
 
     unless (null toUnsubscribe) $
       bloop
         [ "type"   .= ("unsubscribe" :: Text)
-        , "topics" .= Set.Hash.difference old new
+        , "topics" .= HashSet.difference old new
         ]
 
     unless (null toSubscribe) $ do
       bloop
         [ "type"   .= ("subscribe" :: Text)
-        , "topics" .= Set.Hash.difference new old
+        , "topics" .= HashSet.difference new old
         ]
 
-  bloop :: [(Text, Json.Value)] -> IO ()
+  bloop :: [(Text, Aeson.Value)] -> IO ()
   bloop =
-    send . ByteString.Lazy.toStrict . Json.Encode.encode . Json.Encode.object
+    send . ByteString.Lazy.toStrict . Aeson.encode . Aeson.object

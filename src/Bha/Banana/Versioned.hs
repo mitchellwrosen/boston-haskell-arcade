@@ -7,16 +7,18 @@ module Bha.Banana.Versioned
   , Serialize
   ) where
 
-import Data.Serialize (Serialize)
-import File           (FilePath, createDirectoryIfMissing, (</>))
-import FRP            (reactimate)
-import Reader
-
-import qualified File.Binary
-
 import Bha.Prelude
 import Internal.Bha.Banana.Prelude
 import Internal.Bha.Versioned
+
+import Control.Monad.Reader
+import Data.Serialize             (Serialize)
+import Reactive.Banana.Frameworks (reactimate)
+import System.Directory           (createDirectoryIfMissing)
+import System.FilePath            ((</>))
+
+import qualified Data.ByteString as ByteString
+
 
 save
   :: forall a as.
@@ -33,13 +35,13 @@ save path eValue =
   doSave name value = do
     let dir = bhaDataDir </> name
     createDirectoryIfMissing True dir
-    File.Binary.writeFile (dir </> path) (encodeVersioned value)
+    ByteString.writeFile (dir </> path) (encodeVersioned value)
 
 load :: Versioned as a => FilePath -> Banana (Maybe a)
 load path =
   Banana $ ReaderT $ \name -> liftIO $ do
     asum
       [ either (const Nothing) Just . decodeVersioned <$>
-          File.Binary.readFile (bhaDataDir </> name </> path)
+          ByteString.readFile (bhaDataDir </> name </> path)
       , pure Nothing
       ]

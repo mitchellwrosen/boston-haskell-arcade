@@ -35,9 +35,8 @@ module Bha.Banana.Prelude
   , module X
   ) where
 
-import Optic.Traversal as X (ix)
-import Termbox.Banana  as X (Cursor(..), Event(..), Key(..))
-
 import Bha.Prelude                 as X
 import Bha.View                    as X
 import Internal.Bha.Banana.Prelude
+
+import Termbox.Banana as X (Cursor(..), Event(..), Key(..))

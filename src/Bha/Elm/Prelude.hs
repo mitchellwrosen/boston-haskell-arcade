@@ -17,9 +17,9 @@ module Bha.Elm.Prelude
 
 import Control.Applicative as X (empty)
 import Control.Arrow       as X ((>>>))
-import Control.Lens        as X (use, (.=), (%=))
+import Control.Lens        as X (use, zoom, (%=), (.=))
 import Control.Lens.TH     as X (makeFields)
-import State               as X (StateT, get, put, runState, zoom)
+import Control.Monad.State as X (StateT, get, put, runState)
 import Termbox.Banana      as X (Event(..), Key(..))
 
 import Bha.Prelude              as X

@@ -37,6 +37,7 @@ data ElmGame model message
       (model -> Maybe Seconds)
       -- Tick, and if so, how often?
       (model -> HashSet Text)
+      -- Set of channels subscribed to
 
 
 --------------------------------------------------------------------------------
@@ -86,11 +87,11 @@ instance MonadElm message (Update model message) where
 
 
 data ElmF message x
-  = Save !Text !ByteString x
-  | Load !Text (Maybe ByteString -> x)
-  | RandomInt !Int !Int (Int -> x)
+  = Save Text ByteString x
+  | Load Text (Maybe ByteString -> x)
+  | RandomInt Int Int (Int -> x)
   | RandomPct (Double -> x)
-  | Send !Text !message x
+  | Send Text message x
   deriving (Functor)
 
 
@@ -118,9 +119,9 @@ send topic message =
 --------------------------------------------------------------------------------
 
 data Input a
-  = Key !Key
-  | Mouse !Mouse !Int !Int -- Col, then row
-  | Resize !Int !Int -- Col, then row
-  | Tick !Seconds
-  | Message !Text !a
+  = Key Key
+  | Mouse Mouse Int Int -- Col, then row
+  | Resize Int Int -- Col, then row
+  | Tick Seconds
+  | Message Text a
   deriving (Eq, Show)

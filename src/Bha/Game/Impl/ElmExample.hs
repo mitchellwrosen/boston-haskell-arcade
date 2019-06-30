@@ -15,8 +15,8 @@ import Bha.Elm.Prelude
 
 data Model
   = Model
-  { _modelCountL   :: !Int
-  , _modelElapsedL :: !Seconds
+  { _modelCountL   :: Int
+  , _modelElapsedL :: Seconds
   } deriving (Show)
 makeFields ''Model
 

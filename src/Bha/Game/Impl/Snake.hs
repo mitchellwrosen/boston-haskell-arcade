@@ -33,13 +33,13 @@ newtype HighScore
 
 data Model
   = Model
-  { _modelSnakeL     :: !(Seq (Col, Row))
-  , _modelDirL       :: !Direction
-  , _modelFoodL      :: !(Col, Row)
-  , _modelScoreL     :: !Int
-  , _modelHighScoreL :: !(Maybe Int)
-  , _modelPauseL     :: !Bool
-  , _modelAliveL     :: !Bool
+  { _modelSnakeL     :: (Seq (Col, Row))
+  , _modelDirL       :: Direction
+  , _modelFoodL      :: (Col, Row)
+  , _modelScoreL     :: Int
+  , _modelHighScoreL :: (Maybe Int)
+  , _modelPauseL     :: Bool
+  , _modelAliveL     :: Bool
   } deriving (Show)
 makeFields ''Model
 

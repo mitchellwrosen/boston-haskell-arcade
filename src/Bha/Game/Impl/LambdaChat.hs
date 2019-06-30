@@ -18,8 +18,8 @@ import qualified Data.Text     as Text
 
 data Model
   = Model
-  { _modelInputL :: !Text
-  , _modelChatL  :: !(Seq Text)
+  { _modelInputL :: Text
+  , _modelChatL  :: (Seq Text)
   } deriving (Show)
 makeFields ''Model
 

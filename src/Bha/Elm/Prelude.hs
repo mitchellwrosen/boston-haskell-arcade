@@ -15,8 +15,6 @@ module Bha.Elm.Prelude
   , module X
   ) where
 
-import Control.Applicative as X (empty)
-import Control.Arrow       as X ((>>>))
 import Control.Lens        as X (use, zoom, (%=), (.=))
 import Control.Lens.TH     as X (makeFields)
 import Control.Monad.State as X (StateT, get, put, runState)

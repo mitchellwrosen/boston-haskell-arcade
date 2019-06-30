@@ -32,13 +32,13 @@ data Dialog
 
 data Model
   = Model
-  { _modelLocL               :: Location
-  , _modelDialogL            :: Dialog
-  , _modelWaterL             :: Int
-  , _modelGrainL             :: Int
-  , _modelGoldL              :: Int
-  , _modelGrainWorldWaterL   :: Int -- Grain world's water
-  , _modelExploredWaterL     :: Int
+  { _modelLocL             :: Location
+  , _modelDialogL          :: Dialog
+  , _modelWaterL           :: Int
+  , _modelGrainL           :: Int
+  , _modelGoldL            :: Int
+  , _modelGrainWorldWaterL :: Int -- Grain world's water
+  , _modelExploredWaterL   :: Int
   } deriving (Show)
 makeFields ''Model
 

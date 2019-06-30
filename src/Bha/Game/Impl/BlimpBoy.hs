@@ -37,19 +37,19 @@ type Vel = Double
 
 data Model
   = Model
-  { _modelBlimpL         :: !X
-  , _modelBlimpVelL      :: !Vel
-  , _modelEnemiesL       :: !(Set X)
-  , _modelPebbleL        :: !(Set (X, Y))
-  , _modelNumPebblesL    :: !Int
-  , _modelMaxNumPebblesL :: !Int
-  , _modelNextPebbleL    :: !Seconds
-  , _modelBombsL         :: !(Set (X, Y))
-  , _modelNumBombsL      :: !Int
-  , _modelMaxNumBombsL   :: !Int
-  , _modelNextBombL      :: !Seconds
-  , _modelHealthL        :: !Int
-  , _modelMoneyL         :: !Int
+  { _modelBlimpL         :: X
+  , _modelBlimpVelL      :: Vel
+  , _modelEnemiesL       :: (Set X)
+  , _modelPebbleL        :: (Set (X, Y))
+  , _modelNumPebblesL    :: Int
+  , _modelMaxNumPebblesL :: Int
+  , _modelNextPebbleL    :: Seconds
+  , _modelBombsL         :: (Set (X, Y))
+  , _modelNumBombsL      :: Int
+  , _modelMaxNumBombsL   :: Int
+  , _modelNextBombL      :: Seconds
+  , _modelHealthL        :: Int
+  , _modelMoneyL         :: Int
   } deriving (Show)
 makeFields ''Model
 

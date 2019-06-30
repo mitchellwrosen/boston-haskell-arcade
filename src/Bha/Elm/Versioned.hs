@@ -24,9 +24,9 @@ load
   -> m (Maybe a)
 load k =
   interpretElm (Load k f)
- where
-  f :: Maybe ByteString -> Maybe a
-  f mbytes = do
-    bytes <- mbytes
-    Right val <- pure (decodeVersioned bytes)
-    pure val
+  where
+    f :: Maybe ByteString -> Maybe a
+    f mbytes = do
+      bytes <- mbytes
+      Right val <- pure (decodeVersioned bytes)
+      pure val

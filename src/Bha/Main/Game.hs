@@ -55,7 +55,7 @@ gameName = \case
 
 
 data ServerMessage
-  = ServerMessage !Text !Value
+  = ServerMessage Text Value
   deriving (Show)
 
 instance FromJSON ServerMessage where

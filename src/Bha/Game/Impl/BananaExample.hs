@@ -7,6 +7,7 @@ module Bha.Game.Impl.BananaExample
 import Bha.Banana.Prelude
 import Bha.Banana.Tick
 
+
 moment
   :: Events (Text, Void)
   -> Events TermEvent

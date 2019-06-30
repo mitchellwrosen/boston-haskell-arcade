@@ -32,7 +32,7 @@ instance Semigroup Cells where
     Cells (y <> x)
 
 data Scene
-  = Scene !Cells !Cursor
+  = Scene Cells Cursor
 
 set :: Int -> Int -> Cell -> Cells
 set c r x =

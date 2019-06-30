@@ -1,28 +1,14 @@
-resolver: lts-12.9
+resolver: lts-13.26
 extra-deps:
-  - aeson-1.4.1.0
-  - base-orphans-0.8
-  - compact-0.1.0.1
-  - compactable-0.1.2.2
-  - extra-1.6.13
-  - foldl-1.4.0
-  - free-5.1
-  - lens-4.17
-  - list-transformer-1.0.4
-  - monad-ste-0.1.0.0
-  - multiset-0.3.4
-  - network-2.8.0.0
-  - nf-1.0.1.0
-  - planet-mitchell-0.1.0
-  - prettyprinter-1.2.0.1
-  - primitive-0.6.4.0
-  - reactive-banana-1.2.0.0
-  - semigroupoids-5.3.1
-  - semilattices-0.0.0.2
-  - serialise-0.2.0.0
-  - tagged-0.8.6
-  - termbox-0.1.0
-  - termbox-banana-0.1.0
-  - unagi-chan-0.4.1.0
-  - unliftio-0.2.8.1
-  - websockets-0.12.5.2
+  - aeson-1.4.4.0
+  - binary-0.8.7.0
+  - containers-0.6.1.1
+  - primitive-0.7.0.0
+  - primitive-extras-0.8
+  - primitive-unlifted-0.1.1.0
+  - reactive-banana-1.2.1.0
+  - slave-thread-1.0.3
+  - stm-containers-1.1.0.4
+  - stm-hamt-1.2.0.4
+  - termbox-banana-0.1.1
+  - time-compat-1.9.2.2

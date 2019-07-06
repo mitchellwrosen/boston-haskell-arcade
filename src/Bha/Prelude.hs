@@ -13,16 +13,18 @@ import Control.Concurrent        as X (forkIO, threadDelay)
 import Control.Concurrent.STM    as X (STM, TMVar, TVar, atomically,
                                        newEmptyTMVarIO, newTVarIO, readTMVar,
                                        readTVar, tryPutTMVar, writeTVar)
-import Control.Lens              as X (Prism', Traversal', ix, over, preview,
-                                       prism', snoc, (%~), (.~), (^.), (^?), _1,
-                                       _2, _3, _Just, _Nothing)
+import Control.Lens              as X (Lens, Lens', Prism', Traversal,
+                                       Traversal', foldMapOf, ix, mapped, over,
+                                       preview, prism', snoc, traversed, (%~),
+                                       (.~), (^.), (^?), _1, _2, _3, _Just,
+                                       _Nothing)
 import Control.Lens.Extras       as X (is)
 import Control.Monad             as X (forever, guard, unless, void, when)
 import Control.Monad.IO.Class    as X (MonadIO(..))
 import Control.Monad.Trans.Class as X (MonadTrans(..))
 import Control.Monad.Trans.Maybe as X (MaybeT(..))
 import Data.ByteString           as X (ByteString)
-import Data.Foldable             as X (asum, for_, toList)
+import Data.Foldable             as X (asum, fold, for_, toList)
 import Data.Function             as X (fix, (&))
 import Data.HashMap.Strict       as X (HashMap)
 import Data.HashSet              as X (HashSet)

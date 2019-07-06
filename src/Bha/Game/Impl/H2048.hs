@@ -2,12 +2,17 @@ module Bha.Game.Impl.H2048
   ( moment
   ) where
 
-import Data.List  (intercalate, sortOn, transpose)
-import Data.Ord   (Down(Down))
-import Data.Tuple (uncurry)
-
 import Bha.Banana.Prelude
 import Bha.Banana.Versioned
+import Bha.Data.Board       (Board)
+
+import qualified Bha.Data.Board as Board
+
+import Data.List   (intercalate, sortOn)
+import Data.Monoid (Sum(..))
+import Data.Ord    (Down(Down))
+import Data.Tuple  (uncurry)
+
 
 newtype HighScores
   = HighScores [Int]
@@ -29,12 +34,12 @@ moment _ eEvent = mdo
       load "highScore"
 
   let
-    eUp    = filterE ((||) <$> (== EventKey KeyArrowUp    False) <*> (== EventKey (KeyChar 'k') False)) eEvent
-    eDown  = filterE ((||) <$> (== EventKey KeyArrowDown  False) <*> (== EventKey (KeyChar 'j') False)) eEvent
-    eLeft  = filterE ((||) <$> (== EventKey KeyArrowLeft  False) <*> (== EventKey (KeyChar 'h') False)) eEvent
-    eRight = filterE ((||) <$> (== EventKey KeyArrowRight False) <*> (== EventKey (KeyChar 'l') False)) eEvent
+    eUp    = filterE ((||) <$> isKeyArrowUp <*> isKeyChar 'k') eEvent
+    eDown  = filterE ((||) <$> isKeyArrowDown <*> isKeyChar 'j') eEvent
+    eLeft  = filterE ((||) <$> isKeyArrowLeft <*> isKeyChar 'h') eEvent
+    eRight = filterE ((||) <$> isKeyArrowRight <*> isKeyChar 'l') eEvent
 
-    eEsc = filterE (== EventKey KeyEsc False) eEvent
+    eEsc = filterE isKeyEsc eEvent
     eUDLR  = leftmostE [eUp, eDown, eLeft, eRight]
 
   let
@@ -56,23 +61,23 @@ moment _ eEvent = mdo
             (leftmostE [eBoardUp, eBoardDown, eBoardLeft, eBoardRight]))
 
   let
-    eBoardUp :: Events [[Maybe Int]]
+    eBoardUp :: Events (Board Int)
     eBoardUp    = mapMaybeE (ifChanged boardUp)    (bBoard <@ eUDLR)
     eBoardDown  = mapMaybeE (ifChanged boardDown)  (bBoard <@ eUDLR)
     eBoardLeft  = mapMaybeE (ifChanged boardLeft)  (bBoard <@ eUDLR)
     eBoardRight = mapMaybeE (ifChanged boardRight) (bBoard <@ eUDLR)
 
-  eBoard :: Events [[Maybe Int]] <- do
+  eBoard :: Events (Board Int) <- do
     let
-      plus1 :: Events [[Maybe Int]] -> Banana (Events [[Maybe Int]])
+      plus1 :: Events (Board Int) -> Banana (Events (Board Int))
       plus1 =
         fmap f >>> executeE
        where
-        f :: [[Maybe Int]] -> Banana [[Maybe Int]]
+        f :: Board Int -> Banana (Board Int)
         f board = do
-          coord <- randomOneOf (boardHoles board)
+          (r, c) <- randomOneOf (Board.holes board)
           pct <- randomPct
-          pure (boardSet coord (if pct >= 0.9 then 4 else 2) board)
+          pure (board & Board.cell r c .~ (if pct >= 0.9 then Just 4 else Just 2))
 
     eBoardUp'    <- plus1 (filterCoincidentE eUp    eBoardUp)
     eBoardDown'  <- plus1 (filterCoincidentE eDown  eBoardDown)
@@ -87,7 +92,7 @@ moment _ eEvent = mdo
         , eBoardRight'
         ])
 
-  bBoard :: Behavior [[Maybe Int]] <- do
+  bBoard :: Behavior (Board Int) <- do
     board0 <- initialBoard
     stepper board0 eBoard
 
@@ -119,11 +124,12 @@ moment _ eEvent = mdo
 
   pure (bScene, pure mempty, never, eDone)
 
+
 --------------------------------------------------------------------------------
 -- Rendering
 --------------------------------------------------------------------------------
 
-renderBoard :: [[Maybe Int]] -> Cells
+renderBoard :: Board Int -> Cells
 renderBoard cells = do
   mconcat
     [ (zip [0..] >>> foldMap (uncurry renderRow)) cells
@@ -181,48 +187,32 @@ renderHighScores ns =
 -- Board manipulation
 --------------------------------------------------------------------------------
 
-type Col = Int
-type Row = Int
-
-initialBoard :: Banana [[Maybe Int]]
+initialBoard :: Banana (Board Int)
 initialBoard = do
   n <- randomInt 0 15
   pure (chunksOf 4 (map (\i -> if i == n then Just 2 else Nothing) [0..15]))
 
-boardLeft :: [[Maybe Int]] -> [[Maybe Int]]
+boardLeft :: Board Int -> Board Int
 boardLeft =
-  map rowLeft
+  Board.rows %~ rowLeft
 
-boardRight :: [[Maybe Int]] -> [[Maybe Int]]
+boardRight :: Board Int -> Board Int
 boardRight =
-  map (reverse >>> rowLeft >>> reverse)
+  Board.rows %~ rowRight
 
-boardUp :: [[Maybe Int]] -> [[Maybe Int]]
+boardUp :: Board Int -> Board Int
 boardUp =
-  transpose >>> boardLeft >>> transpose
+  Board.cols %~ rowLeft
 
-boardDown :: [[Maybe Int]] -> [[Maybe Int]]
+boardDown :: Board Int -> Board Int
 boardDown =
-  transpose >>> boardRight >>> transpose
+  Board.cols %~ rowRight
 
-boardHoles :: [[Maybe Int]] -> [(Row, Col)]
-boardHoles board = do
-  (r, xs) <- zip [0..] board
-  (c, x) <- zip [0..] xs
-  guard (is _Nothing x)
-  pure (r, c)
+boardScore :: Board Int -> Int
+boardScore =
+  getSum . foldMapOf Board.elems Sum
 
-boardSet :: (Row, Col) -> Int -> [[Maybe Int]] -> [[Maybe Int]]
-boardSet (r, c) n =
-  ix r %~ (ix c .~ Just n)
-
-boardScore :: [[Maybe Int]] -> Int
-boardScore board = sum $ do
-  row <- board
-  Just n <- row
-  pure n
-
-rowLeft :: [Maybe Int] -> [Maybe Int]
+rowLeft :: Board.Row Int -> Board.Row Int
 rowLeft xs0 =
   (catMaybes >>> go >>> map Just >>> (++ repeat Nothing) >>> take (length xs0)) xs0
  where
@@ -234,6 +224,10 @@ rowLeft xs0 =
       x : go xs
     [] ->
       []
+
+rowRight :: Board.Row Int -> Board.Row Int
+rowRight =
+  reverse >>> rowLeft >>> reverse
 
 ifChanged :: Eq a => (a -> a) -> (a -> Maybe a)
 ifChanged f x = do

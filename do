@@ -8,6 +8,15 @@ case "$COMMAND" in
     exec cabal v2-build exe:boston-haskell-arcade -- "$@"
     ;;
 
+  "dev")
+    # Keep running forever, since sometimes ghcid exits by itself, e.g. when you
+    # add a new module to the .cabal file before the file exists.
+    while true; do
+      ghcid -c 'cabal v2-repl lib:boston-haskell-arcade' --restart boston-haskell-arcade.cabal
+      sleep 2
+    done
+    ;;
+
   "docs")
     exec cabal v2-haddock
     ;;
@@ -25,6 +34,7 @@ case "$COMMAND" in
     echo ""
     echo "Commands:"
     echo "  build              Build the code"
+    echo "  dev                Development - refresh a repl on change"
     echo "  docs               Build local documentation"
     echo "  run [HOST:PORT]    Run the arcade [connected to server]"
     echo "  run-server PORT    Run the arcade server"

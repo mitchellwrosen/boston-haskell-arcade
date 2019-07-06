@@ -1,8 +1,6 @@
 module Bha.Banana.Prelude
-  ( -- * Terminal
-    TermEvent
-    -- * Banana
-  , Banana
+  ( -- * Banana
+    Banana
   , Events
   , Behavior
   , MonadMoment

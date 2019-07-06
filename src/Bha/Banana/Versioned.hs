@@ -18,6 +18,7 @@ import System.Directory           (createDirectoryIfMissing)
 import System.FilePath            ((</>))
 
 import qualified Data.ByteString as ByteString
+import qualified Data.Text       as Text
 
 
 save
@@ -31,9 +32,9 @@ save path eValue =
     reactimate (doSave name <$> eValue)
 
  where
-  doSave :: [Char] -> a -> IO ()
+  doSave :: Text -> a -> IO ()
   doSave name value = do
-    let dir = bhaDataDir </> name
+    let dir = bhaDataDir </> Text.unpack name
     createDirectoryIfMissing True dir
     ByteString.writeFile (dir </> path) (encodeVersioned value)
 
@@ -42,6 +43,6 @@ load path =
   Banana $ ReaderT $ \name -> liftIO $ do
     asum
       [ either (const Nothing) Just . decodeVersioned <$>
-          ByteString.readFile (bhaDataDir </> name </> path)
+          ByteString.readFile (bhaDataDir </> Text.unpack name </> path)
       , pure Nothing
       ]

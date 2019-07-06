@@ -23,25 +23,25 @@ moment
   :: Int
   -> Int
   -> Events (Text, Void)
-  -> Events TermEvent
+  -> Events Key
   -> Banana
        ( Behavior Scene
        , Behavior (HashSet Text)
        , Events (Text, Void)
        , Events ()
        )
-moment _ _ _ eEvent = mdo
+moment _ _ _ eKey = mdo
   HighScores highScores <-
     fromMaybe (HighScores []) <$>
       load "highScore"
 
   let
-    eUp    = filterE ((||) <$> isKeyArrowUp <*> isKeyChar 'k') eEvent
-    eDown  = filterE ((||) <$> isKeyArrowDown <*> isKeyChar 'j') eEvent
-    eLeft  = filterE ((||) <$> isKeyArrowLeft <*> isKeyChar 'h') eEvent
-    eRight = filterE ((||) <$> isKeyArrowRight <*> isKeyChar 'l') eEvent
+    eUp    = filterE ((||) <$> (== KeyArrowUp) <*> (== KeyChar 'k')) eKey
+    eDown  = filterE ((||) <$> (== KeyArrowDown) <*> (== KeyChar 'j')) eKey
+    eLeft  = filterE ((||) <$> (== KeyArrowLeft) <*> (== KeyChar 'h')) eKey
+    eRight = filterE ((||) <$> (== KeyArrowRight) <*> (== KeyChar 'l')) eKey
 
-    eEsc = filterE isKeyEsc eEvent
+    eEsc = filterE (== KeyEsc) eKey
     eUDLR  = leftmostE [eUp, eDown, eLeft, eRight]
 
   let

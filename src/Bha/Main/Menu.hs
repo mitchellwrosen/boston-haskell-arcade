@@ -13,6 +13,9 @@ import Bha.Main.Game      (Game(..), gameName)
 
 import Data.Foldable (maximum)
 
+import qualified Data.Text      as Text
+import qualified Termbox.Banana as Termbox
+
 
 data MainMenuOutput
   = MainMenuOutputGame Game -- ^ A game was selected.
@@ -28,7 +31,7 @@ data MainMenuOutput
 momentMainMenu
   :: MonadMoment m
   => [Game] -- ^ Non-empty game list.
-  -> Events TermEvent
+  -> Events Termbox.Event
   -> Behavior (Int, Int)
   -> m (Behavior Scene, Events MainMenuOutput)
 momentMainMenu games eEvent bSize = do
@@ -49,8 +52,8 @@ momentMainMenu games eEvent bSize = do
         ])
       ((\(w, _) selected i game ->
         if selected
-          then text (menucol w) (i+3) mempty mempty ("> " ++ gameName game)
-          else text (menucol w) (i+3) mempty mempty ("  " ++ gameName game))
+          then text (menucol w) (i+3) mempty mempty ("> " ++ Text.unpack (gameName game))
+          else text (menucol w) (i+3) mempty mempty ("  " ++ Text.unpack (gameName game)))
       <$> bSize)
 
   let
@@ -71,14 +74,14 @@ momentMainMenu games eEvent bSize = do
         <*> pure NoCursor
 
   pure (bScene, eOutput)
- where
-  menucol :: Int -> Int
-  menucol w =
-    div w 2 - div (maximum (map (length . gameName) games) + 2) 2
+  where
+    menucol :: Int -> Int
+    menucol w =
+      div w 2 - div (maximum (map (Text.length . gameName) games) + 2) 2
 
 renderTitle :: (Int, Int) -> Cells
 renderTitle (w, _h) =
   text (div w 2 - div (length s) 2) 1 mempty mempty s
- where
-  s :: [Char]
-  s = "* Welcome to the Boston Haskell Arcade! *"
+  where
+    s :: [Char]
+    s = "* Welcome to the Boston Haskell Arcade! *"

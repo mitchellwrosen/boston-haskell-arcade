@@ -12,14 +12,14 @@ moment
   :: Int
   -> Int
   -> Events (Text, Void)
-  -> Events TermEvent
+  -> Events Key
   -> Banana
        ( Behavior Scene
        , Behavior (HashSet Text)
        , Events (Text, Void)
        , Events ()
        )
-moment _ _ _ eEvent = mdo
+moment _ _ _ eKey = mdo
   eTick :: Events Seconds <-
     momentTick (Just 1) (TickTeardown <$ eDone)
 
@@ -30,12 +30,12 @@ moment _ _ _ eEvent = mdo
     eDone :: Events ()
     eDone =
       leftmostE
-        [ () <$ filterE (== EventKey KeyEsc False) eEvent
+        [ () <$ filterE (== KeyEsc) eKey
         , () <$ filterE (> 10) eCount
         ]
 
   eCount :: Events Int <-
-    accumE 0 ((+1) <$ eEvent)
+    accumE 0 ((+1) <$ eKey)
 
   bCount :: Behavior Int <-
     stepper 0 eCount

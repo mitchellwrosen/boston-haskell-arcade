@@ -32,7 +32,7 @@ import qualified Data.ByteString.Lazy as ByteString.Lazy
 import qualified Data.HashSet         as HashSet
 import qualified Network.WebSockets   as WebSockets
 import qualified SlaveThread
-import qualified Termbox.Banana       as Tb
+import qualified Termbox.Banana       as Termbox
 
 
 ------------------------------------------------------------------------------
@@ -65,11 +65,13 @@ main =
     _ ->
       main' Nothing
 
-main' :: Maybe WebSockets.Connection -> IO ()
+main'
+  :: Maybe WebSockets.Connection
+  -> IO ()
 main' mconn = do
   createDirectoryIfMissing True bhaDataDir
 
-  Tb.main (InputModeEsc MouseModeYes) OutputMode256 $ \eEvent bSize -> do
+  Termbox.run_ (InputModeEsc MouseModeYes) OutputMode256 $ \eEvent bSize -> do
     eMessage :: Events ServerMessage <-
       case mconn of
         Nothing ->
@@ -107,9 +109,9 @@ main' mconn = do
 main''
   :: (ByteString -> IO ())
   -> Events ServerMessage
-  -> Events TermEvent
+  -> Events Termbox.Event
   -> Behavior (Int, Int)
-  -> MomentIO (Behavior Tb.Scene, Events ())
+  -> MomentIO (Behavior Termbox.Scene, Events ())
 main'' send eMessage eEvent bSize = mdo
   -- Create the menu.
   (bMenuScene, eMenuOutput) :: (Behavior Scene, Events MainMenuOutput) <-

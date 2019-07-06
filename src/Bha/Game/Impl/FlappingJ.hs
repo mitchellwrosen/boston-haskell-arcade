@@ -5,21 +5,22 @@ module Bha.Game.Impl.FlappingJ
 import Bha.Banana.Prelude
 import Bha.Banana.Tick
 
+
 moment
   :: Int
   -> Int
   -> Events (Text, Void)
-  -> Events TermEvent
+  -> Events Key
   -> Banana
        ( Behavior Scene
        , Behavior (HashSet Text)
        , Events (Text, Void)
        , Events ()
        )
-moment _ _ _ eEvent = mdo
+moment _ _ _ eKey = mdo
   let
-    eEsc   = filterE (== EventKey KeyEsc   False) eEvent
-    eSpace = filterE (== EventKey KeySpace False) eEvent
+    eEsc   = filterE (== KeyEsc) eKey
+    eSpace = filterE (== KeySpace) eKey
 
     eDone = () <$ eEsc
 

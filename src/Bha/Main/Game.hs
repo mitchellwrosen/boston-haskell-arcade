@@ -25,22 +25,23 @@ import qualified Data.Aeson.Types     as Aeson
 import qualified Data.ByteString      as ByteString
 import qualified Data.ByteString.Lazy as ByteString.Lazy
 import qualified Data.Text            as Text
+import qualified Termbox.Banana       as Termbox
 
 
 data Game :: Type where
   GameElm
     :: (FromJSON message, ToJSON message, Show message, Show model)
-    => [Char]
+    => Text
     -> ElmGame model message
     -> Game
 
   GameBanana
     :: (FromJSON message, ToJSON message)
-    => [Char]
+    => Text
     -> (  Int
        -> Int
        -> Events (Text, message)
-       -> Events TermEvent
+       -> Events Key
        -> Banana
             ( Behavior Scene
             , Behavior (HashSet Text)
@@ -50,7 +51,7 @@ data Game :: Type where
        )
     -> Game
 
-gameName :: Game -> [Char]
+gameName :: Game -> Text
 gameName = \case
   GameElm    name _ -> name
   GameBanana name _ -> name
@@ -73,7 +74,7 @@ momentGame
   -> Int
   -> Int
   -> Events ServerMessage
-  -> Events TermEvent
+  -> Events Termbox.Event
   -> Game
   -> MomentIO
        ( Behavior Scene
@@ -88,21 +89,30 @@ momentGame send width height eMessage eEvent = \case
     eInput <- execute (parseInput <$> eMessage)
 
     (bScene, bSubscribe, eOutput, eDone) <-
-      runBanana (game width height eInput eEvent) name
+      runBanana name (game width height eInput eKey)
 
     reactimate (send . uncurry formatOutput <$> eOutput)
 
     pure (bScene, bSubscribe, eDone)
 
+  where
+    eKey :: Events Key
+    eKey =
+      filterJust
+        ((\case
+          EventKey key _ -> Just key
+          _ -> Nothing)
+          <$> eEvent)
+
 momentElmGame
   :: forall message model.
      (FromJSON message, ToJSON message)
-  => [Char]
+  => Text
   -> Int
   -> Int
   -> (ByteString -> IO ())
   -> Events ServerMessage
-  -> Events TermEvent
+  -> Events Termbox.Event
   -> ElmGame model message
   -> MomentIO
        ( Behavior Scene
@@ -152,7 +162,7 @@ momentElmGame
     stepper model0 eModel
 
   eTick :: Events Seconds <-
-    runBanana (momentTick tickEvery0 eTickControl) name
+    runBanana name (momentTick tickEvery0 eTickControl)
 
   let
     eTickControl :: Events TickControl
@@ -193,39 +203,39 @@ momentElmGame
   eKey :: Events (Input message)
   eKey =
     mapMaybeE f eEvent
-   where
-    f :: TermEvent -> Maybe (Input message)
-    f = \case
-      EventKey key _ -> Just (Key key)
-      _ -> Nothing
+    where
+      f :: Termbox.Event -> Maybe (Input message)
+      f = \case
+        EventKey key _ -> Just (Key key)
+        _ -> Nothing
 
   eMouse :: Events (Input message)
   eMouse =
     mapMaybeE f eEvent
-   where
-    f :: TermEvent -> Maybe (Input message)
-    f = \case
-      EventMouse mouse col row -> Just (Mouse mouse col row)
-      _ -> Nothing
+    where
+      f :: Termbox.Event -> Maybe (Input message)
+      f = \case
+        EventMouse mouse col row -> Just (Mouse mouse col row)
+        _ -> Nothing
 
   eResize :: Events (Input message)
   eResize =
     mapMaybeE f eEvent
-   where
-    f :: TermEvent -> Maybe (Input message)
-    f = \case
-      EventResize col row -> Just (Resize col row)
-      _ -> Nothing
+    where
+      f :: Termbox.Event -> Maybe (Input message)
+      f = \case
+        EventResize col row -> Just (Resize col row)
+        _ -> Nothing
 
 interpretElmIO
   :: (ToJSON message, MonadIO m)
-  => [Char]
+  => Text
   -> (ByteString -> IO ())
   -> ElmF message (m x)
   -> m x
 interpretElmIO name send = \case
   Save key value k -> do
-    let dir = bhaDataDir </> name
+    let dir = bhaDataDir </> Text.unpack name
     let file = dir </> Text.unpack key
     liftIO $ do
       createDirectoryIfMissing True dir
@@ -233,7 +243,7 @@ interpretElmIO name send = \case
     k
 
   Load key k -> do
-    let file = bhaDataDir </> name </> Text.unpack key
+    let file = bhaDataDir </> Text.unpack name </> Text.unpack key
     value :: Maybe ByteString <- liftIO $
       asum
         [ Just <$> ByteString.readFile file

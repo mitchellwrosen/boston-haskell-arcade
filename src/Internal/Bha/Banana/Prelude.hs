@@ -1,8 +1,6 @@
 module Internal.Bha.Banana.Prelude
-  ( -- * Terminal
-    TermEvent
-    -- * Banana
-  , Banana(..)
+  ( -- * Banana
+    Banana(..)
   , runBanana
   , Events
   , Reactive.Banana.Behavior
@@ -41,14 +39,10 @@ import Control.Lens         ((^?!))
 import Control.Monad.Fix
 import Control.Monad.Reader
 import System.Random
-import Termbox.Banana       (Event)
 
 import qualified Reactive.Banana
 import qualified Reactive.Banana.Frameworks as Reactive.Banana
 
-
-type TermEvent
-  = Event
 
 type Events
   = Reactive.Banana.Event
@@ -56,7 +50,7 @@ type Events
 -- | A wrapper around MomentIO, used to control what effects games are allowed
 -- to use.
 newtype Banana a
-  = Banana { unBanana :: ReaderT [Char] Reactive.Banana.MomentIO a }
+  = Banana { unBanana :: ReaderT Text Reactive.Banana.MomentIO a }
   deriving newtype (Applicative, Functor, Monad, MonadFix)
 
 instance Reactive.Banana.MonadMoment Banana where
@@ -64,14 +58,17 @@ instance Reactive.Banana.MonadMoment Banana where
   liftMoment =
     Banana . lift . Reactive.Banana.liftMoment
 
-runBanana :: Banana a -> [Char] -> Reactive.Banana.MomentIO a
-runBanana =
-  runReaderT . unBanana
+runBanana
+  :: Text
+  -> Banana a
+  -> Reactive.Banana.MomentIO a
+runBanana name action =
+  runReaderT (unBanana action) name
 
 executeE :: Events (Banana a) -> Banana (Events a)
 executeE e =
   Banana $ ReaderT $ \name -> do
-    Reactive.Banana.execute ((`runBanana` name) <$> e)
+    Reactive.Banana.execute (runBanana name <$> e)
 
 filterCoincidentE :: Events b -> Events a -> Events a
 filterCoincidentE e1 e2 =

@@ -35,28 +35,28 @@ moment
   :: Int
   -> Int
   -> Events (Text, Void)
-  -> Events TermEvent
+  -> Events Key
   -> Banana
        ( Behavior Scene
        , Behavior (HashSet Text)
        , Events (Text, Void)
        , Events ()
        )
-moment _ _ _ eEvent = mdo
+moment _ _ _ eKey = mdo
   let
-    eUp        = filterE (== EventKey KeyArrowUp    False) eEvent
-    eDown      = filterE (== EventKey KeyArrowDown  False) eEvent
-    eLeft      = filterE (== EventKey KeyArrowLeft  False) eEvent
-    eRight     = filterE (== EventKey KeyArrowRight False) eEvent
-    eEsc       = filterE (== EventKey KeyEsc        False) eEvent
-    eEnter     = filterE (== EventKey KeyEnter      False) eEvent
-    eSpace     = filterE (== EventKey KeySpace      False) eEvent
-    eBackspace = filterE (== EventKey KeyBackspace2 False) eEvent
-    eTab       = filterE (== EventKey KeyTab        False) eEvent
-    eH         = filterE (== EventKey (KeyChar 'h') False) eEvent
-    eJ         = filterE (== EventKey (KeyChar 'j') False) eEvent
-    eK         = filterE (== EventKey (KeyChar 'k') False) eEvent
-    eL         = filterE (== EventKey (KeyChar 'l') False) eEvent
+    eUp        = filterE (== KeyArrowUp) eKey
+    eDown      = filterE (== KeyArrowDown) eKey
+    eLeft      = filterE (== KeyArrowLeft) eKey
+    eRight     = filterE (== KeyArrowRight) eKey
+    eEsc       = filterE (== KeyEsc) eKey
+    eEnter     = filterE (== KeyEnter) eKey
+    eSpace     = filterE (== KeySpace) eKey
+    eBackspace = filterE (== KeyBackspace2) eKey
+    eTab       = filterE (== KeyTab) eKey
+    eH         = filterE (== KeyChar 'h') eKey
+    eJ         = filterE (== KeyChar 'j') eKey
+    eK         = filterE (== KeyChar 'k') eKey
+    eL         = filterE (== KeyChar 'l') eKey
 
   bBackground :: Behavior Bool <-
     accumB True (not <$ eSpace)

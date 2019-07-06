@@ -32,7 +32,9 @@ data Color
   deriving (Bounded, Enum, Eq)
 
 moment
-  :: Events (Text, Void)
+  :: Int
+  -> Int
+  -> Events (Text, Void)
   -> Events TermEvent
   -> Banana
        ( Behavior Scene
@@ -40,7 +42,7 @@ moment
        , Events (Text, Void)
        , Events ()
        )
-moment _ eEvent = mdo
+moment _ _ _ eEvent = mdo
   let
     eUp        = filterE (== EventKey KeyArrowUp    False) eEvent
     eDown      = filterE (== EventKey KeyArrowDown  False) eEvent

@@ -19,8 +19,8 @@ data Model
   , elapsed :: Seconds
   } deriving stock (Generic, Show)
 
-init :: Init Void Model
-init =
+init :: Int -> Int -> Init Void Model
+init _ _ =
   pure Model
     { count = 0
     , elapsed = 0

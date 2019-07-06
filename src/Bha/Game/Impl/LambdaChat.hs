@@ -22,8 +22,8 @@ data Model
   , chat  :: (Seq Text)
   } deriving stock (Generic, Show)
 
-init :: Init Text Model
-init =
+init :: Int -> Int -> Init Text Model
+init _ _ =
   pure Model
     { input = ""
     , chat  = mempty

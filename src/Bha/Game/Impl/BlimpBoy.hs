@@ -52,8 +52,8 @@ data Model
   , money         :: Int
   } deriving stock (Generic, Show)
 
-init :: Init Void Model
-init = do
+init :: Int -> Int -> Init Void Model
+init _ _ =
   pure Model
     { blimp         = blimpx
     , blimpVel      = -blimpvel

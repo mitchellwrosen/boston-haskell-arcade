@@ -94,8 +94,8 @@ game :: ElmGame Model Void
 game =
   ElmGame init update view tickEvery subscribe
 
-init :: Init Void Model
-init =
+init :: Int -> Int -> Init Void Model
+init _ _ =
   pure Model
     { loc               = LocGrain
     , dialog            = ActionDialog

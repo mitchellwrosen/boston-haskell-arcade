@@ -26,6 +26,7 @@ module Internal.Bha.Banana.Prelude
   , Reactive.Banana.unionWith
   , Reactive.Banana.unions
   , unpairE
+  , Reactive.Banana.valueB
   , Reactive.Banana.whenE
     -- * Randomness
   , randomBool
@@ -99,16 +100,16 @@ mergeE
   -> Events c
 mergeE f g h xs ys =
   resolve <$> Reactive.Banana.unionWith both (MergeL <$> xs) (MergeR <$> ys)
- where
-  resolve :: Merge a b -> c
-  resolve = \case
-    MergeL x -> f x
-    MergeR y -> g y
-    MergeLR x y -> h x y
+  where
+    resolve :: Merge a b -> c
+    resolve = \case
+      MergeL x -> f x
+      MergeR y -> g y
+      MergeLR x y -> h x y
 
-  both :: Merge a b -> Merge a b -> Merge a b
-  both (MergeL x) (MergeR y) = MergeLR x y
-  both _ _                   = undefined
+    both :: Merge a b -> Merge a b -> Merge a b
+    both (MergeL x) (MergeR y) = MergeLR x y
+    both _ _                   = undefined
 
 -- | Filter an 'Event' with a 'Prism''.
 previewE :: Prism' s a -> Events s -> Events a

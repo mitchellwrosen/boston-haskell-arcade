@@ -48,8 +48,8 @@ rmax = 20
 cmax :: Col
 cmax = 40
 
-init :: Init Void Model
-init = do
+init :: Int -> Int -> Init Void Model
+init _ _ = do
   highScore :: Maybe Int <-
     (fmap.fmap) unHighScore (load "highScore")
 

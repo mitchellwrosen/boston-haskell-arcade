@@ -135,11 +135,14 @@ main'' send eMessage eEvent bSize = mdo
              , Events ()
              )
       doRunGame game = mdo
+        (width, height) <-
+          valueB bSize
+
         bGate :: Behavior Bool <-
           stepper True (False <$ eThisGameDone)
 
         (bThisGameScene, bThisGameSubscribe, eThisGameDone) <-
-          momentGame send eMessage (whenE bGate eEvent) game
+          momentGame send width height eMessage (whenE bGate eEvent) game
 
         pure (bThisGameScene, bThisGameSubscribe, eThisGameDone)
 

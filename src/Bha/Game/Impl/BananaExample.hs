@@ -9,7 +9,9 @@ import Bha.Banana.Tick
 
 
 moment
-  :: Events (Text, Void)
+  :: Int
+  -> Int
+  -> Events (Text, Void)
   -> Events TermEvent
   -> Banana
        ( Behavior Scene
@@ -17,7 +19,7 @@ moment
        , Events (Text, Void)
        , Events ()
        )
-moment _ eEvent = mdo
+moment _ _ _ eEvent = mdo
   eTick :: Events Seconds <-
     momentTick (Just 1) (TickTeardown <$ eDone)
 

@@ -25,6 +25,7 @@ module Bha.Banana.Prelude
   , unionWith
   , unions
   , unpairE
+  , valueB
   , whenE
     -- * Randomness
   , randomBool

@@ -20,7 +20,9 @@ newtype HighScores
   deriving anyclass (Serialize, Versioned '[])
 
 moment
-  :: Events (Text, Void)
+  :: Int
+  -> Int
+  -> Events (Text, Void)
   -> Events TermEvent
   -> Banana
        ( Behavior Scene
@@ -28,7 +30,7 @@ moment
        , Events (Text, Void)
        , Events ()
        )
-moment _ eEvent = mdo
+moment _ _ _ eEvent = mdo
   HighScores highScores <-
     fromMaybe (HighScores []) <$>
       load "highScore"

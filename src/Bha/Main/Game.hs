@@ -37,7 +37,9 @@ data Game :: Type where
   GameBanana
     :: (FromJSON message, ToJSON message)
     => [Char]
-    -> (  Events (Text, message)
+    -> (  Int
+       -> Int
+       -> Events (Text, message)
        -> Events TermEvent
        -> Banana
             ( Behavior Scene
@@ -68,6 +70,8 @@ instance FromJSON ServerMessage where
 
 momentGame
   :: (ByteString -> IO ())
+  -> Int
+  -> Int
   -> Events ServerMessage
   -> Events TermEvent
   -> Game
@@ -76,7 +80,7 @@ momentGame
        , Behavior (HashSet Text)
        , Events ()
        )
-momentGame send eMessage eEvent = \case
+momentGame send width height eMessage eEvent = \case
   GameElm name game ->
     momentElmGame name send eMessage eEvent game
 
@@ -84,7 +88,7 @@ momentGame send eMessage eEvent = \case
     eInput <- execute (parseInput <$> eMessage)
 
     (bScene, bSubscribe, eOutput, eDone) <-
-      runBanana (game eInput eEvent) name
+      runBanana (game width height eInput eEvent) name
 
     reactimate (send . uncurry formatOutput <$> eOutput)
 
@@ -108,7 +112,7 @@ momentElmGame
     (ElmGame init update view tickEvery subscribe) = mdo
 
   model0 :: model <-
-    runInit (interpretElmIO name send) init
+    runInit undefined undefined (interpretElmIO name send) init
 
   let
     tickEvery0 :: Maybe Seconds

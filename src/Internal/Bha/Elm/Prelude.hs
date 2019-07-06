@@ -28,7 +28,7 @@ import Internal.Bha.View (Scene)
 -- | An Elm-style game.
 data ElmGame model message
   = ElmGame
-      (Init message model)
+      (Int -> Int -> Init message model)
       -- Initial model.
       (Input message -> Update model message ())
       -- Update the model from a tick or terminal event.
@@ -50,11 +50,13 @@ newtype Init message a
 
 runInit
   :: Monad m
-  => (forall x. ElmF message (m x) -> m x)
-  -> Init message a
+  => Int
+  -> Int
+  -> (forall x. ElmF message (m x) -> m x)
+  -> (Int -> Int -> Init message a)
   -> m a
-runInit phi =
-  iterT phi . hoistFreeT (pure . runIdentity) . unInit
+runInit width height phi action =
+  iterT phi (hoistFreeT (pure . runIdentity) (unInit (action width height)))
 
 
 newtype Update model message a

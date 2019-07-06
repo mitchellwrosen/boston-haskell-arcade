@@ -82,7 +82,7 @@ momentGame
        )
 momentGame send width height eMessage eEvent = \case
   GameElm name game ->
-    momentElmGame name send eMessage eEvent game
+    momentElmGame name width height send eMessage eEvent game
 
   GameBanana name game -> do
     eInput <- execute (parseInput <$> eMessage)
@@ -98,6 +98,8 @@ momentElmGame
   :: forall message model.
      (FromJSON message, ToJSON message)
   => [Char]
+  -> Int
+  -> Int
   -> (ByteString -> IO ())
   -> Events ServerMessage
   -> Events TermEvent
@@ -108,11 +110,11 @@ momentElmGame
        , Events ()
        )
 momentElmGame
-    name send eMessage eEvent
+    name width height send eMessage eEvent
     (ElmGame init update view tickEvery subscribe) = mdo
 
   model0 :: model <-
-    runInit undefined undefined (interpretElmIO name send) init
+    runInit width height (interpretElmIO name send) init
 
   let
     tickEvery0 :: Maybe Seconds

@@ -108,7 +108,6 @@ randomPct :: MonadElm message m => m Double
 randomPct =
   interpretElm (RandomPct id)
 
-
 send :: MonadElm message m => Text -> message -> m ()
 send topic message =
   interpretElm (Send topic message ())
@@ -120,8 +119,8 @@ send topic message =
 
 data Input a
   = Key Key
-  | Mouse Mouse Int Int -- Col, then row
-  | Resize Int Int -- Col, then row
+  | Mouse Mouse Int Int -- ^ Column, then row
+  | Resize Int Int -- ^ The terminal was resized (column, then row)
   | Tick Seconds
   | Message Text a
   deriving (Eq, Show)

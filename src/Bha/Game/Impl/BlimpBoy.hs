@@ -37,38 +37,37 @@ type Vel = Double
 
 data Model
   = Model
-  { _modelBlimpL         :: X
-  , _modelBlimpVelL      :: Vel
-  , _modelEnemiesL       :: (Set X)
-  , _modelPebbleL        :: (Set (X, Y))
-  , _modelNumPebblesL    :: Int
-  , _modelMaxNumPebblesL :: Int
-  , _modelNextPebbleL    :: Seconds
-  , _modelBombsL         :: (Set (X, Y))
-  , _modelNumBombsL      :: Int
-  , _modelMaxNumBombsL   :: Int
-  , _modelNextBombL      :: Seconds
-  , _modelHealthL        :: Int
-  , _modelMoneyL         :: Int
-  } deriving (Show)
-makeFields ''Model
+  { blimp         :: X
+  , blimpVel      :: Vel
+  , enemies       :: (Set X)
+  , pebble        :: (Set (X, Y))
+  , numPebbles    :: Int
+  , maxNumPebbles :: Int
+  , nextPebble    :: Seconds
+  , bombs         :: (Set (X, Y))
+  , numBombs      :: Int
+  , maxNumBombs   :: Int
+  , nextBomb      :: Seconds
+  , health        :: Int
+  , money         :: Int
+  } deriving stock (Generic, Show)
 
 init :: Init Void Model
 init = do
   pure Model
-    { _modelBlimpL         = blimpx
-    , _modelBlimpVelL      = -blimpvel
-    , _modelEnemiesL       = mempty
-    , _modelPebbleL        = mempty
-    , _modelNumPebblesL    = 1
-    , _modelMaxNumPebblesL = 2
-    , _modelNextPebbleL    = pebbletimer
-    , _modelBombsL         = mempty
-    , _modelNumBombsL      = 1
-    , _modelMaxNumBombsL   = 2
-    , _modelNextBombL      = bombtimer
-    , _modelHealthL        = 50
-    , _modelMoneyL         = 0
+    { blimp         = blimpx
+    , blimpVel      = -blimpvel
+    , enemies       = mempty
+    , pebble        = mempty
+    , numPebbles    = 1
+    , maxNumPebbles = 2
+    , nextPebble    = pebbletimer
+    , bombs         = mempty
+    , numBombs      = 1
+    , maxNumBombs   = 2
+    , nextBomb      = bombtimer
+    , health        = 50
+    , money         = 0
     }
 
 
@@ -82,53 +81,53 @@ update = \case
     tickUpdate dt
 
   Key KeyArrowLeft ->
-    blimpVelL %= negate . abs
+    #blimpVel %= negate . abs
 
   Key KeyArrowRight ->
-    blimpVelL %= abs
+    #blimpVel %= abs
 
   Key (KeyChar 'p') -> do
-    money         <- use moneyL
-    maxNumPebbles <- use maxNumPebblesL
+    money         <- use #money
+    maxNumPebbles <- use #maxNumPebbles
 
     when (money >= 1 && maxNumPebbles < 5) $ do
-      moneyL %= subtract 1
-      maxNumPebblesL %= (+1)
+      #money %= subtract 1
+      #maxNumPebbles %= (+1)
 
   Key (KeyChar 'b') -> do
-    money       <- use moneyL
-    maxNumBombs <- use maxNumBombsL
+    money       <- use #money
+    maxNumBombs <- use #maxNumBombs
 
     when (money >= 3 && maxNumBombs < 5) $ do
-      moneyL %= subtract 3
-      maxNumBombsL %= (+1)
+      #money %= subtract 3
+      #maxNumBombs %= (+1)
 
   Key KeySpace -> do
-    supply   <- use numPebblesL
-    blimpcol <- use blimpL
+    supply   <- use #numPebbles
+    blimpcol <- use #blimp
 
-    pebbleL %=
+    #pebble %=
       if supply >= 1
         then
           Set.insert (blimpcol + 0.5, fromIntegral blimprow + 0.5)
         else
             id
 
-    numPebblesL %=
+    #numPebbles %=
       (max 0 . subtract 1)
 
   Key (KeyChar '1') -> do
-    supply   <- use numBombsL
-    blimpcol <- use blimpL
+    supply   <- use #numBombs
+    blimpcol <- use #blimp
 
-    bombsL %=
+    #bombs %=
       if supply >= 1
         then
           Set.insert (blimpcol + 0.5, fromIntegral blimprow + 0.5)
         else
           id
 
-    numBombsL %=
+    #numBombs %=
       (max 0 . subtract 1)
 
   Key KeyEsc ->
@@ -154,35 +153,35 @@ tickUpdate dt = do
 
 isCastleAlive :: Update Model Void ()
 isCastleAlive = do
-  health <- use healthL
+  health <- use #health
   guard (health > 0)
 
 blimpDrifts :: Seconds -> Update Model Void ()
 blimpDrifts dt = do
-  blimpVel <- use blimpVelL
-  blimpL %= max 1 . min 55 . \x -> x + blimpVel * realToFrac dt
+  blimpVel <- use #blimpVel
+  #blimp %= max 1 . min 55 . \x -> x + blimpVel * realToFrac dt
 
 enemiesAdvance :: Seconds -> Update Model Void ()
 enemiesAdvance dt =
-  enemiesL %= Set.map (\x -> x + enemyvel * realToFrac dt)
+  #enemies %= Set.map (\x -> x + enemyvel * realToFrac dt)
 
 stuffFallsDownward :: Seconds -> Update Model Void ()
 stuffFallsDownward dt = do
-  pebbleL %=
+  #pebble %=
     Set.filter ((\y -> y <= fromIntegral enemyrow + 1) . snd) .
       Set.map (over _2 (\y -> y + pebblevel * realToFrac dt))
 
-  bombsL %=
+  #bombs %=
     Set.filter ((\y -> y <= fromIntegral enemyrow + 1) . snd) .
       Set.map (over _2 (\y -> y + bombvel * realToFrac dt))
 
 removePebbledEnemies :: Update Model Void ()
 removePebbledEnemies = do
-  pebbles <- use pebbleL
+  pebbles <- use #pebble
 
   for_ pebbles $ \(pebblex, pebbley) -> do
     when (floor pebbley == enemyrow) $ do
-      enemies <- use enemiesL
+      enemies <- use #enemies
 
       let
         (dead, alive) =
@@ -190,49 +189,51 @@ removePebbledEnemies = do
             (\x -> x >= pebblex - 0.5 && x <= pebblex + 0.5)
             enemies
 
-      moneyL %= (+ length dead)
-      enemiesL .= alive
+      #money %= (+ length dead)
+      #enemies .= alive
 
 removeBombedEnemies :: Update Model Void ()
 removeBombedEnemies = do
-  bombs <- use bombsL
+  bombs <- use #bombs
 
   for_ bombs $ \(bombx, bomby) -> do
     when (floor bomby == enemyrow) $ do
-      enemies <- use enemiesL
+      enemies <- use #enemies
 
       let
         (dead, alive) =
           Set.partition (\x -> x >= bombx - 1.5 && x <= bombx + 1.5) enemies
 
-      enemiesL .= alive
-      moneyL %= (+ length dead)
+      #enemies .= alive
+      #money %= (+ length dead)
 
 enemiesHitCastle :: Update Model Void ()
 enemiesHitCastle = do
-  enemies <- use enemiesL
+  enemies <- use #enemies
 
   let
     (splat, walking) =
       Set.partition (\x -> floor x >= castlecol) enemies
 
-  enemiesL .= walking
-  healthL %= subtract (length splat)
+  #enemies .= walking
+  #health %= subtract (length splat)
 
 possiblySpawnNewEnemy :: Update Model Void ()
 possiblySpawnNewEnemy = do
   pct <- randomPct
-  when (pct > 0.99) (enemiesL %= Set.insert enemycol)
+  when (pct > 0.99) (#enemies %= Set.insert enemycol)
 
 updatePebbleSupply :: Seconds -> Update Model Void ()
 updatePebbleSupply dt = do
-  nextPebbleTimer <- use nextPebbleL
-  maxNumPebbles   <- use maxNumPebblesL
-  numPebblesL %=
+  nextPebbleTimer <- use #nextPebble
+  maxNumPebbles   <- use #maxNumPebbles
+
+  #numPebbles %=
     if nextPebbleTimer <= 0
       then min maxNumPebbles . (+1)
       else id
-  nextPebbleL %=
+
+  #nextPebble %=
     \timer ->
       if timer <= 0
         then timer - dt + pebbletimer
@@ -240,13 +241,15 @@ updatePebbleSupply dt = do
 
 updateBombSupply :: Seconds -> Update Model Void ()
 updateBombSupply dt = do
-  nextBombTimer <- use nextBombL
-  maxNumBombs   <- use maxNumBombsL
-  numBombsL %=
+  nextBombTimer <- use #nextBomb
+  maxNumBombs   <- use #maxNumBombs
+
+  #numBombs %=
     if nextBombTimer <= 0
       then min maxNumBombs . (+1)
       else id
-  nextBombL %=
+
+  #nextBomb %=
     \timer ->
       if timer <= 0
         then timer - dt + bombtimer
@@ -266,14 +269,14 @@ view model =
       [ renderSky
       , renderGround
       , renderCastle
-      , renderBlimp (model ^. blimpL)
-      , renderPebbles (model ^. pebbleL)
-      , renderBombs (model ^. bombsL)
-      , renderEnemies (model ^. enemiesL)
-      , renderMoney (model ^. moneyL)
-      , renderNumPebbles (model ^. numPebblesL)
-      , renderNumBombs (model ^. numBombsL)
-      , renderHealth (model ^. healthL)
+      , renderBlimp (model ^. #blimp)
+      , renderPebbles (model ^. #pebble)
+      , renderBombs (model ^. #bombs)
+      , renderEnemies (model ^. #enemies)
+      , renderMoney (model ^. #money)
+      , renderNumPebbles (model ^. #numPebbles)
+      , renderNumBombs (model ^. #numBombs)
+      , renderHealth (model ^. #health)
       ]
 
 renderSky    = rect 0 0 60 (enemyrow+1) blue

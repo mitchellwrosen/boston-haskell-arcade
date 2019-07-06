@@ -24,7 +24,7 @@ data Direction
   | DirDown
   | DirLeft
   | DirRight
-  deriving (Eq, Show)
+  deriving stock (Eq, Show)
 
 newtype HighScore
   = HighScore { unHighScore :: Int }
@@ -33,15 +33,14 @@ newtype HighScore
 
 data Model
   = Model
-  { _modelSnakeL     :: (Seq (Col, Row))
-  , _modelDirL       :: Direction
-  , _modelFoodL      :: (Col, Row)
-  , _modelScoreL     :: Int
-  , _modelHighScoreL :: (Maybe Int)
-  , _modelPauseL     :: Bool
-  , _modelAliveL     :: Bool
-  } deriving (Show)
-makeFields ''Model
+  { snake     :: (Seq (Col, Row))
+  , dir       :: Direction
+  , food      :: (Col, Row)
+  , score     :: Int
+  , highScore :: (Maybe Int)
+  , pause     :: Bool
+  , alive     :: Bool
+  } deriving stock (Generic, Show)
 
 rmax :: Row
 rmax = 20
@@ -57,13 +56,13 @@ init = do
   food <- randomCell
 
   pure Model
-    { _modelSnakeL     = pure (0, 0)
-    , _modelDirL       = DirRight
-    , _modelFoodL      = food
-    , _modelScoreL     = 0
-    , _modelHighScoreL = highScore
-    , _modelPauseL     = False
-    , _modelAliveL     = True
+    { snake     = pure (0, 0)
+    , dir       = DirRight
+    , food      = food
+    , score     = 0
+    , highScore = highScore
+    , pause     = False
+    , alive     = True
     }
 
 
@@ -77,21 +76,21 @@ update input = do
 
   if
     -- When dead, <Esc> saves and quits the game.
-    | not (model ^. aliveL) ->
+    | not (model ^. #alive) ->
         case input of
           Key KeyEsc -> do
-            when (Just (model ^. scoreL) > model ^. highScoreL)
-              (save "highScore" (HighScore (model ^. scoreL)))
+            when (Just (model ^. #score) > model ^. #highScore)
+              (save "highScore" (HighScore (model ^. #score)))
             gameover
 
           _ ->
             pure ()
 
     -- When paused <Space> unpauses the game.
-    | model ^. pauseL ->
+    | model ^. #pause ->
         case input of
           Key KeySpace ->
-            pauseL .= False
+            #pause .= False
 
           _ ->
             pure ()
@@ -105,27 +104,27 @@ update input = do
             gameover
 
           Key KeyArrowUp -> do
-            dir <- use dirL
-            dirL .= DirUp
-            when (dir == DirDown) (snakeL %= Seq.reverse)
+            dir <- use #dir
+            #dir .= DirUp
+            when (dir == DirDown) (#snake %= Seq.reverse)
 
           Key KeyArrowDown -> do
-            dir <- use dirL
-            dirL .= DirDown
-            when (dir == DirUp) (snakeL %= Seq.reverse)
+            dir <- use #dir
+            #dir .= DirDown
+            when (dir == DirUp) (#snake %= Seq.reverse)
 
           Key KeyArrowLeft -> do
-            dir <- use dirL
-            dirL .= DirLeft
-            when (dir == DirRight) (snakeL %= Seq.reverse)
+            dir <- use #dir
+            #dir .= DirLeft
+            when (dir == DirRight) (#snake %= Seq.reverse)
 
           Key KeyArrowRight -> do
-            dir <- use dirL
-            dirL .= DirRight
-            when (dir == DirLeft) (snakeL %= Seq.reverse)
+            dir <- use #dir
+            #dir .= DirRight
+            when (dir == DirLeft) (#snake %= Seq.reverse)
 
           Key KeySpace ->
-            pauseL .= True
+            #pause .= True
 
           _ ->
             pure ()
@@ -137,7 +136,7 @@ updateTick = do
 
   let
     snake =
-      model ^. snakeL
+      model ^. #snake
 
   let
     (headCol, headRow) =
@@ -147,7 +146,7 @@ updateTick = do
 
     target :: (Col, Row)
     target =
-      case model ^. dirL of
+      case model ^. #dir of
         DirUp    -> (headCol,   headRow-1)
         DirDown  -> (headCol,   headRow+1)
         DirLeft  -> (headCol-1, headRow)
@@ -160,21 +159,21 @@ updateTick = do
 
   if isDead
   then
-    aliveL .= False
+    #alive .= False
   else do
-    if model ^. foodL == target
+    if model ^. #food == target
     then do
-      scoreL %= (+1)
+      #score %= (+1)
 
       let
         newSnake =
           (snake |> target)
 
-      snakeL .= newSnake
+      #snake .= newSnake
 
       if length newSnake == cmax*rmax
       then do
-        aliveL .= False
+        #alive .= False
       else do
         newFood <-
           fix $ \loop -> do
@@ -182,9 +181,9 @@ updateTick = do
             if food `elem` newSnake
               then loop
               else pure food
-        foodL .= newFood
+        #food .= newFood
     else
-      snakeL %= (Seq.drop 1 >>> (|> target))
+      #snake %= (Seq.drop 1 >>> (|> target))
 
 inBounds :: (Col, Row) -> Bool
 inBounds (col, row) =
@@ -206,11 +205,11 @@ view model =
   cells :: Cells
   cells =
     (mconcat . catMaybes)
-      [ Just (viewBorder (model ^. aliveL))
-      , Just (viewSnake (model ^. snakeL))
-      , Just (viewFood (model ^. foodL))
-      , Just (viewScore (model ^. scoreL))
-      , viewHighScore <$> (model ^. highScoreL)
+      [ Just (viewBorder (model ^. #alive))
+      , Just (viewSnake (model ^. #snake))
+      , Just (viewFood (model ^. #food))
+      , Just (viewScore (model ^. #score))
+      , viewHighScore <$> (model ^. #highScore)
       ]
 
 viewBorder :: Bool -> Cells
@@ -247,12 +246,12 @@ viewHighScore score =
 
 tickEvery :: Model -> Maybe Seconds
 tickEvery model = do
-  guard (not (model ^. pauseL))
-  guard (model ^. aliveL)
+  guard (not (model ^. #pause))
+  guard (model ^. #alive)
 
   let
-    score = model ^. scoreL
-    dir = model ^. dirL
+    score = model ^. #score
+    dir = model ^. #dir
 
   case dir of
     DirUp    -> Just (1 / 14 * (1 - fromIntegral score / 100))

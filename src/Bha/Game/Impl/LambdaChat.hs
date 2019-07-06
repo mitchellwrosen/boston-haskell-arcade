@@ -18,16 +18,15 @@ import qualified Data.Text     as Text
 
 data Model
   = Model
-  { _modelInputL :: Text
-  , _modelChatL  :: (Seq Text)
-  } deriving (Show)
-makeFields ''Model
+  { input :: Text
+  , chat  :: (Seq Text)
+  } deriving stock (Generic, Show)
 
 init :: Init Text Model
 init =
   pure Model
-    { _modelInputL = ""
-    , _modelChatL  = mempty
+    { input = ""
+    , chat  = mempty
     }
 
 
@@ -41,20 +40,20 @@ update = \case
     gameover
 
   Key (KeyChar c) ->
-    inputL %= (`snoc` c)
+    #input %= (`snoc` c)
 
   Key KeySpace ->
-    inputL %= (`snoc` ' ')
+    #input %= (`snoc` ' ')
 
   Key KeyBackspace2 ->
-    inputL %= \s ->
+    #input %= \s ->
       if Text.null s
         then s
         else Text.init s
 
   Key KeyEnter -> do
-    input <- use inputL
-    inputL .= mempty
+    input <- use #input
+    #input .= mempty
     updateChatLog input
     send "chat" input
 
@@ -66,7 +65,7 @@ update = \case
 
 updateChatLog :: Text -> Update Model Text ()
 updateChatLog msg =
-  chatL %= \chat ->
+  #chat %= \chat ->
     if length chat == 15
       then snoc (Seq.drop 1 chat) msg
       else snoc chat msg
@@ -83,8 +82,8 @@ view model =
 render :: Model -> Cells
 render model =
   mconcat
-    [ renderChat (model ^. chatL)
-    , renderInput (model ^. inputL)
+    [ renderChat (model ^. #chat)
+    , renderInput (model ^. #input)
     ]
 
 renderChat :: Seq Text -> Cells

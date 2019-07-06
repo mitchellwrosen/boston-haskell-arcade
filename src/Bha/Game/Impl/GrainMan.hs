@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module Bha.Game.Impl.GrainMan
   ( game
   ) where
@@ -32,31 +30,29 @@ data Dialog
 
 data Model
   = Model
-  { _modelLocL             :: Location
-  , _modelDialogL          :: Dialog
-  , _modelWaterL           :: Int
-  , _modelGrainL           :: Int
-  , _modelGoldL            :: Int
-  , _modelGrainWorldWaterL :: Int -- Grain world's water
-  , _modelExploredWaterL   :: Int
-  } deriving (Show)
-makeFields ''Model
+  { loc             :: Location
+  , dialog          :: Dialog
+  , water           :: Int
+  , grain           :: Int
+  , gold            :: Int
+  , grainWorldWater :: Int -- Grain world's water
+  , exploredWater   :: Int
+  } deriving stock (Generic, Show)
 
 data ModelView
   = ModelView
-  { _modelViewLocL    :: Location
-  , _modelViewDialogL :: ([[Char]], [[Char]])
-  , _modelViewWaterL  :: Int
-  , _modelViewGrainL  :: Int
-  , _modelViewGoldL   :: Int
-  }
-makeFields ''ModelView
+  { loc    :: Location
+  , dialog :: ([[Char]], [[Char]])
+  , water  :: Int
+  , grain  :: Int
+  , gold   :: Int
+  } deriving stock (Generic)
 
 modelToModelView :: Model -> ModelView
 modelToModelView model =
   ModelView
-    { _modelViewDialogL =
-        case model ^. dialogL of
+    { dialog =
+        case model ^. #dialog of
           ActionDialog ->
             case actionDialog model of
               (x, y) ->
@@ -77,10 +73,10 @@ modelToModelView model =
               (x, y) ->
                 (x, map fst y)
 
-    , _modelViewLocL   = model ^. locL
-    , _modelViewWaterL = model ^. waterL
-    , _modelViewGrainL = model ^. grainL
-    , _modelViewGoldL  = model ^. goldL
+    , loc   = model ^. #loc
+    , water = model ^. #water
+    , grain = model ^. #grain
+    , gold  = model ^. #gold
     }
 
 showResource :: Resource -> [Char]
@@ -101,13 +97,13 @@ game =
 init :: Init Void Model
 init =
   pure Model
-    { _modelLocL               = LocGrain
-    , _modelDialogL            = ActionDialog
-    , _modelWaterL             = 0
-    , _modelGrainL             = 0
-    , _modelGoldL              = 0
-    , _modelGrainWorldWaterL   = 0
-    , _modelExploredWaterL     = 0
+    { loc               = LocGrain
+    , dialog            = ActionDialog
+    , water             = 0
+    , grain             = 0
+    , gold              = 0
+    , grainWorldWater   = 0
+    , exploredWater     = 0
     }
 
 update :: Input Void -> Update Model Void ()
@@ -117,7 +113,7 @@ update = \case
 
   Key (KeyChar c) -> do
     model <- get
-    case model ^. dialogL of
+    case model ^. #dialog of
       ActionDialog ->
         put (handleAction c model)
 
@@ -165,9 +161,9 @@ applyTrade :: Trade -> Model -> Model
 applyTrade trade =
   case trade of
     Sell Water n ->
-      (waterL           %~ subtract 1) .
-      (goldL            %~ (+ n)) .
-      (grainWorldWaterL %~ (+1))
+      (#water           %~ subtract 1) .
+      (#gold            %~ (+ n)) .
+      (#grainWorldWater %~ (+1))
 
     Buy Water _n ->
       error "buy water?"
@@ -176,8 +172,8 @@ applyTrade trade =
       error "sell grain?"
 
     Buy Grain n ->
-      (grainL %~ (+1)) .
-      (goldL  %~ (subtract n))
+      (#grain %~ (+1)) .
+      (#gold  %~ (subtract n))
 
 tryScoopWater :: Int -> Maybe Int
 tryScoopWater n = do
@@ -186,10 +182,10 @@ tryScoopWater n = do
 
 actionDialog :: Model -> ([[Char]], [([Char], Model)])
 actionDialog model =
-  case model ^. locL of
+  case model ^. #loc of
     LocGrain ->
       (noInfo . catMaybes)
-        [ Just ("Explore", model & dialogL .~ ExploreDialog)
+        [ Just ("Explore", model & #dialog .~ ExploreDialog)
         , do
             guard (length (snd (tradeDialog model)) > 1)
             Just doTrade
@@ -202,17 +198,17 @@ actionDialog model =
     LocWater ->
       (noInfo . catMaybes)
         [ Just ("Explore", model
-            & dialogL .~ ExploreDialog
-            & exploredWaterL %~ (+1))
+            & #dialog .~ ExploreDialog
+            & #exploredWater %~ (+1))
 
         , do
-            guard (is _Just (tryScoopWater (model ^. waterL)))
+            guard (is _Just (tryScoopWater (model ^. #water)))
             Just ("Scoop water",
               model
-                & waterL .~
+                & #water .~
                     fromMaybe
-                      (model ^. waterL)
-                      (tryScoopWater (model ^. waterL)))
+                      (model ^. #water)
+                      (tryScoopWater (model ^. #water)))
 
         , Just doTravel
         ]
@@ -223,24 +219,24 @@ actionDialog model =
 
   doTrade :: ([Char], Model)
   doTrade =
-    ("Trade", model & dialogL .~ TradeDialog)
+    ("Trade", model & #dialog .~ TradeDialog)
 
   doTravel :: ([Char], Model)
   doTravel =
-    ("Travel", model & dialogL .~ TravelDialog)
+    ("Travel", model & #dialog .~ TravelDialog)
 
 exploreDialog :: Model -> ([[Char]], [([Char], Model)])
 exploreDialog model =
-  (info, [("Ok", model & dialogL .~ ActionDialog)])
+  (info, [("Ok", model & #dialog .~ ActionDialog)])
  where
   info :: [[Char]]
   info =
-    case model ^. locL of
+    case model ^. #loc of
       LocGrain ->
         [ "You meet a man. He says, \"Our well is broken. Do you have water?\"" ]
 
       LocWater ->
-        if model ^. exploredWaterL == 5
+        if model ^. #exploredWater == 5
           then
             [ "You find the wreckage of an ancient orbital booster."
             , "By copying the design, you improve your engines."
@@ -264,15 +260,15 @@ tradeDialog model =
   options =
     catMaybes
       [ do
-          guard (model ^. waterL > 0)
+          guard (model ^. #water > 0)
           guard (not (grainWorldFixedWell model))
           let trade = Just (Sell Water 10)
           Just (showTrade trade, maybe id applyTrade trade model)
       , do
-          guard (model ^. goldL >= 5)
+          guard (model ^. #gold >= 5)
           let trade = Just (Buy Grain 5)
           Just (showTrade trade, maybe id applyTrade trade model)
-      , Just (showTrade Nothing, model & dialogL .~  ActionDialog)
+      , Just (showTrade Nothing, model & #dialog .~  ActionDialog)
       ]
 
 travelDialog :: Model -> ([[Char]], [([Char], Model)])
@@ -284,7 +280,7 @@ travelDialog model =
 
   options :: [([Char], Model)]
   options =
-    case model ^. locL of
+    case model ^. #loc of
       LocGrain ->
         catMaybes
           [ pure doWater
@@ -314,40 +310,40 @@ travelDialog model =
     doGrain =
       ( "Grain world"
       , model
-          & locL .~ LocGrain
-          & dialogL .~ ActionDialog
+          & #loc .~ LocGrain
+          & #dialog .~ ActionDialog
       )
 
     doWater :: ([Char], Model)
     doWater =
       ( "Water world"
       , model
-          & locL .~ LocWater
-          & dialogL .~ ActionDialog
+          & #loc .~ LocWater
+          & #dialog .~ ActionDialog
       )
 
     doPyramid :: ([Char], Model)
     doPyramid =
       ( "Pyramid world"
       , model
-          & locL .~ LocPyramid
-          & dialogL .~ ActionDialog
+          & #loc .~ LocPyramid
+          & #dialog .~ ActionDialog
       )
 
     doCancel :: ([Char], Model)
     doCancel =
       ( "Cancel"
       , model
-          & dialogL .~ ActionDialog
+          & #dialog .~ ActionDialog
       )
 
 grainWorldFixedWell :: Model -> Bool
 grainWorldFixedWell model =
-  model ^. grainWorldWaterL >= 15
+  model ^. #grainWorldWater >= 15
 
 discoveredPyramid :: Model -> Bool
 discoveredPyramid =
-  (>= 5) . (^. exploredWaterL)
+  (>= 5) . (^. #exploredWater)
 
 view :: Model -> Scene
 view =
@@ -360,9 +356,9 @@ viewModel model =
   cells :: Cells
   cells =
     mconcat
-      [ viewLoc (model ^. locL)
+      [ viewLoc (model ^. #loc)
       -- , viewInfo (modelViewInfo model)
-      , viewDialog (model ^. dialogL)
+      , viewDialog (model ^. #dialog)
       , viewHud model
       ]
 
@@ -441,16 +437,16 @@ viewHud model =
   blah :: [Maybe [Char]]
   blah =
     [ do
-        guard (model ^. goldL > 0)
-        pure ("gold " ++ show (model ^. goldL))
+        guard (model ^. #gold > 0)
+        pure ("gold " ++ show (model ^. #gold))
 
     , do
-        guard (model ^. grainL > 0)
-        pure ("grain " ++ show (model ^. grainL))
+        guard (model ^. #grain > 0)
+        pure ("grain " ++ show (model ^. #grain))
 
     , do
-        guard (model ^. waterL > 0)
-        pure ("water " ++ show (model ^. waterL))
+        guard (model ^. #water > 0)
+        pure ("water " ++ show (model ^. #water))
     ]
 
 tickEvery :: Model -> Maybe Seconds

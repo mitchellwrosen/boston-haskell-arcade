@@ -15,16 +15,15 @@ import Bha.Elm.Prelude
 
 data Model
   = Model
-  { _modelCountL   :: Int
-  , _modelElapsedL :: Seconds
-  } deriving (Show)
-makeFields ''Model
+  { count   :: Int
+  , elapsed :: Seconds
+  } deriving stock (Generic, Show)
 
 init :: Init Void Model
 init =
   pure Model
-    { _modelCountL = 0
-    , _modelElapsedL = 0
+    { count = 0
+    , elapsed = 0
     }
 
 
@@ -38,12 +37,12 @@ update = \case
     gameover
 
   Key _ -> do
-    n <- use countL
+    n <- use #count
     guard (n < 10)
-    countL .= (n+1)
+    #count .= (n+1)
 
   Tick delta ->
-    elapsedL %= (+ delta)
+    #elapsed %= (+ delta)
 
   _ -> do
     pure ()

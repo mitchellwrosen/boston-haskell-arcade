@@ -25,6 +25,7 @@ data Model
   , opScore     :: Int
   , columns     :: Int
   , rows        :: Int
+  -- , opPaddleCol :: Int
   , wait        :: Int
   } deriving (Show, Generic)
 
@@ -39,12 +40,13 @@ init width height = do
     , opPaddleVel = 0
     , ballXPos    = 30
     , ballYPos    = 15
-    , ballXVel    = 1
-    , ballYVel    = 1
+    , ballXVel    = -1
+    , ballYVel    = -1
     , myScore     = 0
     , opScore     = 0
     , columns     = width
     , rows        = height
+    -- , opPaddleCol = (+) width 1
     , wait        = 10
     }
 
@@ -61,15 +63,22 @@ update = \case
           Key KeyEsc ->
             gameover
 
-          Key KeyArrowUp -> do 
+          Key (KeyChar 'w') -> do 
             #myPaddlePos %= max 0 . subtract 1
             -- TODO: myPaddlePos -1
 
-          Key KeyArrowDown -> do 
+          Key (KeyChar 's') -> do
             rows <- use #rows 
             #myPaddlePos %= min (rows - 3) . (+1)
             -- TODO: myPaddlePos +1
 
+          Key KeyArrowUp -> do 
+            #opPaddlePos %= max 0 . subtract 1
+            -- TODO: myPaddlePos -1
+
+          Key KeyArrowDown -> do 
+            rows <- use #rows 
+            #opPaddlePos %= min (rows - 3) . (+1)
           _ ->
             pure ()
 
@@ -82,19 +91,23 @@ updateTick = do
     ballYPos = (model ^. #ballYPos) + (model ^. #ballYVel)
     ballXVel = (model ^. #ballXVel)
     ballYVel = (model ^. #ballYVel)
+
   if
      | ballXPos == 0 ->
-       #myScore .= (model ^. #myScore . (+1)) 
+       #opScore .= (+1) (model ^. #opScore) 
 
-     | ballXPos == (model ^. #rows) ->
-       #opScore .= (model ^. #opScore . (+1))
+     | ballXPos == (model ^. #columns) ->
+       #myScore .= (+1) (model ^. #myScore)
 
      | ballYPos == 0 ->
-       #ballYVel .= negate (model ^. #YVel)
+       -- #ballYVel .= negate (model ^. #ballYVel)
+       #ballYVel .= 10
 
-    | ballYPos == 
+     | ballYPos == (model ^. #rows) ->
+       -- #ballYVel .= negate (model ^. #ballYVel)
+       #ballYVel .= 10
 
-     | otherwise ->
+     | otherwise -> do
        #ballXPos .= ballXPos + ballXVel
        #ballYPos .= ballYPos + ballYVel
 
@@ -112,7 +125,9 @@ view model =
   cells = -- rect 0 1 1 3 white {-
     mconcat
       [ rect 0 (model ^. #myPaddlePos) 1 3 white -- renderMyPaddle 
-      , rect 80 3 1 3 white -- renderOpPaddle 
+      -- , rect (model ^. (fmap (\x -> x - 1) #columns)) (model ^. #opPaddlePos) 1 3 white -- renderOpPaddle 
+      -- , rect (model ^. #opPaddleCol) (model ^. #opPaddlePos) 1 3 white -- renderOpPaddle 
+      , rect 80 (model ^. #opPaddlePos) 1 3 white -- renderOpPaddle 
       , set (model ^. #ballXPos) (model ^. #ballYPos) (Cell 'O' mempty mempty)
       ]  
         {-, renderMyScore

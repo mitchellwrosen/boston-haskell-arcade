@@ -14,6 +14,7 @@ import qualified Bha.Game.Impl.H2048
 import qualified Bha.Game.Impl.LambdaChat
 import qualified Bha.Game.Impl.Paint
 import qualified Bha.Game.Impl.Snake
+import qualified Bha.Game.Impl.Pong
 
 import Data.Aeson                 ((.=))
 import Data.List.Split            (splitOn)
@@ -40,6 +41,7 @@ import qualified Termbox.Banana       as Termbox
 gamelist :: [Game]
 gamelist =
   [ GameElm    "Snake"      Bha.Game.Impl.Snake.game
+  , GameElm    "Pong"       Bha.Game.Impl.Pong.game
   , GameBanana "2048"       Bha.Game.Impl.H2048.moment
   , GameBanana "Paint"      Bha.Game.Impl.Paint.moment
   , GameElm    "Blimp Boy"  Bha.Game.Impl.BlimpBoy.game

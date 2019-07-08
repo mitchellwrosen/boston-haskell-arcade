@@ -1,6 +1,7 @@
 cabal-version: 2.4
 
 name: boston-haskell-arcade-server
+tested-with: GHC == 8.4.4, GHC == 8.6.5
 version: 0
 
 executable boston-haskell-arcade-server

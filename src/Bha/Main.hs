@@ -7,9 +7,7 @@ import Bha.Main.Game
 import Bha.Main.Menu
 import Internal.Bha.View  (sceneToTbScene)
 
-import qualified Bha.Game.Impl.BananaExample
 import qualified Bha.Game.Impl.BlimpBoy
-import qualified Bha.Game.Impl.ElmExample
 import qualified Bha.Game.Impl.FlappingJ
 import qualified Bha.Game.Impl.GrainMan
 import qualified Bha.Game.Impl.H2048
@@ -41,15 +39,13 @@ import qualified Termbox.Banana       as Termbox
 
 gamelist :: [Game]
 gamelist =
-  [ GameElm    "Snake"            Bha.Game.Impl.Snake.game
-  , GameBanana "2048"             Bha.Game.Impl.H2048.moment
-  , GameBanana "Paint"            Bha.Game.Impl.Paint.moment
-  , GameElm    "Blimp Boy"        Bha.Game.Impl.BlimpBoy.game
-  , GameBanana "Flapping J"       Bha.Game.Impl.FlappingJ.moment
-  , GameElm    "Grain Man"        Bha.Game.Impl.GrainMan.game
-  , GameElm    "LambdaChat"       Bha.Game.Impl.LambdaChat.game
-  , GameElm    "Elm Example 1"    Bha.Game.Impl.ElmExample.game
-  , GameBanana "Banana Example 1" Bha.Game.Impl.BananaExample.moment
+  [ GameElm    "Snake"      Bha.Game.Impl.Snake.game
+  , GameBanana "2048"       Bha.Game.Impl.H2048.moment
+  , GameBanana "Paint"      Bha.Game.Impl.Paint.moment
+  , GameElm    "Blimp Boy"  Bha.Game.Impl.BlimpBoy.game
+  , GameBanana "Flapping J" Bha.Game.Impl.FlappingJ.moment
+  , GameElm    "Grain Man"  Bha.Game.Impl.GrainMan.game
+  , GameElm    "LambdaChat" Bha.Game.Impl.LambdaChat.game
   ]
 
 ------------------------------------------------------------------------------
@@ -137,14 +133,11 @@ main'' send eMessage eEvent bSize = mdo
              , Events ()
              )
       doRunGame game = mdo
-        (width, height) <-
-          valueB bSize
-
         bGate :: Behavior Bool <-
           stepper True (False <$ eThisGameDone)
 
         (bThisGameScene, bThisGameSubscribe, eThisGameDone) <-
-          momentGame send width height eMessage (whenE bGate eEvent) game
+          momentGame send eMessage (whenE bGate eEvent) bSize game
 
         pure (bThisGameScene, bThisGameSubscribe, eThisGameDone)
 

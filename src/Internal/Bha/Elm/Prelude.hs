@@ -28,16 +28,12 @@ import Internal.Bha.View (Scene)
 -- | An Elm-style game.
 data ElmGame model message
   = ElmGame
-      (Int -> Int -> Init message model)
-      -- Initial model.
-      (Input message -> Update model message ())
-      -- Update the model from a tick or terminal event.
-      (model -> Scene)
-      -- Render the model.
-      (model -> Maybe Seconds)
-      -- Tick, and if so, how often?
-      (model -> HashSet Text)
-      -- Set of channels subscribed to
+  { elmInit :: Int -> Int -> Init message model -- ^ Initial model.
+  , elmUpdate :: Input message -> Update model message () -- ^ Update the model from a tick or terminal event.
+  , elmView :: model -> Scene -- ^ Render the model.
+  , elmTickEvery :: model -> Maybe Seconds -- ^ Tick, and if so, how often?
+  , elmSubscribe :: model -> HashSet Text -- ^ Set of channels subscribed to.
+  }
 
 
 --------------------------------------------------------------------------------

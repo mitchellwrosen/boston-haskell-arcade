@@ -38,10 +38,9 @@ data Game :: Type where
   GameBanana
     :: (FromJSON message, ToJSON message)
     => Text
-    -> (  Int
-       -> Int
-       -> Events (Text, message)
+    -> (  Events (Text, message)
        -> Events Key
+       -> Behavior (Int, Int)
        -> Banana
             ( Behavior Scene
             , Behavior (HashSet Text)
@@ -71,25 +70,25 @@ instance FromJSON ServerMessage where
 
 momentGame
   :: (ByteString -> IO ())
-  -> Int
-  -> Int
   -> Events ServerMessage
   -> Events Termbox.Event
+  -> Behavior (Int, Int)
   -> Game
   -> MomentIO
        ( Behavior Scene
        , Behavior (HashSet Text)
        , Events ()
        )
-momentGame send width height eMessage eEvent = \case
-  GameElm name game ->
+momentGame send eMessage eEvent bSize = \case
+  GameElm name game -> do
+    (width, height) <- valueB bSize
     momentElmGame name width height send eMessage eEvent game
 
   GameBanana name game -> do
     eInput <- execute (parseInput <$> eMessage)
 
     (bScene, bSubscribe, eOutput, eDone) <-
-      runBanana name (game width height eInput eKey)
+      runBanana name (game eInput eKey bSize)
 
     reactimate (send . uncurry formatOutput <$> eOutput)
 

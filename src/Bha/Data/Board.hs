@@ -15,7 +15,7 @@ module Bha.Data.Board
   ) where
 
 import Bha.Prelude
-import Bha.View    (Cell(..), Cells, black, set, white)
+-- import Bha.View    (Cell(..), Cells, black, set, white)
 
 import Data.List (transpose)
 
@@ -79,6 +79,7 @@ holes board = do
 -- Rendering
 --------------------------------------------------------------------------------
 
+{-
 data RenderBoardOpts
   = RenderBoardOpts
   { cellHeight :: Int
@@ -117,6 +118,7 @@ renderBorder opts =
     , foldMap (\r -> set 0 r (Cell '│' white black)) [1..16]
     , foldMap (\r -> set 33 r (Cell '│' white black)) [1..16]
     ]
+-}
 
 -- renderRow :: Int -> [Maybe Int] -> Cells
 -- renderRow row =

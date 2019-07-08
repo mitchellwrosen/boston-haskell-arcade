@@ -24,9 +24,6 @@ There are currently two supported styles of game: Elm-style and Banana-style.
 
 ### Elm-style
 
-To get started writing an Elm-style game, have a look at
-[Elm Example 1](./src/Bha/Game/Impl/ElmExample.hs).
-
 An Elm-style game has five components.
 
 - **init**. The initial model. Computing the initial model occurs in the `Init`
@@ -67,15 +64,13 @@ data Input message
 
 ### Banana style
 
-To get started writing a Banana-style game, have a look at
-[Banana Example 1](./src/Bha/Game/Impl/BananaExample.hs).
-
 A Banana game is written using the [reactive-banana](https://hackage.haskell.org/package/reactive-banana) FRP framework.
 
 ```haskell
 type BananaGame message
-   = Events (Text, message)       -- Input from server
-  -> Events TermEvent             -- Input from terminal
+   = Events (Text, message)       -- Messages from server
+  -> Events Key                   -- Terminal key presses
+  -> Behavior (Int, Int)          -- Terminal size
   -> Banana
        ( Behavior Scene           -- Scene to render
        , Behavior (HashSet Text)  -- Topics to subscribe to

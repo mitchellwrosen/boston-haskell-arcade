@@ -25,7 +25,7 @@ data Model
   , opScore     :: Int
   , columns     :: Int
   , rows        :: Int
-  -- , opPaddleCol :: Int
+  , opPaddleCol :: Int
   , wait        :: Int
   } deriving (Show, Generic)
 
@@ -46,7 +46,7 @@ init width height = do
     , opScore     = 0
     , columns     = width
     , rows        = height
-    -- , opPaddleCol = (+) width 1
+    , opPaddleCol = width - 1 
     , wait        = 10
     }
 
@@ -100,12 +100,10 @@ updateTick = do
        #myScore .= (+1) (model ^. #myScore)
 
      | ballYPos == 0 ->
-       -- #ballYVel .= negate (model ^. #ballYVel)
-       #ballYVel .= 10
+       #ballYVel .= negate (model ^. #ballYVel)
 
      | ballYPos == (model ^. #rows) ->
-       -- #ballYVel .= negate (model ^. #ballYVel)
-       #ballYVel .= 10
+       #ballYVel .= negate (model ^. #ballYVel)
 
      | otherwise -> do
        #ballXPos .= ballXPos + ballXVel
@@ -126,8 +124,8 @@ view model =
     mconcat
       [ rect 0 (model ^. #myPaddlePos) 1 3 white -- renderMyPaddle 
       -- , rect (model ^. (fmap (\x -> x - 1) #columns)) (model ^. #opPaddlePos) 1 3 white -- renderOpPaddle 
-      -- , rect (model ^. #opPaddleCol) (model ^. #opPaddlePos) 1 3 white -- renderOpPaddle 
-      , rect 80 (model ^. #opPaddlePos) 1 3 white -- renderOpPaddle 
+      , rect (model ^. #opPaddleCol) (model ^. #opPaddlePos) 1 3 white -- renderOpPaddle 
+      -- , rect 80 (model ^. #opPaddlePos) 1 3 white -- renderOpPaddle 
       , set (model ^. #ballXPos) (model ^. #ballYPos) (Cell 'O' mempty mempty)
       ]  
         {-, renderMyScore

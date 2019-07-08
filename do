@@ -3,7 +3,9 @@
 set -e
 
 COMMAND=$1
-shift
+if [ ! -z $COMMAND ]; then
+  shift
+fi
 
 case "$COMMAND" in
   "build")
@@ -45,6 +47,7 @@ case "$COMMAND" in
     echo "  build              Build the code"
     echo "  dev                Development - refresh a repl on change"
     echo "  docs               Build local documentation"
+    echo "  rebase             Rebase onto origin/master"
     echo "  run [HOST:PORT]    Run the arcade [connected to server]"
     echo "  run-server PORT    Run the arcade server"
 esac

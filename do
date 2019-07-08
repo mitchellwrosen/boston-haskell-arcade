@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 COMMAND=$1
 shift
 
@@ -19,6 +21,13 @@ case "$COMMAND" in
 
   "docs")
     exec cabal v2-haddock
+    ;;
+
+  "rebase")
+    git stash -q -u
+    git fetch origin
+    git rebase origin/master
+    git stash pop 2>/dev/null || true
     ;;
 
   "run")

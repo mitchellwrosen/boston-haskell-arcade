@@ -3,7 +3,7 @@ cabal-version: 2.4
 name: boston-haskell-arcade
 version: 0
 build-type: Simple
-tested-with: GHC == 8.4.3
+tested-with: GHC == 8.4.4, GHC == 8.6.5
 
 library
   build-depends:

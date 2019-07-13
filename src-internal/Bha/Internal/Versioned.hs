@@ -1,6 +1,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module Internal.Bha.Versioned
+module Bha.Internal.Versioned
   ( Versioned
   , encodeVersioned
   , decodeVersioned
@@ -8,7 +8,7 @@ module Internal.Bha.Versioned
   , Migrations
   ) where
 
-import Bha.Prelude
+import Bha.Internal.Prelude
 
 import Control.Monad.Fail (fail)
 import Data.Proxy         (Proxy(..))

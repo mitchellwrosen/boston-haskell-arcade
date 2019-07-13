@@ -1,4 +1,4 @@
-module Internal.Bha.Banana.Prelude
+module Bha.Internal.Banana.Prelude
   ( -- * Banana
     Banana(..)
   , runBanana
@@ -33,7 +33,7 @@ module Internal.Bha.Banana.Prelude
   , randomPct
   ) where
 
-import Bha.Prelude
+import Bha.Internal.Prelude
 
 import Control.Lens         ((^?!))
 import Control.Monad.Fix

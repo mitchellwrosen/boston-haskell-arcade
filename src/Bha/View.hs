@@ -22,9 +22,9 @@ module Bha.View
   , module X
   ) where
 
-import Termbox.Banana as X (Attr, Cell(..), Cursor(..))
+import Bha.Internal.View
 
-import Internal.Bha.View
+import Termbox.Banana as X (Attr, Cell(..), Cursor(..))
 
 
 red, green, yellow, blue, magenta, cyan, white, tangerine, orange, cement, black :: Attr

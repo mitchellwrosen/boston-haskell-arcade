@@ -2,7 +2,7 @@
 
 -- | Unfortunate orphan instances.
 
-module Internal.Bha.Orphans () where
+module Bha.Internal.Orphans () where
 
 import Control.Applicative
 import Data.Monoid         (Monoid(..))

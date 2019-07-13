@@ -3,9 +3,9 @@ module Bha.Main
   ) where
 
 import Bha.Banana.Prelude
+import Bha.Internal.View  (sceneToTbScene)
 import Bha.Main.Game
 import Bha.Main.Menu
-import Internal.Bha.View  (sceneToTbScene)
 
 import qualified Bha.Game.Impl.BlimpBoy
 import qualified Bha.Game.Impl.FlappingJ

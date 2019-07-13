@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -e
-
 COMMAND=$1
 if [ ! -z $COMMAND ]; then
   shift
@@ -26,10 +24,9 @@ case "$COMMAND" in
     ;;
 
   "rebase")
-    git stash -q -u
+    set -e
     git fetch origin
-    git rebase origin/master
-    git stash pop 2>/dev/null || true
+    git rebase origin/master --auto-stash
     ;;
 
   "run")

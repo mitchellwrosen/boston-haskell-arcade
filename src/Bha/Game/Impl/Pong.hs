@@ -8,25 +8,37 @@ import Bha.Elm.Prelude
 -- Model
 --------------------------------------------------------------------------------
 
+setPaddleSize:: Int
+gameSpeed :: Seconds
+
+setPaddleSize = 3
+gameSpeed = 15 
+
 type Pos = Int
 type Vel = Int
+type Score = Int
+
 
 data Model
   = Model
-  { myPaddlePos :: Pos
-  , myPaddleVel :: Vel 
-  , opPaddlePos :: Pos
-  , opPaddleVel :: Vel
-  , ballXPos    :: Pos
-  , ballYPos    :: Pos
-  , ballXVel    :: Vel
-  , ballYVel    :: Vel
-  , myScore     :: Int
-  , opScore     :: Int
-  , columns     :: Int
-  , rows        :: Int
-  , opPaddleCol :: Int
-  , wait        :: Int
+  { padSize    :: Int 
+  , myPadPos   :: Pos
+  , myPadVel   :: Vel 
+  , opPadPos   :: Pos
+  , opPadVel   :: Vel
+  , ballXPos   :: Pos
+  , ballYPos   :: Pos
+  , ballXVel   :: Vel
+  , ballYVel   :: Vel
+  , myScore    :: Score
+  , opScore    :: Score
+  , myScorePos :: Pos
+  , opScorePos :: Pos
+  , columns    :: Pos
+  , rows       :: Pos
+  , opPadCol   :: Pos 
+  , botBorder  :: Pos
+  , wait       :: Int
   } deriving (Show, Generic)
 
 
@@ -34,19 +46,23 @@ init :: Int -> Int -> Init Void Model
 init width height = do
 
   pure Model
-    { myPaddlePos = height `div` 2
-    , myPaddleVel = 0
-    , opPaddlePos = height `div` 2
-    , opPaddleVel = 0
+    { padSize     = setPaddleSize
+    , myPadPos    = height `div` 2
+    , myPadVel    = 0
+    , opPadPos    = height `div` 2
+    , opPadVel    = 0
     , ballXPos    = 30
     , ballYPos    = 15
     , ballXVel    = -1
     , ballYVel    = -1
     , myScore     = 0
     , opScore     = 0
+    , myScorePos  = width `div` 4
+    , opScorePos  = 3 * (width `div` 4)
     , columns     = width
     , rows        = height
-    , opPaddleCol = width - 1 
+    , opPadCol    = width - 1 
+    , botBorder   = height - 1
     , wait        = 10
     }
 
@@ -64,21 +80,19 @@ update = \case
             gameover
 
           Key (KeyChar 'w') -> do 
-            #myPaddlePos %= max 0 . subtract 1
-            -- TODO: myPaddlePos -1
+            #myPadPos %= max 0 . subtract 1
 
           Key (KeyChar 's') -> do
             rows <- use #rows 
-            #myPaddlePos %= min (rows - 3) . (+1)
-            -- TODO: myPaddlePos +1
+            #myPadPos %= min (rows - 3) . (+1)
 
           Key KeyArrowUp -> do 
-            #opPaddlePos %= max 0 . subtract 1
-            -- TODO: myPaddlePos -1
+            #opPadPos %= max 0 . subtract 1
 
           Key KeyArrowDown -> do 
             rows <- use #rows 
-            #opPaddlePos %= min (rows - 3) . (+1)
+            #opPadPos %= min (rows - 3) . (+1)
+
           _ ->
             pure ()
 
@@ -87,29 +101,57 @@ updateTick = do
   model :: Model <- get
 
   let
-    ballXPos = (model ^. #ballXPos) 
-    ballYPos = (model ^. #ballYPos) + (model ^. #ballYVel)
+    ballXPos = (model ^. #ballXPos)
+    ballYPos = (model ^. #ballYPos)
+    ballNextX = (model ^. #ballXPos) + (model ^. #ballXVel)  
+    ballNextY = (model ^. #ballYPos) + (model ^. #ballYVel)
     ballXVel = (model ^. #ballXVel)
     ballYVel = (model ^. #ballYVel)
+    myPadPos = (model ^. #myPadPos)
+    opPadPos = (model ^. #opPadPos)
+
 
   if
-     | ballXPos == 0 ->
+     | ballNextX < 0 ->
        #opScore .= (+1) (model ^. #opScore) 
+       -- reset function
+     | ballNextX >= (model ^. #columns) ->
+       #myScore .= (+1) (model ^. #opScore) 
+     
+     | ballNextX == 0 && myPadPos <= ballNextY && ballNextY <= myPadPos + 2 -> do
+        #ballXVel .= negate ballXVel
+        #ballXPos .= ballXPos + 1 
+        #ballYPos .= ballYPos + ballYVel
+
+  {- Line 106 error
+     | ballNextX == opPadCol && opPadPos <= ballNextY && ballNextY <= opPadPos + 2 -> do
+        #ballXVel .= negate ballXVel
+        #ballXPos .= ballXPos - 1
+        #ballYPos .= ballYPos + ballYVel 
+        --}
+        
 
      | ballXPos == (model ^. #columns) ->
        #myScore .= (+1) (model ^. #myScore)
+       -- reset function
 
-     | ballYPos == 0 ->
-       #ballYVel .= negate (model ^. #ballYVel)
+     | ballNextY == 0 -> do
+       #ballYVel .= negate ballYVel
+       #ballXPos .= ballXPos + ballXVel
+       #ballYPos .= ballYPos + 1
 
-     | ballYPos == (model ^. #rows) ->
-       #ballYVel .= negate (model ^. #ballYVel)
+
+     | ballYPos == (model ^. #botBorder) -> do
+       #ballYVel .= negate ballYVel
+       #ballXPos .= ballXPos + ballXVel
+       #ballYPos .= ballYPos - 1
 
      | otherwise -> do
        #ballXPos .= ballXPos + ballXVel
        #ballYPos .= ballYPos + ballYVel
 
-
+-- move = do
+-- reset = do
 
 --------------------------------------------------------------------------------
 -- View
@@ -122,18 +164,17 @@ view model =
   cells :: Cells
   cells = -- rect 0 1 1 3 white {-
     mconcat
-      [ rect 0 (model ^. #myPaddlePos) 1 3 white -- renderMyPaddle 
+      [ text (model ^. #myScorePos) 0 mempty mempty (show (model ^. #myScore))
+      , text (model ^. #opScorePos) 0 mempty mempty (show (model ^. #opScore))
       -- , rect (model ^. (fmap (\x -> x - 1) #columns)) (model ^. #opPaddlePos) 1 3 white -- renderOpPaddle 
-      , rect (model ^. #opPaddleCol) (model ^. #opPaddlePos) 1 3 white -- renderOpPaddle 
-      -- , rect 80 (model ^. #opPaddlePos) 1 3 white -- renderOpPaddle 
+      , text 1 0 mempty mempty (show (model ^. #myPadPos))
+      , text 4 0 mempty mempty (show (model ^. #ballXPos))
+      , text 7 0 mempty mempty (show (model ^. #ballYPos))
+      -- , text 9 0 mempty mempty (show (model ^. #ballYPos) +~ 1)
       , set (model ^. #ballXPos) (model ^. #ballYPos) (Cell 'O' mempty mempty)
+      , rect (model ^. #opPadCol) (model ^. #opPadPos) 1 3 white
+      , rect 0 (model ^. #myPadPos) 1 3 white
       ]  
-        {-, renderMyScore
-      , renderOpScore
-      ]
-
-renderMyPaddle = rect 0 10 
---}
 
 
 --------------------------------------------------------------------------------
@@ -141,7 +182,7 @@ renderMyPaddle = rect 0 10
 --------------------------------------------------------------------------------
 
 tickEvery :: Model -> Maybe Seconds
-tickEvery model = Just (1/3)
+tickEvery model = Just (1/gameSpeed)
 
 
 

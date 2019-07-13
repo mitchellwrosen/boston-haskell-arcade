@@ -22,7 +22,7 @@ case "$COMMAND" in
     ;;
 
   "docs")
-    exec cabal v2-haddock
+    cabal v2-haddock 2>/dev/null | grep -A1 "Documentation created" | tail -n1
     ;;
 
   "rebase")

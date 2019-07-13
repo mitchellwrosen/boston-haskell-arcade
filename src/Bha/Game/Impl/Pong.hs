@@ -109,6 +109,7 @@ updateTick = do
     ballYVel = (model ^. #ballYVel)
     myPadPos = (model ^. #myPadPos)
     opPadPos = (model ^. #opPadPos)
+    opPadCol = (model ^. #opPadCol)
 
 
   if
@@ -123,13 +124,10 @@ updateTick = do
         #ballXPos .= ballXPos + 1 
         #ballYPos .= ballYPos + ballYVel
 
-  {- Line 106 error
      | ballNextX == opPadCol && opPadPos <= ballNextY && ballNextY <= opPadPos + 2 -> do
         #ballXVel .= negate ballXVel
-        #ballXPos .= ballXPos - 1
-        #ballYPos .= ballYPos + ballYVel 
-        --}
-        
+        #ballXPos .= ballXPos - 1 
+        #ballYPos .= ballYPos + ballYVel
 
      | ballXPos == (model ^. #columns) ->
        #myScore .= (+1) (model ^. #myScore)

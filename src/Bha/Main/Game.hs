@@ -9,8 +9,8 @@ import Bha.Banana.Prelude
 import Bha.Banana.Tick             (TickControl(TickSetDelta, TickTeardown),
                                     momentTick)
 import Bha.Elm.Prelude             (ElmGame(..), Input(..))
-import Internal.Bha.Banana.Prelude (Banana, runBanana)
-import Internal.Bha.Elm.Prelude    (ElmF(..), runInit, runUpdate)
+import Bha.Internal.Banana.Prelude (Banana, runBanana)
+import Bha.Internal.Elm.Prelude    (ElmF(..), runInit, runUpdate)
 
 import Data.Aeson                 (FromJSON(..), ToJSON, Value, (.:), (.=))
 import Data.Tuple                 (uncurry)

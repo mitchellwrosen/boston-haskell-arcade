@@ -1,4 +1,4 @@
-module Internal.Bha.View
+module Bha.Internal.View
   ( Cells
   , set
   , Scene(..)
@@ -10,7 +10,7 @@ module Internal.Bha.View
   , rect'
   ) where
 
-import Bha.Prelude
+import Bha.Internal.Prelude
 
 import Data.List      (zip)
 import Data.Monoid    (mappend)

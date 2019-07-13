@@ -7,9 +7,9 @@ module Bha.Banana.Versioned
   , Serialize
   ) where
 
+import Bha.Internal.Banana.Prelude
+import Bha.Internal.Versioned
 import Bha.Prelude
-import Internal.Bha.Banana.Prelude
-import Internal.Bha.Versioned
 
 import Control.Monad.Reader
 import Data.Serialize             (Serialize)

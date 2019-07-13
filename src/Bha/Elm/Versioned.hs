@@ -7,16 +7,19 @@ module Bha.Elm.Versioned
   , Serialize
   ) where
 
+import Bha.Internal.Elm.Prelude
+import Bha.Internal.Versioned
+import Bha.Prelude
+
 import Data.Serialize (Serialize)
 
-import Bha.Prelude
-import Internal.Bha.Elm.Prelude
-import Internal.Bha.Versioned
 
+-- | Save a versioned the given name.
 save :: (MonadElm message m, Versioned as a) => Text -> a -> m ()
 save k v =
   interpretElm (Save k (encodeVersioned v) ())
 
+-- | Load a value by name.
 load
   :: forall a as m message.
      (MonadElm message m, Versioned as a)

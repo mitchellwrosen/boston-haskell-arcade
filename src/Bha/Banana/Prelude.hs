@@ -34,8 +34,8 @@ module Bha.Banana.Prelude
   , module X
   ) where
 
+import Bha.Internal.Banana.Prelude
 import Bha.Prelude                 as X
 import Bha.View                    as X
-import Internal.Bha.Banana.Prelude
 
 import Termbox.Banana as X (Cursor(..), Event(..), Key(..))

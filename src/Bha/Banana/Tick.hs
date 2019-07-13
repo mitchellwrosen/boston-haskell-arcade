@@ -4,7 +4,7 @@ module Bha.Banana.Tick
   ) where
 
 import Bha.Banana.Prelude
-import Internal.Bha.Banana.Prelude (Banana(..))
+import Bha.Internal.Banana.Prelude (Banana(..))
 
 import Control.Monad              (join)
 import Reactive.Banana.Frameworks (newEvent, reactimate)

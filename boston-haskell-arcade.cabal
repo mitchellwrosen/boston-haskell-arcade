@@ -5,31 +5,9 @@ version: 0
 build-type: Simple
 tested-with: GHC == 8.4.4, GHC == 8.6.5
 
-library
+common all
   build-depends:
-    aeson ^>= 1.4.4,
-    base,
-    bytestring ^>= 0.10.8,
-    cereal,
-    containers ^>= 0.6.1,
-    directory ^>= 1.3.3,
-    filepath ^>= 1.4.2,
-    generic-lens ^>= 1.1.0,
-    free ^>= 5.1.1,
-    lens ^>= 4.17,
-    mtl ^>= 2.2.2,
-    random,
-    reactive-banana ^>= 1.2.1,
-    slave-thread ^>= 1.0.2,
-    split ^>= 0.2.3,
-    stm ^>= 2.5.0,
-    termbox-banana ^>= 0.2.0,
-    text,
-    time ^>= 1.8 || ^>= 1.9,
-    transformers ^>= 0.5.6,
-    unliftio ^>= 0.2.9,
-    unordered-containers ^>= 0.2.10,
-    websockets,
+    base ^>= 4.11 || ^>= 4.12,
 
   default-extensions:
     DataKinds
@@ -69,6 +47,44 @@ library
   default-language:
     Haskell2010
 
+  ghc-options:
+    -Weverything
+    -fno-warn-all-missed-specialisations
+    -fno-warn-missed-specialisations
+    -fno-warn-missing-import-lists
+    -fno-warn-name-shadowing
+    -fno-warn-unsafe
+
+library
+  import:
+    all
+
+  build-depends:
+    aeson ^>= 1.4.4,
+    base,
+    boston-haskell-arcade-internal,
+    bytestring ^>= 0.10.8,
+    cereal,
+    containers ^>= 0.6.1,
+    directory ^>= 1.3.3,
+    filepath ^>= 1.4.2,
+    generic-lens ^>= 1.1.0,
+    free ^>= 5.1.1,
+    lens ^>= 4.17,
+    mtl ^>= 2.2.2,
+    random,
+    reactive-banana ^>= 1.2.1,
+    slave-thread ^>= 1.0.2,
+    split ^>= 0.2.3,
+    stm ^>= 2.5.0,
+    termbox-banana ^>= 0.2.0,
+    text,
+    time ^>= 1.8 || ^>= 1.9,
+    transformers ^>= 0.5.6,
+    unliftio ^>= 0.2.9,
+    unordered-containers ^>= 0.2.10,
+    websockets,
+
   exposed-modules:
     Bha.Banana.Menu
     Bha.Banana.Prelude
@@ -89,31 +105,51 @@ library
     Bha.Main.Menu
     Bha.Prelude
     Bha.View
-    Internal.Bha.Banana.Prelude
-    Internal.Bha.Debug
-    Internal.Bha.Elm.Prelude
-    Internal.Bha.Orphans
-    Internal.Bha.Versioned
-    Internal.Bha.View
-
-  ghc-options:
-    -Weverything
-    -fno-warn-all-missed-specialisations
-    -fno-warn-missed-specialisations
-    -fno-warn-missing-import-lists
-    -fno-warn-name-shadowing
-    -fno-warn-unsafe
 
   hs-source-dirs:
     src
 
-executable boston-haskell-arcade
-  build-depends:
-      base
-    , boston-haskell-arcade
+library boston-haskell-arcade-internal
+  import:
+    all
 
-  default-language:
-    Haskell2010
+  build-depends:
+    bytestring,
+    cereal,
+    containers,
+    directory,
+    free,
+    generic-lens,
+    lens,
+    mtl,
+    random,
+    reactive-banana,
+    stm,
+    termbox-banana,
+    text,
+    time,
+    transformers,
+    unliftio,
+    unordered-containers,
+
+  exposed-modules:
+    Bha.Internal.Banana.Prelude
+    Bha.Internal.Debug
+    Bha.Internal.Elm.Prelude
+    Bha.Internal.Orphans
+    Bha.Internal.Prelude
+    Bha.Internal.Versioned
+    Bha.Internal.View
+
+  hs-source-dirs:
+    src-internal
+
+executable boston-haskell-arcade
+  import:
+    all
+
+  build-depends:
+    boston-haskell-arcade,
 
   ghc-options:
     -rtsopts

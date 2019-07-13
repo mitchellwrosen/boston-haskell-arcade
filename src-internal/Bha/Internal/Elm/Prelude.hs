@@ -1,4 +1,4 @@
-module Internal.Bha.Elm.Prelude
+module Bha.Internal.Elm.Prelude
   ( ElmGame(..)
   , Input(..)
   , ElmF(..)
@@ -13,13 +13,14 @@ module Internal.Bha.Elm.Prelude
   , send
   ) where
 
+import Bha.Internal.Prelude
+import Bha.Internal.View    (Scene)
+
 import Control.Monad.State.Strict (MonadState, StateT, execStateT)
 import Control.Monad.Trans.Free   (Free, FreeT, hoistFreeT, iterT, liftF)
 import Data.Functor.Identity
 import Termbox.Banana             (Key, Mouse)
 
-import Bha.Prelude
-import Internal.Bha.View (Scene)
 
 --------------------------------------------------------------------------------
 -- Elm game

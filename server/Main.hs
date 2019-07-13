@@ -3,35 +3,42 @@
              ViewPatterns #-}
 
 import Control.Concurrent.Async       (race_)
+import Control.Concurrent.MVar
 import Control.Concurrent.STM         (atomically)
 import Control.Concurrent.STM.TChan
-import Control.Exception              (Exception, throwIO)
+import Control.Exception              (Exception, catch, throwIO)
 import Control.Monad                  (forever, when)
 import Data.Aeson                     ((.:))
 import Data.ByteString                (ByteString)
 import Data.HashSet                   (HashSet)
 import Data.IORef
 import Data.IORef                     (modifyIORef', newIORef, readIORef)
-import Data.Text                      (Text)
+import Data.Text                      (Text, unpack)
+import Data.Text.Encoding             (decodeUtf8)
 import Data.Text.IO                   (hPutStrLn)
 import Network.HTTP.Types             (status400, status500)
-import Network.Socket                 (SockAddr)
+import Network.Socket                 (SockAddr(..), hostAddressToTuple)
 import Network.Wai                    (Request, remoteHost, responseLBS,
                                        responseRaw)
 import Network.Wai.Handler.Warp       (run)
 import Network.Wai.Handler.WebSockets (getRequestHead, isWebSocketsReq,
                                        runWebSockets)
-import Network.WebSockets             (Connection, PendingConnection,
-                                       acceptRequest, defaultConnectionOptions,
-                                       receiveData, sendTextData)
+import Network.WebSockets             (Connection,
+                                       ConnectionException(ConnectionClosed),
+                                       PendingConnection, acceptRequest,
+                                       defaultConnectionOptions, receiveData,
+                                       sendTextData)
 import System.Environment             (getArgs)
 import System.Exit                    (exitFailure)
 import System.IO                      (stderr)
+import System.IO.Unsafe               (unsafePerformIO)
+import Text.Printf                    (printf)
 import Text.Read                      (readMaybe)
 
-import qualified Data.Aeson       as Aeson
-import qualified Data.Aeson.Types as Aeson
-import qualified Data.HashSet     as HashSet
+import qualified Data.Aeson           as Aeson
+import qualified Data.Aeson.Types     as Aeson
+import qualified Data.ByteString.Lazy as ByteString.Lazy
+import qualified Data.HashSet         as HashSet
 
 
 data Message
@@ -68,6 +75,16 @@ data MalformedMessage
   deriving anyclass (Exception)
 
 
+lock :: MVar ()
+lock =
+  unsafePerformIO (newMVar ())
+{-# NOINLINE lock #-}
+
+sync :: IO a -> IO a
+sync action =
+  withMVar lock (const action)
+
+
 main :: IO ()
 main = do
   port :: Int <-
@@ -75,6 +92,8 @@ main = do
 
   chan :: TChan (SockAddr, Text, Aeson.Value) <-
     newBroadcastTChanIO
+
+  printf "Running on port %d\n" port
 
   run port $ \req resp ->
     if isWebSocketsReq req
@@ -88,14 +107,16 @@ main = do
             (responseLBS status500 [] ""))
       else
         resp (responseLBS status400 [] "")
- where
-  parseArgs :: [String] -> IO Int
-  parseArgs = \case
-    [readMaybe -> Just port] ->
-      pure port
-    _ -> do
-      hPutStrLn stderr "Usage: generic-websocket-server PORT"
-      exitFailure
+
+  where
+    parseArgs :: [String] -> IO Int
+    parseArgs = \case
+      [readMaybe -> Just port] ->
+        pure port
+
+      _ -> do
+        hPutStrLn stderr "Usage: boston-haskell-arcade-server PORT"
+        exitFailure
 
 wsApp
   :: TChan (SockAddr, Text, Aeson.Value)
@@ -105,6 +126,8 @@ wsApp
 wsApp chan request pconn = do
   conn :: Connection <-
     acceptRequest pconn
+
+  sync (printf "Client %s connected\n" clientId)
 
   chan' :: TChan (SockAddr, Text, Aeson.Value) <-
     atomically (dupTChan chan)
@@ -143,14 +166,51 @@ wsApp chan request pconn = do
 
           Just message ->
             case message of
-              Subscribe topics ->
+              Subscribe topics -> do
+                sync
+                  (printf
+                    "Client %s subscribed to %s\n"
+                    clientId
+                    (show (HashSet.toList topics)))
+
                 modifyIORef' subscribedRef (HashSet.union topics)
 
-              Unsubscribe topics ->
+              Unsubscribe topics -> do
+                sync
+                  (printf
+                    "Client %s unsubscribed from %s\n"
+                    clientId
+                    (show (HashSet.toList topics)))
+
                 modifyIORef' subscribedRef (`HashSet.difference` topics)
 
-              Publish topic message' ->
+              Publish topic message' -> do
+                sync
+                  (printf
+                    "Client %s published to %s: %s\n"
+                    clientId
+                    (show topic)
+                    (unpack
+                      (decodeUtf8
+                        (ByteString.Lazy.toStrict
+                          (Aeson.encode message')))))
+
                 atomically
                   (writeTChan chan (remoteHost request, topic, message'))
 
   race_ (forever send) (forever recv)
+    `catch`
+      \case
+        ConnectionClosed -> sync (printf "Client %s disconnected\n" clientId)
+        e -> throwIO e
+
+  where
+    clientId :: String
+    clientId =
+      case remoteHost request of
+        SockAddrInet port host ->
+          case hostAddressToTuple host of
+            (w1, w2, w3, w4) ->
+              show w1 ++ "." ++ show w2 ++ "." ++ show w3 ++ "." ++ show w4 ++ ":" ++ show port
+        s ->
+          error (show s)

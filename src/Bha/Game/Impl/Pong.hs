@@ -13,7 +13,7 @@ import Bha.Elm.Prelude
 
 gameSpeed :: Seconds
 
-gameSpeed = 10 
+gameSpeed = 30 
 
 type XPos = Int
 type YPos = Int

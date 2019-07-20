@@ -23,12 +23,14 @@ type Score = Int
 
 type Ball = (XPos, YPos)
 type BallVec = (XVel, YVel)
-type Paddle = (XPos, YPos)
 
 getRandomVel :: MonadElm message m => m Int
-getRandomVel = randomInt 0 1 >>= \case
-  0 -> pure (-1)
-  1 -> pure 1
+getRandomVel = f <$> randomBool 
+  where 
+    f :: Bool -> Int
+    f = \case
+          False -> (-1)
+          True -> 1
   
 randomVector :: MonadElm message m => m (Int,Int)
 randomVector =
@@ -190,7 +192,7 @@ view model =
 --------------------------------------------------------------------------------
 
 tickEvery :: Model -> Maybe Seconds
-tickEvery model = Just (1/gameSpeed)
+tickEvery _ = Just (1/gameSpeed)
 
 
 --------------------------------------------------------------------------------

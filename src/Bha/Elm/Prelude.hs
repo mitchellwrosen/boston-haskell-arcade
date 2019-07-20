@@ -8,6 +8,7 @@ module Bha.Elm.Prelude
   , gameover
     -- ** Randomness
   , randomInt
+  , randomBool
   , randomPct
     -- **
   , send

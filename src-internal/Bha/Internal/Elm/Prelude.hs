@@ -9,6 +9,7 @@ module Bha.Internal.Elm.Prelude
   , MonadElm(..)
   , gameover
   , randomInt
+  , randomBool
   , randomPct
   , send
   ) where
@@ -102,6 +103,12 @@ gameover =
 randomInt :: MonadElm message m => Int -> Int -> m Int
 randomInt lo hi =
   interpretElm (RandomInt lo hi id)
+
+randomBool :: MonadElm message m => m Bool
+randomBool = 
+  randomInt 0 1 >>= \case
+    0 -> pure False
+    _ -> pure True
 
 randomPct :: MonadElm message m => m Double
 randomPct =

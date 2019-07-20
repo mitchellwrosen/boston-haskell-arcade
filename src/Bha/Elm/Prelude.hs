@@ -22,3 +22,5 @@ import Bha.View                 as X
 import Control.Lens        as X (use, zoom, (%=), (.=))
 import Control.Monad.State as X (StateT, get, put, runState)
 import Termbox.Banana      as X (Event(..), Key(..))
+
+import Data.Aeson as X (FromJSON, ToJSON)

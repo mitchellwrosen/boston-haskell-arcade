@@ -8,53 +8,68 @@ import Bha.Elm.Prelude
 -- Model
 --------------------------------------------------------------------------------
 
-setPaddleSize:: Int
+-- setPaddleSize:: Int
+-- setPaddleSize = 3 
+
 gameSpeed :: Seconds
 
-setPaddleSize = 3
-gameSpeed = 15 
+gameSpeed = 10 
 
-type Pos = Int
-type Vel = Int
+type XPos = Int
+type YPos = Int
+type XVel = Int
+type YVel = Int
 type Score = Int
 
+type Ball = (XPos, YPos)
+type BallVec = (XVel, YVel)
+type Paddle = (XPos, YPos)
+
+getRandomVel :: MonadElm message m => m Int
+getRandomVel = randomInt 0 1 >>= \case
+  0 -> pure (-1)
+  1 -> pure 1
+  
+randomVector :: MonadElm message m => m (Int,Int)
+randomVector =
+  (,) <$> getRandomVel <*> getRandomVel
 
 data Model
   = Model
   { padSize    :: Int 
-  , myPadPos   :: Pos
-  , myPadVel   :: Vel 
-  , opPadPos   :: Pos
-  , opPadVel   :: Vel
-  , ballXPos   :: Pos
-  , ballYPos   :: Pos
-  , ballXVel   :: Vel
-  , ballYVel   :: Vel
+  , myPadPos   :: YPos
+  , opPadPos   :: YPos
+  , ball       :: Ball
+  , ballvec    :: BallVec
+  , ballreset  :: Ball
   , myScore    :: Score
   , opScore    :: Score
-  , myScorePos :: Pos
-  , opScorePos :: Pos
-  , columns    :: Pos
-  , rows       :: Pos
-  , opPadCol   :: Pos 
-  , botBorder  :: Pos
+  , myScorePos :: XPos
+  , opScorePos :: XPos
+  , columns    :: Int
+  , rows       :: Int
+  , opPadCol   :: XPos 
+  , botBorder  :: YPos
   , wait       :: Int
   } deriving (Show, Generic)
 
 
 init :: Int -> Int -> Init Void Model
 init width height = do
+  randvec <- randomVector
+  let 
+    xMid = (width `div` 2)
+    yMid = (height `div` 2)
+    setPaddleSize = height `div` 7 
+  
 
   pure Model
     { padSize     = setPaddleSize
-    , myPadPos    = height `div` 2
-    , myPadVel    = 0
-    , opPadPos    = height `div` 2
-    , opPadVel    = 0
-    , ballXPos    = 30
-    , ballYPos    = 15
-    , ballXVel    = -1
-    , ballYVel    = -1
+    , myPadPos    = yMid
+    , opPadPos    = yMid
+    , ball        = (xMid,yMid) 
+    , ballvec     = randvec 
+    , ballreset   = (xMid,yMid)
     , myScore     = 0
     , opScore     = 0
     , myScorePos  = width `div` 4
@@ -73,6 +88,7 @@ init width height = do
 
 update :: Input Void -> Update Model Void ()
 update = \case
+
           Tick _ ->
             updateTick
 
@@ -84,14 +100,16 @@ update = \case
 
           Key (KeyChar 's') -> do
             rows <- use #rows 
-            #myPadPos %= min (rows - 3) . (+1)
+            padsize <- use #padSize
+            #myPadPos %= min (rows - padsize) . (+1)
 
           Key KeyArrowUp -> do 
             #opPadPos %= max 0 . subtract 1
 
           Key KeyArrowDown -> do 
             rows <- use #rows 
-            #opPadPos %= min (rows - 3) . (+1)
+            padsize <- use #padSize
+            #opPadPos %= min (rows - padsize) . (+1)
 
           _ ->
             pure ()
@@ -101,53 +119,49 @@ updateTick = do
   model :: Model <- get
 
   let
-    ballXPos = (model ^. #ballXPos)
-    ballYPos = (model ^. #ballYPos)
-    ballNextX = (model ^. #ballXPos) + (model ^. #ballXVel)  
-    ballNextY = (model ^. #ballYPos) + (model ^. #ballYVel)
-    ballXVel = (model ^. #ballXVel)
-    ballYVel = (model ^. #ballYVel)
+    ballNextX = ballx + ballxvel  
+    ballNextY = bally + ballyvel
     myPadPos = (model ^. #myPadPos)
     opPadPos = (model ^. #opPadPos)
     opPadCol = (model ^. #opPadCol)
+    (ballx, bally) = (model ^. #ball)
+    (ballxvel, ballyvel) = (model ^. #ballvec)
+    padsize = (model ^. #padSize)
 
 
   if
-     | ballNextX < 0 ->
-       #opScore .= (+1) (model ^. #opScore) 
-       -- reset function
-     | ballNextX >= (model ^. #columns) ->
-       #myScore .= (+1) (model ^. #opScore) 
+     | ballNextX < 0 -> do
+       newrandvec <- randomVector
+       #opScore .= (+1) (model ^. #opScore)
+       #ball .= (model ^. #ballreset)
+       #ballvec .= newrandvec
+
+     | ballNextX >= (model ^. #columns) -> do
+       newrandvec <- randomVector
+       #myScore .= (+1) (model ^. #myScore) 
+       #ball .= (model ^. #ballreset)
+       #ballvec .= newrandvec
      
-     | ballNextX == 0 && myPadPos <= ballNextY && ballNextY <= myPadPos + 2 -> do
-        #ballXVel .= negate ballXVel
-        #ballXPos .= ballXPos + 1 
-        #ballYPos .= ballYPos + ballYVel
+     | ballNextX == 0 && myPadPos <= ballNextY && ballNextY <= myPadPos + padsize -> do
+        #ballvec .= (negate ballxvel, ballyvel)
+        #ball .= (ballx + negate ballxvel, bally + ballyvel)
 
-     | ballNextX == opPadCol && opPadPos <= ballNextY && ballNextY <= opPadPos + 2 -> do
-        #ballXVel .= negate ballXVel
-        #ballXPos .= ballXPos - 1 
-        #ballYPos .= ballYPos + ballYVel
+     | ballNextX == opPadCol && opPadPos <= ballNextY && ballNextY <= opPadPos + padsize -> do
+        #ballvec .= (negate ballxvel, ballyvel)
+        #ball .= (ballx + negate ballxvel, bally + ballyvel)
 
-     | ballXPos == (model ^. #columns) ->
-       #myScore .= (+1) (model ^. #myScore)
-       -- reset function
+     | ballNextY <= 0 -> do
+       #ballvec .= (ballxvel, 1)
+       #ball .= (ballx + ballxvel, bally + 1)
 
-     | ballNextY == 0 -> do
-       #ballYVel .= negate ballYVel
-       #ballXPos .= ballXPos + ballXVel
-       #ballYPos .= ballYPos + 1
-
-
-     | ballYPos == (model ^. #botBorder) -> do
-       #ballYVel .= negate ballYVel
-       #ballXPos .= ballXPos + ballXVel
-       #ballYPos .= ballYPos - 1
+     | ballNextY >= (model ^. #rows) -> do
+       #ballvec .= (ballxvel, (-1))
+       #ball .= (ballx + ballxvel, bally - 1)
 
      | otherwise -> do
-       #ballXPos .= ballXPos + ballXVel
-       #ballYPos .= ballYPos + ballYVel
+       #ball .= (ballx + ballxvel, bally + ballyvel)
 
+-- move :: 
 -- move = do
 -- reset = do
 
@@ -164,14 +178,10 @@ view model =
     mconcat
       [ text (model ^. #myScorePos) 0 mempty mempty (show (model ^. #myScore))
       , text (model ^. #opScorePos) 0 mempty mempty (show (model ^. #opScore))
-      -- , rect (model ^. (fmap (\x -> x - 1) #columns)) (model ^. #opPaddlePos) 1 3 white -- renderOpPaddle 
-      , text 1 0 mempty mempty (show (model ^. #myPadPos))
-      , text 4 0 mempty mempty (show (model ^. #ballXPos))
-      , text 7 0 mempty mempty (show (model ^. #ballYPos))
-      -- , text 9 0 mempty mempty (show (model ^. #ballYPos) +~ 1)
-      , set (model ^. #ballXPos) (model ^. #ballYPos) (Cell 'O' mempty mempty)
-      , rect (model ^. #opPadCol) (model ^. #opPadPos) 1 3 white
-      , rect 0 (model ^. #myPadPos) 1 3 white
+      , rect ((model ^. #columns) - 1) (model ^. #opPadPos) 1 (model ^. #padSize) white 
+      -- , text 4 0 mempty mempty (show (model ^. #ball))
+      , set (fst (model ^. #ball)) (snd (model ^. #ball)) (Cell 'O' mempty mempty)
+      , rect 0 (model ^. #myPadPos) 1 (model ^. #padSize) white
       ]  
 
 
@@ -181,9 +191,6 @@ view model =
 
 tickEvery :: Model -> Maybe Seconds
 tickEvery model = Just (1/gameSpeed)
-
-
-
 
 
 --------------------------------------------------------------------------------

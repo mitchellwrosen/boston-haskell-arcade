@@ -98,6 +98,8 @@ library
     Bha.Game.Impl.LambdaChat
     Bha.Game.Impl.Paint
     Bha.Game.Impl.Snake
+    Bha.Game.Impl.Pong
+    Bha.Game.Impl.NetworkedPong
     Bha.Elm.Prelude
     Bha.Elm.Versioned
     Bha.Main

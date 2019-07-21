@@ -14,7 +14,7 @@ case "$COMMAND" in
     # Keep running forever, since sometimes ghcid exits by itself, e.g. when you
     # add a new module to the .cabal file before the file exists.
     while true; do
-      ghcid -c 'cabal v2-repl lib:boston-haskell-arcade' --restart boston-haskell-arcade.cabal
+      ghcid -c 'cabal v2-repl -O0 lib:boston-haskell-arcade' --restart boston-haskell-arcade.cabal
       sleep 2
     done
     ;;
@@ -22,14 +22,14 @@ case "$COMMAND" in
   "dev-server")
     while true; do
       ghcid \
-        -c 'cabal v2-repl exe:boston-haskell-arcade-server' \
+        -c 'cabal v2-repl -O0 exe:boston-haskell-arcade-server' \
         --restart server/boston-haskell-arcade-server.cabal
       sleep 2
     done
     ;;
 
   "docs")
-    cabal v2-haddock 2>/dev/null | grep -A1 "Documentation created" | tail -n1
+    cabal v2-haddock -O0 2>/dev/null | grep -A1 "Documentation created" | tail -n1
     ;;
 
   "rebase")
@@ -39,11 +39,11 @@ case "$COMMAND" in
     ;;
 
   "run")
-    exec cabal v2-run exe:boston-haskell-arcade -- "$@"
+    exec cabal v2-run -O0 exe:boston-haskell-arcade -- "$@"
     ;;
 
   "run-server")
-    exec cabal v2-run exe:boston-haskell-arcade-server -- "$@"
+    exec cabal v2-run -O0 exe:boston-haskell-arcade-server -- "$@"
     ;;
 
   *)

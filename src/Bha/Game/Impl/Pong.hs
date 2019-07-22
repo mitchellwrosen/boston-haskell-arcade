@@ -156,7 +156,7 @@ updateTick = do
        #ballvec .= (ballxvel, 1)
        #ball .= (ballx + ballxvel, bally + 1)
 
-     | ballNextY >= (model ^. #rows) -> do
+     | ballNextY >= (model ^. #rows) - 1 -> do
        #ballvec .= (ballxvel, (-1))
        #ball .= (ballx + ballxvel, bally - 1)
 
@@ -176,14 +176,16 @@ view model =
   Scene cells NoCursor
  where
   cells :: Cells
-  cells = -- rect 0 1 1 3 white {-
+  cells = 
     mconcat
-      [ text (model ^. #myScorePos) 0 mempty mempty (show (model ^. #myScore))
-      , text (model ^. #opScorePos) 0 mempty mempty (show (model ^. #opScore))
-      , rect ((model ^. #columns) - 1) (model ^. #opPadPos) 1 (model ^. #padSize) white 
-      -- , text 4 0 mempty mempty (show (model ^. #ball))
+      [ rect ((model ^. #columns) - 1) (model ^. #opPadPos) 1 (model ^. #padSize) white 
       , set (fst (model ^. #ball)) (snd (model ^. #ball)) (Cell 'O' mempty mempty)
       , rect 0 (model ^. #myPadPos) 1 (model ^. #padSize) white
+      , rect 0 0 (model ^. #columns) 1 blue
+      , rect 0 ((model ^. #rows) - 1) (model ^. #columns) 1 blue
+      , text (model ^. #myScorePos) 0 mempty mempty (show (model ^. #myScore))
+      , text (model ^. #opScorePos) 0 mempty mempty (show (model ^. #opScore))
+      -- , text 4 0 mempty mempty (show (model ^. #ball))
       ]  
 
 

@@ -16,6 +16,8 @@ gameSpeed :: Seconds
 
 gameSpeed = 30 
 
+
+
 type XPos = Int
 type YPos = Int
 type XVel = Int
@@ -32,14 +34,22 @@ data Direction = Up | Down
 data GameState = Hosting | Joined | NotPlaying
   deriving stock (Show)
 
-data ServerMsg = Hello | BeginPlaying Int Int BallVec | Quit | Move1 YPos | Move2 YPos | RequestMove Direction | SendTick Ball Score Score
+data ServerMsg 
+    -- TODO(exw): refactor into hello | player1 player2 message types
+    = Hello 
+    | BeginPlaying Int Int BallVec 
+    | Quit 
+    | Move1 YPos 
+    | Move2 YPos 
+    | RequestMove Direction 
+    | SendTick Ball Score Score
   deriving stock (Show, Generic)
   deriving anyclass (ToJSON, FromJSON)
 
 getRandomVel :: MonadElm message m => m Int
-getRandomVel = randomInt 0 1 >>= \case
-  0 -> pure (-1)
-  _ -> pure 1
+getRandomVel = randomBool >>= \case
+  False -> pure (-1)
+  True  -> pure 1
 
 randomVector :: MonadElm message m => m (Int,Int)
 randomVector =
@@ -67,11 +77,15 @@ data Model
 
 
 init :: Int -> Int -> Init ServerMsg Model
-init width height = do
+init _ _ = do
   send "Pong" Hello
   randvec <- randomVector
   let 
     playingStatus = NotPlaying
+    height :: YPos
+    height = 25
+    width :: XPos
+    width = 80
     xMid = (width `div` 2)
     yMid = (height `div` 2)
     setPaddleSize = height `div` 7 
@@ -272,15 +286,18 @@ updateTick = do
        #ballvec .= (ballxvel, 1)
        #ball .= (ballx + ballxvel, bally + 1)
 
-     | ballNextY >= (model ^. #rows) -> do
+    -- TODO(exw): fix bounce barrier
+     | ballNextY >= (model ^. #rows)-1 -> do
        #ballvec .= (ballxvel, (-1))
        #ball .= (ballx + ballxvel, bally - 1)
 
      | otherwise -> do
        #ball .= (ballx + ballxvel, bally + ballyvel)
 
--- move :: 
--- move = do
+move :: Ball -> BallVec -> Update Model ServerMsg ()
+move ball ballvec = do
+  #ballvec .= ballvec
+  #ball .= ball
 -- reset = do
 
 --------------------------------------------------------------------------------
@@ -292,14 +309,16 @@ view model =
   Scene cells NoCursor
  where
   cells :: Cells
-  cells = -- rect 0 1 1 3 white {-
+  cells = 
     mconcat
-      [ text (model ^. #myScorePos) 0 mempty mempty (show (model ^. #myScore))
-      , text (model ^. #opScorePos) 0 mempty mempty (show (model ^. #opScore))
-      , rect ((model ^. #columns) - 1) (model ^. #rightPadPos) 1 (model ^. #padSize) white 
-      -- , text 4 0 mempty mempty (show (model ^. #ball))
+      [ rect ((model ^. #columns) - 1) (model ^. #rightPadPos) 1 (model ^. #padSize) white 
       , set (fst (model ^. #ball)) (snd (model ^. #ball)) (Cell 'O' mempty mempty)
       , rect 0 (model ^. #leftPadPos) 1 (model ^. #padSize) white
+      , rect 0 0 (model ^. #columns) 1 blue
+      , rect 0 ((model ^. #rows) - 1) (model ^. #columns) 1 blue
+      , text (model ^. #myScorePos) 0 mempty mempty (show (model ^. #myScore))
+      , text (model ^. #opScorePos) 0 mempty mempty (show (model ^. #opScore))
+      -- , text 4 0 mempty mempty (show (model ^. #ball))
       ]  
 
 

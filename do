@@ -28,15 +28,6 @@ case "$COMMAND" in
     done
     ;;
 
-  "dev-server")
-    while true; do
-      ghcid \
-        -c 'cabal v2-repl exe:boston-haskell-arcade-server' \
-        --restart server/boston-haskell-arcade-server.cabal
-      sleep 2
-    done
-    ;;
-
   "docs")
     cabal v2-haddock -O0 2>/dev/null | grep -A1 "Documentation created" | tail -n1
     ;;

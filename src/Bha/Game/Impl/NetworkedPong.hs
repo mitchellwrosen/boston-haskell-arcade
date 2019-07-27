@@ -32,17 +32,33 @@ data Direction = Up | Down
   deriving anyclass (ToJSON, FromJSON)
 
 data GameState = Hosting | Joined | NotPlaying
-  deriving stock (Show)
+  deriving stock (Show, Generic)
+  deriving anyclass (ToJSON, FromJSON)
 
-data ServerMsg 
+    {-
+data Request
     -- TODO(exw): refactor into hello | player1 player2 message types
-    = Hello 
-    | BeginPlaying Int Int BallVec 
-    | Quit 
+    = Quit 
+    | RequestMove Direction 
+  deriving stock (Show, Generic)
+  deriving anyclass (ToJSON, FromJSON)
+  --}
+
+data Response  
+    = BeginPlaying Int Int BallVec 
     | Move1 YPos 
     | Move2 YPos 
-    | RequestMove Direction 
     | SendTick Ball Score Score
+  deriving stock (Show, Generic)
+  deriving anyclass (ToJSON, FromJSON)
+
+data Greetings
+    = Hello 
+    | Quit
+  deriving stock (Show, Generic)
+  deriving anyclass (ToJSON, FromJSON)
+
+data ServerMsg = RequestMove Direction | Sent Response | Echo Greetings
   deriving stock (Show, Generic)
   deriving anyclass (ToJSON, FromJSON)
 
@@ -78,7 +94,7 @@ data Model
 
 init :: Int -> Int -> Init ServerMsg Model
 init _ _ = do
-  send "Pong" Hello
+  send "Pong" (Echo Hello)
   randvec <- randomVector
   let 
     playingStatus = NotPlaying
@@ -118,133 +134,107 @@ init _ _ = do
 update :: Input ServerMsg -> Update Model ServerMsg ()
 update = \case
 
-  {-
-          Tick _ ->
-            updateTick
+  Message _ (Echo greet) -> do
+    case greet of
+      Hello -> do
+      --TODO [exw]: race condition if both connect simultaneously
+        model <- get
+        #gameState .= Hosting
+        send "Pong" (Sent (BeginPlaying (model ^. #columns) (model ^. #rows) (model ^. #ballvec)))
+      Quit -> do
+        gameover
 
-
-          Key (KeyChar 'w') -> do 
-            #leftPadPos %= max 0 . subtract 1
-
-          Key (KeyChar 's') -> do
-            rows <- use #rows 
-            padsize <- use #padSize
-            #leftPadPos %= min (rows - padsize) . (+1)
-
-          Key KeyArrowUp -> do 
-            #rightPadPos %= max 0 . subtract 1
-
-          Key KeyArrowDown -> do 
+  Message _ (RequestMove dir) -> do
+    gamestate <- use #gameState
+    case gamestate of
+      Hosting -> do
+        case dir of
+          Up -> #rightPadPos %= max 0 . subtract 1
+          Down -> do 
             rows <- use #rows 
             padsize <- use #padSize
             #rightPadPos %= min (rows - padsize) . (+1)
-            -}
+            rightPadPos <- use #rightPadPos
+            send "Pong" (Sent (Move2 rightPadPos))
 
-          Message _ Hello -> do
-            model <- get
-            #gameState .= Hosting
-            send "Pong" (BeginPlaying (model ^. #columns) (model ^. #rows) (model ^. #ballvec))
+      Joined -> 
+        error "Must be host to receive RequestMove"
 
-          Message _ (BeginPlaying col row initballvec) -> do
+      NotPlaying -> 
+        error "Must be host to receive RequestMove"
+
+  Message _ (Sent res) -> do
+    gamestate <- use #gameState
+    case gamestate of
+      Joined -> do
+        case res of
+          Move1 ypos -> do 
+            #leftPadPos .= ypos
+
+          Move2 ypos -> do
+            #rightPadPos .= ypos
+
+          SendTick ball leftScore rightScore -> do
+            #ball .= ball
+            #myScore .= leftScore
+            #opScore .= rightScore
+
+          _ -> do
+            error "Invalid Response type"
+
+      Hosting -> 
+        error "Must be player 2 to receive Response of type " -- ++ show res
+
+      NotPlaying -> do
+        case res of
+          BeginPlaying col row initballvec -> do
             #gameState .= Joined
             #columns .= col
             #rows .= row
             #ballvec .= initballvec
 
-          Key KeyEsc -> do
-            send "Pong" Quit
-            gameover
-
-          Message _ Quit -> do
-            gameover
-
-          Key KeyArrowUp -> do 
-            -- #rightPadPos %= max 0 . subtract 1
-            gamestate <- use #gameState
-            case gamestate of
-              Hosting -> do
-                #leftPadPos %= max 0 . subtract 1
-                leftPadPos <- use #leftPadPos
-                send "Pong" (Move1 leftPadPos)
-              Joined -> do
-                send "Pong" (RequestMove Up)
-              NotPlaying -> pure ()
-            
-          Key KeyArrowDown -> do 
-            -- #rightPadPos %= max 0 . subtract 1
-            gamestate <- use #gameState
-            case gamestate of
-              Hosting -> do
-                rows <- use #rows 
-                padsize <- use #padSize
-                #leftPadPos %= min (rows - padsize) . (+1)
-                leftPadPos <- use #leftPadPos
-                send "Pong" (Move1 leftPadPos)
-              Joined -> do
-                send "Pong" (RequestMove Down)
-              NotPlaying -> pure ()
-
-          Message _ (RequestMove dir) -> do
-            gamestate <- use #gameState
-            case gamestate of
-              Hosting -> do
-                case dir of
-                  Up -> #rightPadPos %= max 0 . subtract 1
-                  Down -> do 
-                    rows <- use #rows 
-                    padsize <- use #padSize
-                    #rightPadPos %= min (rows - padsize) . (+1)
-                rightPadPos <- use #rightPadPos
-                send "Pong" (Move2 rightPadPos)
-
-              Joined -> 
-                error "Must be host to receive RequestMove"
-
-                {-case dir of
-                  Up ->  
-                  Down -> do 
-                    rows <- use #rows 
-                    padsize <- use #padSize
-                    #rightPadPos %= min (rows - padsize) . (+1)
-                    -}
-
-              NotPlaying -> 
-                error "Must be host to receive RequestMove"
-
-          Message _ (Move1 pos) -> do
-            gamestate <- use #gameState
-            case gamestate of
-              Hosting -> do
-                error "Must be p2 to receive Move message"
-              Joined -> 
-                #leftPadPos .= pos
-              NotPlaying -> 
-                error "Must be playing to receive Move messages"
-
-          Message _ (Move2 pos) -> do
-            gamestate <- use #gameState
-            case gamestate of
-              Hosting -> do
-                error "Must be p2 to receive Move message"
-              Joined -> 
-                #rightPadPos .= pos
-              NotPlaying ->
-                error "Must be playing to receive Move messages"
-
-          Message _ (SendTick ball leftScore rightScore) -> do
-            #ball .= ball
-            #myScore .= leftScore
-            #opScore .= rightScore
-
-          Tick _ -> do 
-            updateTick
-            ball <- use #ball
-            leftScore <- use #myScore
-            rightScore <- use #opScore
-            send "Pong" (SendTick ball leftScore rightScore) 
-
           _ ->
-            pure ()
+            error "Must be playing to receive Response of type " -- ++ show res
+
+  Key KeyEsc -> do
+    send "Pong" (Echo Quit)
+    gameover
+
+  Key KeyArrowUp -> do 
+    -- #rightPadPos %= max 0 . subtract 1
+    gamestate <- use #gameState
+    case gamestate of
+      Hosting -> do
+        #leftPadPos %= max 0 . subtract 1
+        leftPadPos <- use #leftPadPos
+        send "Pong" (Sent (Move1 leftPadPos))
+      Joined -> do
+        send "Pong" (RequestMove Up)
+      NotPlaying -> pure ()
+
+  Key KeyArrowDown -> do 
+    -- #rightPadPos %= max 0 . subtract 1
+    gamestate <- use #gameState
+    case gamestate of
+      Hosting -> do
+        rows <- use #rows 
+        padsize <- use #padSize
+        #leftPadPos %= min (rows - padsize) . (+1)
+        leftPadPos <- use #leftPadPos
+        send "Pong" (Sent (Move1 leftPadPos))
+      Joined -> do
+        send "Pong" (RequestMove Down)
+      NotPlaying -> pure ()
+
+  Tick _ -> do 
+    updateTick
+    ball <- use #ball
+    leftScore <- use #myScore
+    rightScore <- use #opScore
+    send "Pong" (Sent (SendTick ball leftScore rightScore)) 
+
+  _ ->
+    pure ()
 
 updateTick :: Update Model ServerMsg ()
 updateTick = do
@@ -293,12 +283,15 @@ updateTick = do
 
      | otherwise -> do
        #ball .= (ballx + ballxvel, bally + ballyvel)
-
+       
+         {--TODO [exw]: refactor move function in UpdateTick
 move :: Ball -> BallVec -> Update Model ServerMsg ()
 move ball ballvec = do
   #ballvec .= ballvec
   #ball .= ball
+  --}
 -- reset = do
+
 
 --------------------------------------------------------------------------------
 -- View
